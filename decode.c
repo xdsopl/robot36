@@ -10,6 +10,8 @@
 #include <sys/mman.h>
 #include <math.h>
 #include <complex.h> 
+#include <alsa/asoundlib.h> 
+#include <time.h>
 
 float lerp(float a, float b, float x)
 {
@@ -215,10 +217,11 @@ void *mmap_file_ro(char *name, size_t *size)
 	}
 
 	if (close(fd) == -1) {
-		perror ("close");
+		perror("close");
 		return 0; 
 	}
 	*size = sb.st_size;
+	fprintf(stderr, "opened %s (ro)\n", name);
 	return p;
 }
 
@@ -261,6 +264,7 @@ void *mmap_file_rw(char *name, size_t size)
 		perror ("close");
 		return 0; 
 	}
+	fprintf(stderr, "opened %s (rw)\n", name);
 	return p;
 }
 int munmap_file(void *p, size_t size)
@@ -309,21 +313,9 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 	if (n % 2)
 	for (int y = n-1, l = 0; l < 2 && y < height; l++, y++) {
 		for (int x = 0; x < width; x++) {
-#if DN && UP
 			uint8_t Y = y_pixel[x + l*y_width];
 			uint8_t U = uv_pixel[x/2 + uv_width];
 			uint8_t V = uv_pixel[x/2];
-#else
-			float y_xf = (float)x * (float)y_width / (float)width;
-			float uv_xf = (float)x * (float)uv_width / (float)width;
-			int y_x0 = y_xf;
-			int uv_x0 = uv_xf;
-			int y_x1 = limit(0, y_width, y_xf + 1);
-			int uv_x1 = limit(0, uv_width, uv_xf + 1);
-			uint8_t Y = lerp(y_pixel[y_x0 + l*y_width], y_pixel[y_x1 + l*y_width], y_xf - (float)y_x0);
-			uint8_t U = lerp(uv_pixel[uv_x0 + uv_width], uv_pixel[uv_x1 + uv_width], uv_xf - (float)uv_x0);
-			uint8_t V = lerp(uv_pixel[uv_x0], uv_pixel[uv_x1], uv_xf - (float)uv_x0);
-#endif
 			uint8_t *p = pixel + 3 * width * y + 3 * x;
 			p[0] = R_YUV(Y, U, V);
 			p[1] = G_YUV(Y, U, V);
@@ -332,64 +324,109 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 	}
 }
 
+typedef struct {
+	snd_pcm_t *pcm;
+	int rate;
+	int channels;
+} pcm_t;
+
+pcm_t *open_pcm(char *name)
+{
+	snd_pcm_t *pcm;
+	snd_pcm_hw_params_t *params;
+	snd_pcm_hw_params_alloca(&params);
+
+	if (snd_pcm_open(&pcm, name, SND_PCM_STREAM_CAPTURE, 0) < 0) {
+		fprintf(stderr, "Error opening PCM device\n");
+		return 0;
+	}
+  
+	if (snd_pcm_hw_params_any(pcm, params) < 0) {
+		fprintf(stderr, "Can not configure this PCM device.\n");
+		return 0;
+	}
+  
+	if (snd_pcm_hw_params_set_access(pcm, params, SND_PCM_ACCESS_RW_INTERLEAVED) < 0) {
+		fprintf(stderr, "Error setting access.\n");
+		return 0;
+	}
+
+	if (snd_pcm_hw_params_set_format(pcm, params, SND_PCM_FORMAT_S16_LE) < 0) {
+		fprintf(stderr, "Error setting format.\n");
+		return 0;
+	}
+
+	if (snd_pcm_hw_params_set_rate_resample(pcm, params, 0) < 0) {
+		fprintf(stderr, "Error disabling resampling.\n");
+		return 0;
+	}
+
+	if (snd_pcm_hw_params(pcm, params) < 0) {
+		fprintf(stderr, "Error setting HW params.\n");
+		return 0;
+	}
+	unsigned int rate = 0;
+	if (snd_pcm_hw_params_get_rate(params, &rate, 0) < 0) {
+		fprintf(stderr, "Error getting rate.\n");
+		return 0;
+	}
+	unsigned int channels = 0;
+	if (snd_pcm_hw_params_get_channels(params, &channels) < 0) {
+		fprintf(stderr, "Error getting channels.\n");
+		return 0;
+	}
+	pcm_t *p = (pcm_t *)malloc(sizeof(pcm_t));
+	p->pcm = pcm;
+	p->rate = rate;
+	p->channels = channels;
+	return p;
+}
+
+void close_pcm(pcm_t *p)
+{
+	snd_pcm_close(p->pcm);
+	free(p);
+}
+void read_pcm(pcm_t *p, short *buff, int frames)
+{
+	int got = 0;
+	while (0 < frames) {
+		while ((got = snd_pcm_readi(p->pcm, buff, frames)) < 0) {
+			snd_pcm_prepare(p->pcm);
+			fprintf(stderr, "<<<<<<<<<<<<<<< Buffer Overrun >>>>>>>>>>>>>>>\n");
+		}
+		buff += got * p->channels;
+		frames -= got;
+	}
+}
+
+char *string_time(char *fmt)
+{
+	static char s[64];
+	time_t now = time(0);
+	strftime(s, sizeof(s), fmt, localtime(&now));
+	return s;
+}
+
 int main(int argc, char **argv)
 {
-	if (argc != 3) {
-		fprintf(stderr, "usage: %s <input.wav> <output.ppm>\n", argv[0]);
+	pcm_t *pcm;
+	if (argc == 1)
+		pcm = open_pcm("default");
+	else
+		pcm = open_pcm(argv[1]);
+
+	if (!pcm)
 		return 1;
-	}
 
-	size_t wav_size;
-	char *wav_p = mmap_file_ro(argv[1], &wav_size);
-	if (!wav_p)
-		return 1;
-
-	wav_t *wav = (wav_t *)wav_p;
-
-#if 0
-	fprintf(stderr, "\n");
-	fprintf(stderr, "ChunkID = 0x%x\n", wav->ChunkID);
-	fprintf(stderr, "ChunkSize = %d\n", wav->ChunkSize);
-	fprintf(stderr, "Format = 0x%x\n", wav->Format);
-	fprintf(stderr, "Subchunk1ID = 0x%x\n", wav->Subchunk1ID);
-	fprintf(stderr, "Subchunk1Size = %d\n", wav->Subchunk1Size);
-	fprintf(stderr, "AudioFormat = %d\n", wav->AudioFormat);
-	fprintf(stderr, "NumChannels = %d\n", wav->NumChannels);
-	fprintf(stderr, "SampleRate = %d\n", wav->SampleRate);
-	fprintf(stderr, "ByteRate = %d\n", wav->ByteRate);
-	fprintf(stderr, "BlockAlign = %d\n", wav->BlockAlign);
-	fprintf(stderr, "BitsPerSample = %d\n", wav->BitsPerSample);
-	fprintf(stderr, "Subchunk2ID = 0x%x\n", wav->Subchunk2ID);
-	fprintf(stderr, "Subchunk2Size = %d\n", wav->Subchunk2Size);
-	fprintf(stderr, "\n");
-#endif
-
-	if (wav->ChunkID != 0x46464952 || wav->Format != 0x45564157 ||
-			wav->Subchunk1ID != 0x20746d66 || wav->Subchunk1Size != 16 ||
-			wav->AudioFormat != 1 || wav->Subchunk2ID != 0x61746164) {
-		fprintf(stderr, "unsupported WAV file!\n");
-		return 1;
-	}
-	if (wav->BitsPerSample != 16) {
-		fprintf(stderr, "only 16bit WAV supported!\n");
-		return 1;
-	}
-
-	if (wav->NumChannels != 1) {
-		fprintf(stderr, "only Mono WAV supported!\n");
-		return 1;
-	}
-
-	int samples = wav->Subchunk2Size / 2;
-
-	float rate = wav->SampleRate;
+	float rate = pcm->rate;
 	if (rate * 0.088 < 320.0) {
 		fprintf(stderr, "%.0fhz samplerate too low\n", rate);
 		return 1;
 	}
 	fprintf(stderr, "%.0fhz samplerate\n", rate);
-
-	short *b = (short *)(wav_p + sizeof(wav_t));
+	if (pcm->channels > 1)
+		fprintf(stderr, "using first of %d channels\n", pcm->channels);
 
 	const float step = 1.0 / rate;
 	float complex cnt_last = -I;
@@ -426,23 +463,12 @@ int main(int argc, char **argv)
 	int evn_count = 0;
 	int first_hor_sync = 0;
 
-#if DN && UP
 	// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
 	int64_t factor_L = 40000;
 	int64_t factor_M = 11 * rate;
 	int64_t factor_D = gcd(factor_L, factor_M);
 	factor_L /= factor_D;
 	factor_M /= factor_D;
-#endif
-#if DN && !UP
-	int64_t factor_L = 1;
-	// factor_M * step should be smaller than pixel length
-	int64_t factor_M = rate * 0.088 / 320.0;
-#endif
-#if !DN
-	int64_t factor_L = 1;
-	int64_t factor_M = 1;
-#endif
 
 	// we want odd number of taps, 4 and 2 ms window length gives best results
 	int cnt_taps = 1 | (int)(rate * factor_L * 0.004);
@@ -462,6 +488,8 @@ int main(int argc, char **argv)
 	delay_t *cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
 	delay_t *dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
 
+	short *buff = (short *)malloc(sizeof(short) * pcm->channels * factor_M);
+
 	const float sync_porch_len = 0.003;
 	const float porch_len = 0.0015; (void)porch_len;
 	const float y_len = 0.088;
@@ -470,20 +498,14 @@ int main(int argc, char **argv)
 	int missing_sync = 0;
 	int seperator_correction = 0;
 
-#if DEBUG
-	const int width = (0.150 + 3.0 * sync_porch_len) * drate + 20;
-	const int height = 256;
-#else
 	const int width = 320;
 	const int height = 240;
-#endif
+
 	char ppm_head[32];
 	snprintf(ppm_head, 32, "P6 %d %d 255\n", width, height);
 	size_t ppm_size = strlen(ppm_head) + width * height * 3;
-	char *ppm_p = mmap_file_rw(argv[2], ppm_size);
-	memcpy(ppm_p, ppm_head, strlen(ppm_head));
-	uint8_t *pixel = (uint8_t *)ppm_p + strlen(ppm_head);
-	memset(pixel, 0, width * height * 3);
+	char *ppm_p = 0;
+	uint8_t *pixel = 0;
 
 	int hor_ticks = 0;
 	int y_pixel_x = 0;
@@ -495,11 +517,12 @@ int main(int argc, char **argv)
 	uint8_t *uv_pixel = malloc(uv_width * 2);
 	memset(uv_pixel, 0, uv_width * 2);
 
-	for (int ticks = 0, in = 0, out = factor_L; in < (samples + 1 - factor_M); out++, ticks++, hor_ticks++, cal_ticks++, vis_ticks++) {
+	for (int out = factor_L;; out++, hor_ticks++, cal_ticks++, vis_ticks++) {
 		if (out >= factor_L) {
 			out = 0;
+			read_pcm(pcm, buff, factor_M);
 			for (int j = 0; j < factor_M; j++) {
-				float amp = (float)b[in++] / 32767.0;
+				float amp = (float)buff[j * pcm->channels] / 32767.0;
 				cnt_amp[j] = do_delay(cnt_delay, amp);
 				dat_amp[j] = do_delay(dat_delay, amp);
 			}
@@ -549,14 +572,6 @@ int main(int argc, char **argv)
 		begin_vis_lo = vis_lo ? 0 : begin_vis_lo;
 		begin_vis_hi = vis_hi ? 0 : begin_vis_hi;
 
-#if DEBUG
-		if ((int)(ticks * dstep) < 5.0)
-			printf("%f %f %f %d %d %d %d %d %d %d %d\n", (float)ticks * dstep, dat_freq, cnt_freq,
-				50*hor_sync+950, 50*cal_leader+850, 50*cal_break+750,
-				50*vis_ss+650, 50*vis_lo+550, 50*vis_hi+450,
-				50*sep_evn+350, 50*sep_odd+250);
-#endif
-
 		if (cal_leader && !cal_break && got_cal_break &&
 				cal_ticks >= (int)(drate * (cal_leader_len + cal_break_len) * leader_tolerance) &&
 				cal_ticks <= (int)(drate * (cal_leader_len + cal_break_len) * (2.0 - leader_tolerance))) {
@@ -565,7 +580,7 @@ int main(int argc, char **argv)
 			dat_mode = 0;
 			first_hor_sync = 1;
 			got_cal_break = 0;
-			fprintf(stderr, "%f got calibration header\n", (float)ticks * dstep);
+			fprintf(stderr, "%s got calibration header\n", string_time("%F %T"));
 		}
 
 		if (cal_break && !cal_leader &&
@@ -591,7 +606,7 @@ int main(int argc, char **argv)
 					dat_mode = 1;
 					vis_mode = 0;
 					vis_bit = -1;
-					fprintf(stderr, "%f got VIS = 0x%x (complete)\n", (float)ticks*dstep, vis_byte);
+					fprintf(stderr, "%s got VIS = 0x%x (complete)\n", string_time("%F %T"), vis_byte);
 				}
 				if (vis_bit < 8) {
 					if (vis_lo) vis_bit++;
@@ -602,7 +617,7 @@ int main(int argc, char **argv)
 					dat_mode = 1;
 					vis_mode = 0;
 					vis_bit = -1;
-					fprintf(stderr, "%f got VIS = 0x%x (missing stop bit)\n", (float)ticks*dstep, vis_byte);
+					fprintf(stderr, "%s got VIS = 0x%x (missing stop bit)\n", string_time("%F %T"), vis_byte);
 				}
 			}
 			if (!vis_mode && vis_byte != 0x88) {
@@ -624,22 +639,21 @@ int main(int argc, char **argv)
 			hor_ticks = 0;
 			y_pixel_x = 0;
 			uv_pixel_x = 0;
+			y = 0;
+			odd = 0;
+			if (pixel) {
+				munmap_file(ppm_p, ppm_size);
+				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
+				missing_sync = 0;
+				seperator_correction = 0;
+			}
+			ppm_p = mmap_file_rw(string_time("%F_%T.ppm"), ppm_size);
+			memcpy(ppm_p, ppm_head, strlen(ppm_head));
+			pixel = (uint8_t *)ppm_p + strlen(ppm_head);
+			memset(pixel, 0, width * height * 3);
 			continue;
 		}
 
-#if DEBUG
-		if (hor_ticks < width) {
-			uint8_t *p = pixel + 3 * y * width + 3 * hor_ticks;
-#if DATA
-			uint8_t v = limit(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
-#else
-			uint8_t v = limit(0.0, 255.0, 255.0 * (cnt_freq - 1100.0) / 200.0);
-#endif
-			p[0] = v;
-			p[1] = v;
-			p[2] = v;
-		}
-#endif
 		// if horizontal sync is too early, we reset to the beginning instead of ignoring
 		if (hor_sync && hor_ticks < (int)((hor_len - sync_porch_len) * drate)) {
 			for (int i = 0; i < 4; i++) {
@@ -656,17 +670,16 @@ int main(int argc, char **argv)
 		// we always sync if sync pulse is where it should be.
 		if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
 				hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
-#if DEBUG
-			uint8_t *p = pixel + 3 * y * width + 3 * hor_ticks + 6 * (int)(sync_porch_len * drate);
-			p[0] = 0;
-			p[1] = 255;
-			p[2] = 255;
-			y++;
-#else
 			process_line(pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
-#endif
-			if (y == height)
-				break;
+			if (y == height) {
+				munmap_file(ppm_p, ppm_size);
+				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
+				pixel = 0;
+				dat_mode = 0;
+				missing_sync = 0;
+				seperator_correction = 0;
+				continue;
+			}
 			odd ^= 1;
 			hor_ticks = 0;
 			y_pixel_x = 0;
@@ -675,19 +688,16 @@ int main(int argc, char **argv)
 
 		// if horizontal sync is missing, we extrapolate from last sync
 		if (hor_ticks >= (int)((hor_len + sync_porch_len) * drate)) {
-#if DEBUG
-			for (int i = 0; i < 4; i++) {
-				uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 5);
-				p[0] = 255;
-				p[1] = 255;
-				p[2] = 0;
-			}
-			y++;
-#else
 			process_line(pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
-#endif
-			if (y == height)
-				break;
+			if (y == height) {
+				munmap_file(ppm_p, ppm_size);
+				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
+				pixel = 0;
+				dat_mode = 0;
+				missing_sync = 0;
+				seperator_correction = 0;
+				continue;
+			}
 			odd ^= 1;
 			missing_sync++;
 			hor_ticks -= (int)(hor_len * drate);
@@ -706,44 +716,15 @@ int main(int argc, char **argv)
 			if (evn_count > odd_count && odd) {
 				odd = 0;
 				seperator_correction++;
-#if DEBUG
-				for (int i = 0; i < 4; i++) {
-					uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 15);
-					p[0] = 255;
-					p[1] = 0;
-					p[2] = 0;
-				}
-#endif
 			}
 			// odd seperator
 			if (odd_count > evn_count && !odd) {
 				odd = 1;
 				seperator_correction++;
-#if DEBUG
-				for (int i = 0; i < 4; i++) {
-					uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 15);
-					p[0] = 0;
-					p[1] = 255;
-					p[2] = 0;
-				}
-#endif
 			}
 			evn_count = 0;
 			odd_count = 0;
 		}
-#if DEBUG
-		float fixme = 0.0007;
-		if (hor_ticks == (int)((fixme + sync_porch_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len + uv_len) * drate)) {
-			uint8_t *p = pixel + 3 * y * width + 3 * hor_ticks;
-			p[0] = 255;
-			p[1] = 0;
-			p[2] = 0;
-		}
-#else
 		// TODO: need better way to compensate for pulse decay time
 		float fixme = 0.0007;
 		if (y_pixel_x < y_width && hor_ticks >= (int)((fixme + sync_porch_len) * drate))
@@ -751,18 +732,14 @@ int main(int argc, char **argv)
 
 		if (uv_pixel_x < uv_width && hor_ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
 			uv_pixel[uv_pixel_x++ + odd * uv_width] = limit(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
-#endif
 	}
 
-	munmap_file(wav_p, wav_size);
+	close_pcm(pcm);
 
 	free_ddc(cnt_ddc);
 	free_ddc(dat_ddc);
 	free(cnt_amp);
 	free(dat_amp);
-
-	munmap_file(ppm_p, ppm_size);
-	fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
 
 	return 0;
 }
