@@ -3,15 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <math.h>
 #include <complex.h> 
-#include <alsa/asoundlib.h> 
 #include <time.h>
+#include "mmap_file.h"
+#include "pcm.h"
 
 float lerp(float a, float b, float x)
 {
@@ -190,92 +186,6 @@ void free_delay(delay_t *delay)
 	free(delay);
 }
 
-void *mmap_file_ro(char *name, size_t *size)
-{
-	*size = 0;
-	int fd = open(name, O_RDONLY);
-	if (fd == -1) {
-		perror("open");
-		return 0;
-	}
-
-	struct stat sb;
-	if (fstat(fd, &sb) == -1) {
-		perror("fstat");
-		return 0;
-	}
-
-	if (!S_ISREG(sb.st_mode)) {
-		fprintf(stderr, "%s not a file\n", name);
-		return 0;
-	}
-
-	void *p = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (p == MAP_FAILED) {
-		perror("mmap");
-		return 0; 
-	}
-
-	if (close(fd) == -1) {
-		perror("close");
-		return 0; 
-	}
-	*size = sb.st_size;
-	fprintf(stderr, "opened %s (ro)\n", name);
-	return p;
-}
-
-void *mmap_file_rw(char *name, size_t size)
-{
-	int fd = open(name, O_RDWR|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-	if (fd == -1) {
-		perror("open");
-		return 0;
-	}
-
-	struct stat sb;
-	if (fstat(fd, &sb) == -1) {
-		perror("fstat");
-		return 0;
-	}
-
-	if (!S_ISREG(sb.st_mode)) {
-		fprintf(stderr, "%s not a file\n", name);
-		return 0;
-	}
-
-	if (lseek(fd, size - 1, SEEK_SET) == -1) {
-		perror("lseek");
-		return 0;
-	}
-
-	if (write(fd, "", 1) != 1) {
-		perror("write");
-		return 0;
-	}
-
-	void *p = mmap(0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if (p == MAP_FAILED) {
-		perror("mmap");
-		return 0; 
-	}
-
-	if (close(fd) == -1) {
-		perror ("close");
-		return 0; 
-	}
-	fprintf(stderr, "opened %s (rw)\n", name);
-	return p;
-}
-int munmap_file(void *p, size_t size)
-{
-	if (munmap(p, size) == -1) {
-		perror("munmap");
-		return 0;
-	}
-	return 1;
-}
-
 typedef struct {
 	uint32_t ChunkID;
 	uint32_t ChunkSize;
@@ -324,82 +234,6 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 	}
 }
 
-typedef struct {
-	snd_pcm_t *pcm;
-	int rate;
-	int channels;
-} pcm_t;
-
-pcm_t *open_pcm(char *name)
-{
-	snd_pcm_t *pcm;
-	snd_pcm_hw_params_t *params;
-	snd_pcm_hw_params_alloca(&params);
-
-	if (snd_pcm_open(&pcm, name, SND_PCM_STREAM_CAPTURE, 0) < 0) {
-		fprintf(stderr, "Error opening PCM device\n");
-		return 0;
-	}
-  
-	if (snd_pcm_hw_params_any(pcm, params) < 0) {
-		fprintf(stderr, "Can not configure this PCM device.\n");
-		return 0;
-	}
-  
-	if (snd_pcm_hw_params_set_access(pcm, params, SND_PCM_ACCESS_RW_INTERLEAVED) < 0) {
-		fprintf(stderr, "Error setting access.\n");
-		return 0;
-	}
-
-	if (snd_pcm_hw_params_set_format(pcm, params, SND_PCM_FORMAT_S16_LE) < 0) {
-		fprintf(stderr, "Error setting format.\n");
-		return 0;
-	}
-
-	if (snd_pcm_hw_params_set_rate_resample(pcm, params, 0) < 0) {
-		fprintf(stderr, "Error disabling resampling.\n");
-		return 0;
-	}
-
-	if (snd_pcm_hw_params(pcm, params) < 0) {
-		fprintf(stderr, "Error setting HW params.\n");
-		return 0;
-	}
-	unsigned int rate = 0;
-	if (snd_pcm_hw_params_get_rate(params, &rate, 0) < 0) {
-		fprintf(stderr, "Error getting rate.\n");
-		return 0;
-	}
-	unsigned int channels = 0;
-	if (snd_pcm_hw_params_get_channels(params, &channels) < 0) {
-		fprintf(stderr, "Error getting channels.\n");
-		return 0;
-	}
-	pcm_t *p = (pcm_t *)malloc(sizeof(pcm_t));
-	p->pcm = pcm;
-	p->rate = rate;
-	p->channels = channels;
-	return p;
-}
-
-void close_pcm(pcm_t *p)
-{
-	snd_pcm_close(p->pcm);
-	free(p);
-}
-void read_pcm(pcm_t *p, short *buff, int frames)
-{
-	int got = 0;
-	while (0 < frames) {
-		while ((got = snd_pcm_readi(p->pcm, buff, frames)) < 0) {
-			snd_pcm_prepare(p->pcm);
-			fprintf(stderr, "<<<<<<<<<<<<<<< Buffer Overrun >>>>>>>>>>>>>>>\n");
-		}
-		buff += got * p->channels;
-		frames -= got;
-	}
-}
-
 char *string_time(char *fmt)
 {
 	static char s[64];
@@ -411,22 +245,26 @@ char *string_time(char *fmt)
 int main(int argc, char **argv)
 {
 	pcm_t *pcm;
-	if (argc == 1)
-		pcm = open_pcm("default");
-	else
-		pcm = open_pcm(argv[1]);
+	char *name = "alsa:default";
+	if (argc != 1)
+		name = argv[1];
 
-	if (!pcm)
+	if (!open_pcm(&pcm, name)) {
+		fprintf(stderr, "couldnt open %s\n", name);
 		return 1;
+	}
 
-	float rate = pcm->rate;
+	info_pcm(pcm);
+
+	float rate = rate_pcm(pcm);
 	if (rate * 0.088 < 320.0) {
 		fprintf(stderr, "%.0fhz samplerate too low\n", rate);
 		return 1;
 	}
-	fprintf(stderr, "%.0fhz samplerate\n", rate);
-	if (pcm->channels > 1)
-		fprintf(stderr, "using first of %d channels\n", pcm->channels);
+
+	int channels = channels_pcm(pcm);
+	if (channels > 1)
+		fprintf(stderr, "using first of %d channels\n", channels);
 
 	const float step = 1.0 / rate;
 	float complex cnt_last = -I;
@@ -488,7 +326,7 @@ int main(int argc, char **argv)
 	delay_t *cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
 	delay_t *dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
 
-	short *buff = (short *)malloc(sizeof(short) * pcm->channels * factor_M);
+	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
 	const float sync_porch_len = 0.003;
 	const float porch_len = 0.0015; (void)porch_len;
@@ -504,7 +342,7 @@ int main(int argc, char **argv)
 	char ppm_head[32];
 	snprintf(ppm_head, 32, "P6 %d %d 255\n", width, height);
 	size_t ppm_size = strlen(ppm_head) + width * height * 3;
-	char *ppm_p = 0;
+	void *ppm_p = 0;
 	uint8_t *pixel = 0;
 
 	int hor_ticks = 0;
@@ -520,9 +358,10 @@ int main(int argc, char **argv)
 	for (int out = factor_L;; out++, hor_ticks++, cal_ticks++, vis_ticks++) {
 		if (out >= factor_L) {
 			out = 0;
-			read_pcm(pcm, buff, factor_M);
+			if (!read_pcm(pcm, buff, factor_M))
+				break;
 			for (int j = 0; j < factor_M; j++) {
-				float amp = (float)buff[j * pcm->channels] / 32767.0;
+				float amp = (float)buff[j * channels] / 32767.0;
 				cnt_amp[j] = do_delay(cnt_delay, amp);
 				dat_amp[j] = do_delay(dat_delay, amp);
 			}
@@ -647,7 +486,7 @@ int main(int argc, char **argv)
 				missing_sync = 0;
 				seperator_correction = 0;
 			}
-			ppm_p = mmap_file_rw(string_time("%F_%T.ppm"), ppm_size);
+			mmap_file_rw(&ppm_p, string_time("%F_%T.ppm"), ppm_size);
 			memcpy(ppm_p, ppm_head, strlen(ppm_head));
 			pixel = (uint8_t *)ppm_p + strlen(ppm_head);
 			memset(pixel, 0, width * height * 3);
@@ -732,6 +571,13 @@ int main(int argc, char **argv)
 
 		if (uv_pixel_x < uv_width && hor_ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
 			uv_pixel[uv_pixel_x++ + odd * uv_width] = limit(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
+	}
+
+	if (pixel) {
+		munmap_file(ppm_p, ppm_size);
+		fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
+		missing_sync = 0;
+		seperator_correction = 0;
 	}
 
 	close_pcm(pcm);

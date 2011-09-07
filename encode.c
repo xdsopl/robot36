@@ -3,14 +3,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <math.h>
 #include <complex.h> 
 #include <limits.h>
+#include "mmap_file.h"
 
 float limit(float min, float max, float x)
 {
@@ -47,91 +43,6 @@ uint8_t V_RGB(uint8_t R, uint8_t G, uint8_t B)
 uint8_t U_RGB(uint8_t R, uint8_t G, uint8_t B)
 {
 	return limit(0.0, 255.0, 128.0 + (0.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B))));
-}
-
-void *mmap_file_ro(char *name, size_t *size)
-{
-	*size = 0;
-	int fd = open(name, O_RDONLY);
-	if (fd == -1) {
-		perror("open");
-		return 0;
-	}
-
-	struct stat sb;
-	if (fstat(fd, &sb) == -1) {
-		perror("fstat");
-		return 0;
-	}
-
-	if (!S_ISREG(sb.st_mode)) {
-		fprintf(stderr, "%s not a file\n", name);
-		return 0;
-	}
-
-	void *p = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (p == MAP_FAILED) {
-		perror("mmap");
-		return 0; 
-	}
-
-	if (close(fd) == -1) {
-		perror ("close");
-		return 0; 
-	}
-	*size = sb.st_size;
-	return p;
-}
-
-void *mmap_file_rw(char *name, size_t size)
-{
-	int fd = open(name, O_RDWR|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-	if (fd == -1) {
-		perror("open");
-		return 0;
-	}
-
-	struct stat sb;
-	if (fstat(fd, &sb) == -1) {
-		perror("fstat");
-		return 0;
-	}
-
-	if (!S_ISREG(sb.st_mode)) {
-		fprintf(stderr, "%s not a file\n", name);
-		return 0;
-	}
-
-	if (lseek(fd, size - 1, SEEK_SET) == -1) {
-		perror("lseek");
-		return 0;
-	}
-
-	if (write(fd, "", 1) != 1) {
-		perror("write");
-		return 0;
-	}
-
-	void *p = mmap(0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if (p == MAP_FAILED) {
-		perror("mmap");
-		return 0; 
-	}
-
-	if (close(fd) == -1) {
-		perror ("close");
-		return 0; 
-	}
-	return p;
-}
-
-int munmap_file(void *p, size_t size)
-{
-	if (munmap(p, size) == -1) {
-		perror("munmap");
-		return 0;
-	}
-	return 1;
 }
 
 typedef struct {
@@ -176,7 +87,11 @@ int main(int argc, char **argv)
 	}
 
 	size_t ppm_size;
-	char *ppm_p = mmap_file_ro(argv[1], &ppm_size);
+	void *ppm_p;
+	if (!mmap_file_ro(&ppm_p, argv[1], &ppm_size)) {
+		fprintf(stderr, "couldnt open ppm file\n");
+		return 1;
+	}
 	const int width = 320;
 	const int height = 240;
 	const char *ppm_head = "P6 320 240 255\n";
@@ -201,9 +116,11 @@ int main(int argc, char **argv)
 
 	size_t wav_size = 4096 * ((size_t)(37.5 * rate * 2 + 44 + 4095) / 4096);
 	int samples = (wav_size - 44) / 2;
-	char *wav_p = mmap_file_rw(argv[2], wav_size);
-	if (!wav_p)
+	void *wav_p;
+	if (!mmap_file_rw(&wav_p, argv[2], wav_size)) {
+		fprintf(stderr, "couldnt open wav file\n");
 		return 1;
+	}
 
 	buffer = (short *)(wav_p + sizeof(wav_t));
 

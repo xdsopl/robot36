@@ -1,5 +1,6 @@
 encode
 decode
+*.o
 11025.ppm
 11025.wav
 40000.ppm
