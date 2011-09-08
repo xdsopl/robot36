@@ -32,21 +32,13 @@ float limit(float min, float max, float x)
 	return tmp > max ? max : tmp;
 }
 
-typedef struct {
-	uint32_t ChunkID;
-	uint32_t ChunkSize;
-	uint32_t Format;
-	uint32_t Subchunk1ID;
-	uint32_t Subchunk1Size;
-	uint16_t AudioFormat;
-	uint16_t NumChannels;
-	uint32_t SampleRate;
-	uint32_t ByteRate;
-	uint16_t BlockAlign;
-	uint16_t BitsPerSample;
-	uint32_t Subchunk2ID;
-	uint32_t Subchunk2Size;
-} wav_t;
+char *string_time(char *fmt)
+{
+	static char s[64];
+	time_t now = time(0);
+	strftime(s, sizeof(s), fmt, localtime(&now));
+	return s;
+}
 
 uint8_t R_YUV(uint8_t Y, uint8_t U, uint8_t V)
 {
@@ -78,14 +70,6 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 			p[2] = B_YUV(Y, U, V);
 		}
 	}
-}
-
-char *string_time(char *fmt)
-{
-	static char s[64];
-	time_t now = time(0);
-	strftime(s, sizeof(s), fmt, localtime(&now));
-	return s;
 }
 
 int main(int argc, char **argv)
