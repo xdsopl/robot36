@@ -198,8 +198,8 @@ int main(int argc, char **argv)
 	float complex *cnt_q = malloc(sizeof(float complex) * factor_L);
 	float complex *dat_q = malloc(sizeof(float complex) * factor_L);
 	// same factor to keep life simple and have accurate horizontal sync
-	ddc_t *cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser);
-	ddc_t *dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser);
+	ddc_t *cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser, 2.0);
+	ddc_t *dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser, 2.0);
 	// delay input by phase shift of other filter to synchronize outputs
 	delay_t *cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
 	delay_t *dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));

@@ -18,7 +18,7 @@ typedef struct {
 } ddc_t;
 
 void do_ddc(ddc_t *, float *, float complex *);
-ddc_t *alloc_ddc(float, float, float, int, int, int, float (*)(float, float));
+ddc_t *alloc_ddc(float, float, float, int, int, int, float (*)(float, float, float), float);
 void free_ddc(ddc_t *);
 
 #endif

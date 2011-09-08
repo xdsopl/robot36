@@ -33,7 +33,7 @@ void do_ddc(ddc_t *ddc, float *input, float complex *output)
 //		ddc->osc /= cabsf(ddc->osc); // not really needed
 	}
 }
-ddc_t *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float (*window)(float, float))
+ddc_t *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float (*window)(float, float, float), float a)
 {
 	float lstep = step / (float)L;
 	float ostep = step * (float)M / (float)L;
@@ -57,7 +57,7 @@ ddc_t *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float
 		float n = (float)i;
 		float x = n - (N - 1.0) / 2.0;
 		float l = 2.0 * M_PI * bw * lstep;
-		float w = window(n, ddc->taps);
+		float w = window(n, ddc->taps, a);
 		float h = 0.0 == x ? l / M_PI : sinf(l * x) / (x * M_PI);
 		float b = w * h;
 		sum += b;
