@@ -1,7 +1,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include "pcm.h"
 #include "alsa.h"
 #include "wav.h"
