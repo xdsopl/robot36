@@ -12,11 +12,6 @@
 #include "delay.h"
 #include "yuv.h"
 
-float lerp(float a, float b, float x)
-{
-	return a - a * x + b * x;
-}
-
 int64_t gcd(int64_t a, int64_t b)
 {
 	int64_t c;
@@ -27,7 +22,7 @@ int64_t gcd(int64_t a, int64_t b)
 	return b;
 }
 
-float limit(float min, float max, float x)
+float flimitf(float min, float max, float x)
 {
 	float tmp = x < min ? min : x;
 	return tmp > max ? max : tmp;
@@ -188,8 +183,8 @@ int main(int argc, char **argv)
 			do_ddc(dat_ddc, dat_amp, dat_q);
 		}
 
-		float cnt_freq = limit(1100.0, 1300.0, 1200.0 + cargf(cnt_q[out] * conjf(cnt_last)) / (2.0 * M_PI * dstep));
-		float dat_freq = limit(1500.0, 2300.0, 1900.0 + cargf(dat_q[out] * conjf(dat_last)) / (2.0 * M_PI * dstep));
+		float cnt_freq = flimitf(1100.0, 1300.0, 1200.0 + cargf(cnt_q[out] * conjf(cnt_last)) / (2.0 * M_PI * dstep));
+		float dat_freq = flimitf(1500.0, 2300.0, 1900.0 + cargf(dat_q[out] * conjf(dat_last)) / (2.0 * M_PI * dstep));
 
 		cnt_last = cnt_q[out];
 		dat_last = dat_q[out];
@@ -389,10 +384,10 @@ int main(int argc, char **argv)
 		// TODO: need better way to compensate for pulse decay time
 		float fixme = 0.0007;
 		if (y_pixel_x < y_width && hor_ticks >= (int)((fixme + sync_porch_len) * drate))
-			y_pixel[y_pixel_x++ + (y % 2) * y_width] = limit(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
+			y_pixel[y_pixel_x++ + (y % 2) * y_width] = flimitf(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
 
 		if (uv_pixel_x < uv_width && hor_ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
-			uv_pixel[uv_pixel_x++ + odd * uv_width] = limit(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
+			uv_pixel[uv_pixel_x++ + odd * uv_width] = flimitf(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
 	}
 
 	if (pixel) {
