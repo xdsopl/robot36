@@ -1,6 +1,6 @@
 
 CC = gcc
-CFLAGS = -D_GNU_SOURCE= -W -Wall -O3 -std=c99 -ffast-math -DDN=1 -DUP=1
+CFLAGS = -D_GNU_SOURCE= -W -Wall -O3 -std=c99 -ffast-math
 LDFLAGS = $(CFLAGS) -lm -lasound
 
 all: encode decode
