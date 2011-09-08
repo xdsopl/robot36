@@ -25,6 +25,7 @@ typedef struct {
 void close_alsa(pcm_t *pcm)
 {
 	alsa_t *alsa = (alsa_t *)pcm;
+	snd_pcm_drain(alsa->pcm);
 	snd_pcm_close(alsa->pcm);
 }
 
