@@ -15,35 +15,18 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "mmap_file.h"
 #include "yuv.h"
 #include "utils.h"
+#include "pcm.h"
 
-typedef struct {
-	uint32_t ChunkID;
-	uint32_t ChunkSize;
-	uint32_t Format;
-	uint32_t Subchunk1ID;
-	uint32_t Subchunk1Size;
-	uint16_t AudioFormat;
-	uint16_t NumChannels;
-	uint32_t SampleRate;
-	uint32_t ByteRate;
-	uint16_t BlockAlign;
-	uint16_t BitsPerSample;
-	uint32_t Subchunk2ID;
-	uint32_t Subchunk2Size;
-} wav_t;
-
-short *buffer;
+pcm_t *pcm;
 complex float nco;
-int sample;
 float hz2rad;
+int channels;
+short *buff;
 
-void add_sample(float val) {
-//	static float avg = 0.0;
-//	const float a = 0.9;
-//	avg = a * val + (1.0 - a) * avg;
-//	buffer[sample++] = (float)SHRT_MAX * avg;
-	buffer[sample++] = (float)SHRT_MAX * val;
-//	buffer[sample++] = (float)SHRT_MAX * avg + random() / (RAND_MAX / 10000);
+int add_sample(float val) {
+	for (int i = 0; i < channels; i++)
+		buff[i] = (float)SHRT_MAX * val;
+	return write_pcm(pcm, buff, 1);
 }
 void add_freq(float freq) {
 	add_sample(creal(nco));
@@ -75,6 +58,18 @@ int main(int argc, char **argv)
 	uint8_t *pixel = (uint8_t *)ppm_p + strlen(ppm_head);
 
 	float rate = atoi(argv[3]);
+	int frames = 37.5 * rate;
+	if (!open_pcm_write(&pcm, argv[2], atoi(argv[3]), 1, frames)) {
+		fprintf(stderr, "couldnt open output %s\n", argv[2]);
+		return 1;
+	}
+
+	rate = rate_pcm(pcm);
+	channels = channels_pcm(pcm);
+
+	buff = (short *)malloc(sizeof(short)*channels);
+
+	info_pcm(pcm);
 
 	if (fabsf(0.0015 * rate - (int)(0.0015 * rate)) > 0.0001)
 		fprintf(stderr, "this rate will not give accurate (smooth) results.\ntry 40000Hz and resample to %0.fHz\n", rate);
@@ -85,17 +80,6 @@ int main(int argc, char **argv)
 	float seq_freq[N] = { 1900.0, 1200.0, 1900.0, 1200.0, 1300.0, 1300.0, 1300.0, 1100.0, 1300.0, 1300.0, 1300.0, 1100.0, 1200.0 };
 	float seq_time[N] = { 0.3, 0.01, 0.3, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03 };
 
-	size_t wav_size = 4096 * ((size_t)(37.5 * rate * 2 + 44 + 4095) / 4096);
-	int samples = (wav_size - 44) / 2;
-	void *wav_p;
-	if (!mmap_file_rw(&wav_p, argv[2], wav_size)) {
-		fprintf(stderr, "couldnt open wav file\n");
-		return 1;
-	}
-
-	buffer = (short *)(wav_p + sizeof(wav_t));
-
-	sample = 0;
 
 	for (int ticks = 0; ticks < (int)(0.3 * rate); ticks++)
 		add_sample(0.0);
@@ -218,25 +202,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	while (sample < samples)
-		add_sample(0.0);
-
-	wav_t *wav = (wav_t *)wav_p;
-	wav->ChunkID = 0x46464952;
-	wav->ChunkSize = 36 + 2 * samples;
-	wav->Format = 0x45564157;
-	wav->Subchunk1ID = 0x20746d66;
-	wav->Subchunk1Size = 16;
-	wav->AudioFormat = 1;
-	wav->NumChannels = 1;
-	wav->SampleRate = rate;
-	wav->ByteRate = 2 * rate;
-	wav->BlockAlign = 2;
-	wav->BitsPerSample = 16;
-	wav->Subchunk2ID = 0x61746164;
-	wav->Subchunk2Size = 2 * samples;
-
-	munmap_file(wav_p, wav_size);
+	while (add_sample(0.0));
+	
+	close_pcm(pcm);
 	munmap_file(ppm_p, ppm_size);
 	return 0;
 }
