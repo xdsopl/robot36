@@ -245,12 +245,15 @@ char *string_time(char *fmt)
 int main(int argc, char **argv)
 {
 	pcm_t *pcm;
-	char *name = "default";
+	char *pcm_name = "default";
+	char *ppm_name = 0;
 	if (argc != 1)
-		name = argv[1];
+		pcm_name = argv[1];
+	if (argc == 3)
+		ppm_name = argv[2];
 
-	if (!open_pcm(&pcm, name)) {
-		fprintf(stderr, "couldnt open %s\n", name);
+	if (!open_pcm(&pcm, pcm_name)) {
+		fprintf(stderr, "couldnt open %s\n", pcm_name);
 		return 1;
 	}
 
@@ -486,7 +489,10 @@ int main(int argc, char **argv)
 				missing_sync = 0;
 				seperator_correction = 0;
 			}
-			mmap_file_rw(&ppm_p, string_time("%F_%T.ppm"), ppm_size);
+			if (ppm_name)
+				mmap_file_rw(&ppm_p, ppm_name, ppm_size);
+			else
+				mmap_file_rw(&ppm_p, string_time("%F_%T.ppm"), ppm_size);
 			memcpy(ppm_p, ppm_head, strlen(ppm_head));
 			pixel = (uint8_t *)ppm_p + strlen(ppm_head);
 			memset(pixel, 0, width * height * 3);
