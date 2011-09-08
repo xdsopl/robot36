@@ -1,5 +1,4 @@
 
-CC = gcc
 CFLAGS = -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -ffast-math
 LDFLAGS = -lm -lasound
 
