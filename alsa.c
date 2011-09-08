@@ -49,10 +49,8 @@ int read_alsa(pcm_t *pcm, short *buff, int frames)
 	alsa_t *alsa = (alsa_t *)pcm;
 	int got = 0;
 	while (0 < frames) {
-		while ((got = snd_pcm_readi(alsa->pcm, buff, frames)) < 0) {
+		while ((got = snd_pcm_readi(alsa->pcm, buff, frames)) < 0)
 			snd_pcm_prepare(alsa->pcm);
-			fprintf(stderr, "<<<<<<<<<<<<<<< Buffer Overrun >>>>>>>>>>>>>>>\n");
-		}
 		buff += got * alsa->c;
 		frames -= got;
 	}
@@ -64,10 +62,8 @@ int write_alsa(pcm_t *pcm, short *buff, int frames)
 	alsa_t *alsa = (alsa_t *)pcm;
 	int got = 0;
 	while (0 < frames) {
-		while ((got = snd_pcm_writei(alsa->pcm, buff, frames)) < 0) {
+		while ((got = snd_pcm_writei(alsa->pcm, buff, frames)) < 0)
 			snd_pcm_prepare(alsa->pcm);
-			fprintf(stderr, "<<<<<<<<<<<<<<< Buffer Overrun >>>>>>>>>>>>>>>\n");
-		}
 		buff += got * alsa->c;
 		frames -= got;
 	}
