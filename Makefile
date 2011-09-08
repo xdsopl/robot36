@@ -22,5 +22,5 @@ clean:
 
 encode: encode.o mmap_file.o
 
-decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o
+decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o
 
