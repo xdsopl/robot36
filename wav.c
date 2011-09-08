@@ -36,10 +36,12 @@ typedef struct {
 	int (*channels)(pcm_t *);
 	int (*rw)(struct pcm *, short *, int);
 	void *p;
-	wav_head_t *head;
 	short *b;
 	size_t size;
-	unsigned int index;
+	int index;
+	int frames;
+	int r;
+	int c;
 } wav_t;
 
 void close_wav(pcm_t *pcm)
@@ -51,34 +53,34 @@ void close_wav(pcm_t *pcm)
 void info_wav(pcm_t *pcm)
 {
 	wav_t *wav = (wav_t *)pcm;
-	fprintf(stderr, "%d channel(s), %d rate, %d samples\n", wav->head->NumChannels, wav->head->SampleRate, wav->head->Subchunk2Size / 2);
+	fprintf(stderr, "%d channel(s), %d rate, %d frames\n", wav->c, wav->r, wav->frames);
 }
 int rate_wav(pcm_t *pcm)
 {
 	wav_t *wav = (wav_t *)pcm;
-	return wav->head->SampleRate;
+	return wav->r;
 }
 int channels_wav(pcm_t *pcm)
 {
 	wav_t *wav = (wav_t *)pcm;
-	return wav->head->NumChannels;
+	return wav->c;
 }
 int read_wav(pcm_t *pcm, short *buff, int frames)
 {
 	wav_t *wav = (wav_t *)pcm;
-	if ((wav->index + frames * wav->head->NumChannels) > (wav->head->Subchunk2Size / 2))
+	if ((wav->index + frames) > wav->frames)
 		return 0;
-	memcpy(buff, wav->b + wav->index, sizeof(short) * frames * wav->head->NumChannels);
-	wav->index += frames * wav->head->NumChannels;
+	memcpy(buff, wav->b + wav->index * wav->c, sizeof(short) * frames * wav->c);
+	wav->index += frames;
 	return 1;
 }
 int write_wav(pcm_t *pcm, short *buff, int frames)
 {
 	wav_t *wav = (wav_t *)pcm;
-	if ((wav->index + frames * wav->head->NumChannels) > (wav->head->Subchunk2Size / 2))
+	if ((wav->index + frames) > wav->frames)
 		return 0;
-	memcpy(wav->b + wav->index, buff, sizeof(short) * frames * wav->head->NumChannels);
-	wav->index += frames * wav->head->NumChannels;
+	memcpy(wav->b + wav->index * wav->c, buff, sizeof(short) * frames * wav->c);
+	wav->index += frames;
 	return 1;
 }
 
@@ -95,29 +97,33 @@ int open_wav_read(pcm_t **p, char *name)
 		free(wav);
 		return 0;
 	}
-	wav->head = (wav_head_t *)wav->p;
+	wav_head_t *head = (wav_head_t *)wav->p;
 	wav->b = (short *)(wav->p + sizeof(wav_head_t));
 
-	if (wav->head->ChunkID != 0x46464952 || wav->head->Format != 0x45564157 ||
-			wav->head->Subchunk1ID != 0x20746d66 || wav->head->Subchunk1Size != 16 ||
-			wav->head->AudioFormat != 1 || wav->head->Subchunk2ID != 0x61746164) {
+	if (head->ChunkID != 0x46464952 || head->Format != 0x45564157 ||
+			head->Subchunk1ID != 0x20746d66 || head->Subchunk1Size != 16 ||
+			head->AudioFormat != 1 || head->Subchunk2ID != 0x61746164 ||
+			head->ChunkSize != (head->Subchunk2Size + 36)) {
 		fprintf(stderr, "unsupported WAV file!\n");
 		munmap_file(wav->p, wav->size);
 		free(wav);
 		return 0;
 	}
-	if (wav->head->BitsPerSample != 16) {
+	if (head->BitsPerSample != 16) {
 		fprintf(stderr, "only 16bit WAV supported!\n");
 		munmap_file(wav->p, wav->size);
 		free(wav);
 		return 0;
 	}
 	wav->index = 0;
+	wav->frames = head->Subchunk2Size / (sizeof(short) * head->NumChannels);
+	wav->r = head->SampleRate;
+	wav->c = head->NumChannels;
 	*p = (pcm_t *)wav;
 	return 1;
 }
 
-int open_wav_write(pcm_t **p, char *name, int rate, int channels)
+int open_wav_write(pcm_t **p, char *name, int rate, int channels, int frames)
 {
 	wav_t *wav = (wav_t *)malloc(sizeof(wav_t));
 	wav->close = close_wav;
@@ -125,7 +131,7 @@ int open_wav_write(pcm_t **p, char *name, int rate, int channels)
 	wav->rate = rate_wav;
 	wav->channels = channels_wav;
 	wav->rw = write_wav;
-	wav->size = 4096;
+	wav->size = frames * channels * sizeof(short) + sizeof(wav_head_t);
 	if (!mmap_file_rw(&wav->p, name, wav->size)) {
 		fprintf(stderr, "couldnt open wav file %s!\n", name);
 		free(wav);
@@ -134,11 +140,8 @@ int open_wav_write(pcm_t **p, char *name, int rate, int channels)
 	wav_head_t *head = (wav_head_t *)wav->p;
 	wav->b = (short *)(wav->p + sizeof(wav_head_t));
 
-	int samples = (wav->size - 44) / 2;
-	wav->index = 0;
-
 	head->ChunkID = 0x46464952;
-	head->ChunkSize = 36 + 2 * samples;
+	head->ChunkSize = 36 + frames * sizeof(short) * channels;
 	head->Format = 0x45564157;
 	head->Subchunk1ID = 0x20746d66;
 	head->Subchunk1Size = 16;
@@ -149,7 +152,12 @@ int open_wav_write(pcm_t **p, char *name, int rate, int channels)
 	head->BlockAlign = 2;
 	head->BitsPerSample = 16;
 	head->Subchunk2ID = 0x61746164;
-	head->Subchunk2Size = 2 * samples;
+	head->Subchunk2Size = frames * sizeof(short) * channels;
+
+	wav->r = rate;
+	wav->c = channels;
+	wav->frames = frames;
+	wav->index = 0;
 
 	*p = (pcm_t *)wav;
 	return 1;

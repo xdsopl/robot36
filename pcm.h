@@ -24,7 +24,7 @@ int channels_pcm(pcm_t *);
 int read_pcm(pcm_t *, short *, int);
 int write_pcm(pcm_t *, short *, int);
 int open_pcm_read(pcm_t **, char *);
-int open_pcm_write(pcm_t **, char *, int, int);
+int open_pcm_write(pcm_t **, char *, int, int, int);
 
 #endif
 

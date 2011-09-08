@@ -53,12 +53,12 @@ int open_pcm_read(pcm_t **p, char *name)
 	return 0;
 }
 
-int open_pcm_write(pcm_t **p, char *name, int rate, int channels)
+int open_pcm_write(pcm_t **p, char *name, int rate, int channels, int frames)
 {
 	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
 		return open_alsa_write(p, name, rate, channels);
 	if (strstr(name, ".wav") == (name + (strlen(name) - strlen(".wav"))))
-		return open_wav_write(p, name, rate, channels);
+		return open_wav_write(p, name, rate, channels, frames);
 	return 0;
 }
 
