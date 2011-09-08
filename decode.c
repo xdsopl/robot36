@@ -10,6 +10,7 @@
 #include "pcm.h"
 #include "ddc.h"
 #include "delay.h"
+#include "yuv.h"
 
 float lerp(float a, float b, float x)
 {
@@ -38,21 +39,6 @@ char *string_time(char *fmt)
 	time_t now = time(0);
 	strftime(s, sizeof(s), fmt, localtime(&now));
 	return s;
-}
-
-uint8_t R_YUV(uint8_t Y, uint8_t U, uint8_t V)
-{
-	(void)U;
-	return limit(0.0, 255.0, 0.003906 * ((298.082 * (Y - 16.0)) + (408.583 * (V - 128))));
-}
-uint8_t G_YUV(uint8_t Y, uint8_t U, uint8_t V)
-{
-	return limit(0.0, 255.0, 0.003906 * ((298.082 * (Y - 16.0)) + (-100.291 * (U - 128)) + (-208.12 * (V - 128))));
-}
-uint8_t B_YUV(uint8_t Y, uint8_t U, uint8_t V)
-{
-	(void)V;
-	return limit(0.0, 255.0, 0.003906 * ((298.082 * (Y - 16.0)) + (516.411 * (U - 128))));
 }
 
 void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_width, int uv_width, int width, int height, int n)
