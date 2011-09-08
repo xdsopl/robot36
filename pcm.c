@@ -36,15 +36,29 @@ int channels_pcm(pcm_t *pcm)
 
 int read_pcm(pcm_t *pcm, short *buff, int frames)
 {
-	return pcm->read(pcm, buff, frames);
+	return pcm->rw(pcm, buff, frames);
 }
 
-int open_pcm(pcm_t **p, char *name)
+int write_pcm(pcm_t *pcm, short *buff, int frames)
+{
+	return pcm->rw(pcm, buff, frames);
+}
+
+int open_pcm_read(pcm_t **p, char *name)
 {
 	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
-		return open_alsa(p, name);
+		return open_alsa_read(p, name);
 	if (strstr(name, ".wav") == (name + (strlen(name) - strlen(".wav"))))
-		return open_wav(p, name);
+		return open_wav_read(p, name);
+	return 0;
+}
+
+int open_pcm_write(pcm_t **p, char *name, int rate, int channels)
+{
+	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
+		return open_alsa_write(p, name, rate, channels);
+	if (strstr(name, ".wav") == (name + (strlen(name) - strlen(".wav"))))
+		return open_wav_write(p, name, rate, channels);
 	return 0;
 }
 

@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	if (argc == 3)
 		ppm_name = argv[2];
 
-	if (!open_pcm(&pcm, pcm_name)) {
+	if (!open_pcm_read(&pcm, pcm_name)) {
 		fprintf(stderr, "couldnt open %s\n", pcm_name);
 		return 1;
 	}
