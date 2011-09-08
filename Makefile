@@ -20,7 +20,7 @@ test: all
 clean:
 	rm -f encode decode *.o {8000,11025,40000,44100,48000}.{ppm,wav}
 
-encode: encode.o mmap_file.o
+encode: encode.o mmap_file.o yuv.o
 
-decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.c
+decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.o
 

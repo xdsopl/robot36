@@ -7,43 +7,8 @@
 #include <complex.h> 
 #include <limits.h>
 #include "mmap_file.h"
-
-float limit(float min, float max, float x)
-{
-	float tmp = x < min ? min : x;
-	return tmp > max ? max : tmp;
-}
-float lerp(float a, float b, float x)
-{
-	return a - a * x + b * x;
-}
-uint8_t R_YUV(uint8_t Y, uint8_t U, uint8_t V)
-{
-	(void)U;
-	return limit(0.0, 255.0, 0.003906 * ((298.082 * (Y - 16.0)) + (408.583 * (V - 128.0))));
-}
-uint8_t G_YUV(uint8_t Y, uint8_t U, uint8_t V)
-{
-	return limit(0.0, 255.0, 0.003906 * ((298.082 * (Y - 16.0)) + (-100.291 * (U - 128.0)) + (-208.12 * (V - 128.0))));
-}
-uint8_t B_YUV(uint8_t Y, uint8_t U, uint8_t V)
-{
-	(void)V;
-	return limit(0.0, 255.0, 0.003906 * ((298.082 * (Y - 16.0)) + (516.411 * (U - 128.0))));
-}
-
-uint8_t Y_RGB(uint8_t R, uint8_t G, uint8_t B)
-{
-	return limit(0.0, 255.0, 16.0 + (0.003906 * ((65.738 * R) + (129.057 * G) + (25.064 * B))));
-}
-uint8_t V_RGB(uint8_t R, uint8_t G, uint8_t B)
-{
-	return limit(0.0, 255.0, 128.0 + (0.003906 * ((112.439 * R) + (-94.154 * G) + (-18.285 * B))));
-}
-uint8_t U_RGB(uint8_t R, uint8_t G, uint8_t B)
-{
-	return limit(0.0, 255.0, 128.0 + (0.003906 * ((-37.945 * R) + (-74.494 * G) + (112.439 * B))));
-}
+#include "yuv.h"
+#include "utils.h"
 
 typedef struct {
 	uint32_t ChunkID;
@@ -145,9 +110,9 @@ int main(int argc, char **argv)
 		}
 		// Y
 		for (int ticks = 0; ticks < (int)(0.088 * rate); ticks++) {
-			float xf = limit(0.0, 319.0, (320.0 * (float)ticks) / (0.088 * rate));
+			float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
 			int x0 = xf;
-			int x1 = limit(0.0, 319.0, x0 + 1);
+			int x1 = fclampf(x0 + 1, 0.0, 319.0);
 			int off0 = 3 * y * width + 3 * x0;
 			int off1 = 3 * y * width + 3 * x1;
 			uint8_t R0 = pixel[off0 + 0];
@@ -156,9 +121,9 @@ int main(int argc, char **argv)
 			uint8_t R1 = pixel[off1 + 0];
 			uint8_t G1 = pixel[off1 + 1];
 			uint8_t B1 = pixel[off1 + 2];
-			uint8_t R = lerp(R0, R1, xf - (float)x0);
-			uint8_t G = lerp(G0, G1, xf - (float)x0);
-			uint8_t B = lerp(B0, B1, xf - (float)x0);
+			uint8_t R = flerpf(R0, R1, xf - (float)x0);
+			uint8_t G = flerpf(G0, G1, xf - (float)x0);
+			uint8_t B = flerpf(B0, B1, xf - (float)x0);
 			add_freq(1500.0 + 800.0 * Y_RGB(R, G, B) / 255.0);
 		}
 		// EVEN
@@ -171,9 +136,9 @@ int main(int argc, char **argv)
 		}
 		// V
 		for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
-			float xf = limit(0.0, 159.0, (160.0 * (float)ticks) / (0.044 * rate));
+			float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
 			int x0 = xf;
-			int x1 = limit(0.0, 159.0, x0 + 1);
+			int x1 = fclampf(x0 + 1, 0.0, 159.0);
 			int evn0 = 3 * y * width + 6 * x0;
 			int evn1 = 3 * y * width + 6 * x1;
 			int odd0 = 3 * (y + 1) * width + 6 * x0;
@@ -184,9 +149,9 @@ int main(int argc, char **argv)
 			uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
 			uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
 			uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
-			uint8_t R = lerp(R0, R1, xf - (float)x0);
-			uint8_t G = lerp(G0, G1, xf - (float)x0);
-			uint8_t B = lerp(B0, B1, xf - (float)x0);
+			uint8_t R = flerpf(R0, R1, xf - (float)x0);
+			uint8_t G = flerpf(G0, G1, xf - (float)x0);
+			uint8_t B = flerpf(B0, B1, xf - (float)x0);
 			add_freq(1500.0 + 800.0 * V_RGB(R, G, B) / 255.0);
 		}
 		// ODD LINES
@@ -201,9 +166,9 @@ int main(int argc, char **argv)
 		}
 		// Y
 		for (int ticks = 0; ticks < (int)(0.088 * rate); ticks++) {
-			float xf = limit(0.0, 319.0, (320.0 * (float)ticks) / (0.088 * rate));
+			float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
 			int x0 = xf;
-			int x1 = limit(0.0, 319.0, x0 + 1);
+			int x1 = fclampf(x0 + 1, 0.0, 319.0);
 			int off0 = 3 * y * width + 3 * x0;
 			int off1 = 3 * y * width + 3 * x1;
 			uint8_t R0 = pixel[off0 + 0];
@@ -212,9 +177,9 @@ int main(int argc, char **argv)
 			uint8_t R1 = pixel[off1 + 0];
 			uint8_t G1 = pixel[off1 + 1];
 			uint8_t B1 = pixel[off1 + 2];
-			uint8_t R = lerp(R0, R1, xf - (float)x0);
-			uint8_t G = lerp(G0, G1, xf - (float)x0);
-			uint8_t B = lerp(B0, B1, xf - (float)x0);
+			uint8_t R = flerpf(R0, R1, xf - (float)x0);
+			uint8_t G = flerpf(G0, G1, xf - (float)x0);
+			uint8_t B = flerpf(B0, B1, xf - (float)x0);
 			add_freq(1500.0 + 800.0 * Y_RGB(R, G, B) / 255.0);
 		}
 		// ODD
@@ -227,9 +192,9 @@ int main(int argc, char **argv)
 		}
 		// U
 		for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
-			float xf = limit(0.0, 159.0, (160.0 * (float)ticks) / (0.044 * rate));
+			float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
 			int x0 = xf;
-			int x1 = limit(0.0, 159.0, x0 + 1);
+			int x1 = fclampf(x0 + 1, 0.0, 159.0);
 			int evn0 = 3 * (y - 1) * width + 6 * x0;
 			int evn1 = 3 * (y - 1) * width + 6 * x1;
 			int odd0 = 3 * y * width + 6 * x0;
@@ -240,9 +205,9 @@ int main(int argc, char **argv)
 			uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
 			uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
 			uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
-			uint8_t R = lerp(R0, R1, xf - (float)x0);
-			uint8_t G = lerp(G0, G1, xf - (float)x0);
-			uint8_t B = lerp(B0, B1, xf - (float)x0);
+			uint8_t R = flerpf(R0, R1, xf - (float)x0);
+			uint8_t G = flerpf(G0, G1, xf - (float)x0);
+			uint8_t B = flerpf(B0, B1, xf - (float)x0);
 			add_freq(1500.0 + 800.0 * U_RGB(R, G, B) / 255.0);
 		}
 	}

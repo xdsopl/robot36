@@ -11,30 +11,7 @@
 #include "ddc.h"
 #include "delay.h"
 #include "yuv.h"
-
-int64_t gcd(int64_t a, int64_t b)
-{
-	int64_t c;
-	while ((c = a % b)) {
-		a = b;
-		b = c;
-	}
-	return b;
-}
-
-float fclampf(float x, float min, float max)
-{
-	float tmp = x < min ? min : x;
-	return tmp > max ? max : tmp;
-}
-
-char *string_time(char *fmt)
-{
-	static char s[64];
-	time_t now = time(0);
-	strftime(s, sizeof(s), fmt, localtime(&now));
-	return s;
-}
+#include "utils.h"
 
 void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_width, int uv_width, int width, int height, int n)
 {
