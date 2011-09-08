@@ -34,10 +34,10 @@ int read_pcm(pcm_t *pcm, short *buff, int frames)
 
 int open_pcm(pcm_t **p, char *name)
 {
-	if (strstr(name, "alsa:"))
-		return open_alsa(p, name + strlen("alsa:"));
-	if (strstr(name, "wav:"))
-		return open_wav(p, name + strlen("wav:"));
+	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
+		return open_alsa(p, name);
+	if (strstr(name, ".wav") == (name + (strlen(name) - strlen(".wav"))))
+		return open_wav(p, name);
 	return 0;
 }
 

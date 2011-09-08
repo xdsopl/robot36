@@ -245,7 +245,7 @@ char *string_time(char *fmt)
 int main(int argc, char **argv)
 {
 	pcm_t *pcm;
-	char *name = "alsa:default";
+	char *name = "default";
 	if (argc != 1)
 		name = argv[1];
 
