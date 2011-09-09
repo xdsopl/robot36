@@ -18,6 +18,8 @@ typedef struct {
 	int (*channels)(pcm_t *);
 	int (*rw)(struct pcm *, short *, int);
 	snd_pcm_t *pcm;
+	int index;
+	int frames;
 	int r;
 	int c;
 } alsa_t;
@@ -32,7 +34,10 @@ void close_alsa(pcm_t *pcm)
 void info_alsa(pcm_t *pcm)
 {
 	alsa_t *alsa = (alsa_t *)pcm;
-	fprintf(stderr, "%d channel(s), %d rate\n", alsa->c, alsa->r);
+	if (alsa->frames)
+		fprintf(stderr, "%d channel(s), %d rate, %.2f seconds\n", alsa->c, alsa->r, (float)alsa->frames / (float)alsa->r);
+	else
+		fprintf(stderr, "%d channel(s), %d rate\n", alsa->c, alsa->r);
 }
 int rate_alsa(pcm_t *pcm)
 {
@@ -60,6 +65,9 @@ int read_alsa(pcm_t *pcm, short *buff, int frames)
 int write_alsa(pcm_t *pcm, short *buff, int frames)
 {
 	alsa_t *alsa = (alsa_t *)pcm;
+	if (alsa->frames && (alsa->index + frames) > alsa->frames)
+		return 0;
+	alsa->index += frames;
 	int got = 0;
 	while (0 < frames) {
 		while ((got = snd_pcm_writei(alsa->pcm, buff, frames)) < 0)
@@ -144,7 +152,7 @@ int open_alsa_read(pcm_t **p, char *name)
 	return 1;
 }
 
-int open_alsa_write(pcm_t **p, char *name, int rate, int channels)
+int open_alsa_write(pcm_t **p, char *name, int rate, int channels, float seconds)
 {
 	alsa_t *alsa = (alsa_t *)malloc(sizeof(alsa_t));
 	alsa->close = close_alsa;
@@ -210,6 +218,8 @@ int open_alsa_write(pcm_t **p, char *name, int rate, int channels)
 	alsa->pcm = pcm;
 	alsa->r = rate;
 	alsa->c = channels;
+	alsa->frames = seconds * rate;
+	alsa->index = 0;
 	*p = (pcm_t *)alsa;
 	return 1;
 }

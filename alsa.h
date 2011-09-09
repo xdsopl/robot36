@@ -10,6 +10,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #define ALSA_H
 #include "pcm.h"
 int open_alsa_read(pcm_t **, char *);
-int open_alsa_write(pcm_t **, char *, int, int);
+int open_alsa_write(pcm_t **, char *, int, int, float);
 #endif
 
