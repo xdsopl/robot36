@@ -57,14 +57,12 @@ int main(int argc, char **argv)
 
 	uint8_t *pixel = (uint8_t *)ppm_p + strlen(ppm_head);
 
-	float rate = atoi(argv[3]);
-	int frames = 37.5 * rate;
-	if (!open_pcm_write(&pcm, argv[2], atoi(argv[3]), 1, frames)) {
+	if (!open_pcm_write(&pcm, argv[2], atoi(argv[3]), 1, 37.5)) {
 		fprintf(stderr, "couldnt open output %s\n", argv[2]);
 		return 1;
 	}
 
-	rate = rate_pcm(pcm);
+	float rate = rate_pcm(pcm);
 	channels = channels_pcm(pcm);
 
 	buff = (short *)malloc(sizeof(short)*channels);

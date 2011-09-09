@@ -123,7 +123,7 @@ int open_wav_read(pcm_t **p, char *name)
 	return 1;
 }
 
-int open_wav_write(pcm_t **p, char *name, int rate, int channels, int frames)
+int open_wav_write(pcm_t **p, char *name, int rate, int channels, float seconds)
 {
 	wav_t *wav = (wav_t *)malloc(sizeof(wav_t));
 	wav->close = close_wav;
@@ -131,6 +131,7 @@ int open_wav_write(pcm_t **p, char *name, int rate, int channels, int frames)
 	wav->rate = rate_wav;
 	wav->channels = channels_wav;
 	wav->rw = write_wav;
+	int frames = seconds * rate;
 	wav->size = frames * channels * sizeof(short) + sizeof(wav_head_t);
 	if (!mmap_file_rw(&wav->p, name, wav->size)) {
 		fprintf(stderr, "couldnt open wav file %s!\n", name);
