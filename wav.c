@@ -102,8 +102,7 @@ int open_wav_read(pcm_t **p, char *name)
 
 	if (head->ChunkID != 0x46464952 || head->Format != 0x45564157 ||
 			head->Subchunk1ID != 0x20746d66 || head->Subchunk1Size != 16 ||
-			head->AudioFormat != 1 || head->Subchunk2ID != 0x61746164 ||
-			head->ChunkSize != (head->Subchunk2Size + 36)) {
+			head->AudioFormat != 1 || head->Subchunk2ID != 0x61746164) {
 		fprintf(stderr, "unsupported WAV file!\n");
 		munmap_file(wav->p, wav->size);
 		free(wav);
