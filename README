@@ -27,3 +27,6 @@ read from wav file input.wav and write out to ppm image output.ppm:
 encode ppm image input.ppm to output.wav using rate of 40000Hz
 # ./encode input.ppm output.wav 40000
 
+encode ppm image input.ppm and write out to default alsa device
+# ./encode input.ppm
+

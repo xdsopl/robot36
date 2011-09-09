@@ -53,7 +53,7 @@ void close_wav(pcm_t *pcm)
 void info_wav(pcm_t *pcm)
 {
 	wav_t *wav = (wav_t *)pcm;
-	fprintf(stderr, "%d channel(s), %d rate, %d frames\n", wav->c, wav->r, wav->frames);
+	fprintf(stderr, "%d channel(s), %d rate, %.2f seconds\n", wav->c, wav->r, (float)wav->frames / (float)wav->r);
 }
 int rate_wav(pcm_t *pcm)
 {

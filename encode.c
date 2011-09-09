@@ -35,8 +35,8 @@ void add_freq(float freq) {
 
 int main(int argc, char **argv)
 {
-	if (argc != 4) {
-		fprintf(stderr, "usage: %s <input.ppm> <output.wav> <rate>\n", argv[0]);
+	if (argc < 2) {
+		fprintf(stderr, "usage: %s <input.ppm> <output.wav|default|hw:?,?> <rate>\n", argv[0]);
 		return 1;
 	}
 
@@ -57,12 +57,18 @@ int main(int argc, char **argv)
 
 	uint8_t *pixel = (uint8_t *)ppm_p + strlen(ppm_head);
 
-	if (!open_pcm_write(&pcm, argv[2], atoi(argv[3]), 1, 37.5)) {
-		fprintf(stderr, "couldnt open output %s\n", argv[2]);
+	char *pcm_name = "default";
+	float rate = 48000;
+	if (argc > 2)
+		pcm_name = argv[2];
+	if (argc > 3)
+		rate = atoi(argv[3]);
+	if (!open_pcm_write(&pcm, pcm_name, rate, 1, 37.5)) {
+		fprintf(stderr, "couldnt open output %s\n", pcm_name);
 		return 1;
 	}
 
-	float rate = rate_pcm(pcm);
+	rate = rate_pcm(pcm);
 	channels = channels_pcm(pcm);
 
 	buff = (short *)malloc(sizeof(short)*channels);
