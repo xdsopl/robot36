@@ -16,7 +16,7 @@ typedef struct {
 	void (*info)(pcm_t *);
 	int (*rate)(pcm_t *);
 	int (*channels)(pcm_t *);
-	int (*rw)(struct pcm *, short *, int);
+	int (*rw)(pcm_t *, short *, int);
 	snd_pcm_t *pcm;
 	int index;
 	int frames;
