@@ -22,15 +22,112 @@ complex float nco;
 float hz2rad;
 int channels;
 short *buff;
+uint8_t *pixel;
+float rate = 48000;
+const int width = 320;
+const int height = 240;
 
-int add_sample(float val) {
+int add_sample(float val)
+{
 	for (int i = 0; i < channels; i++)
 		buff[i] = (float)SHRT_MAX * val;
 	return write_pcm(pcm, buff, 1);
 }
-void add_freq(float freq) {
+void add_freq(float freq)
+{
 	add_sample(creal(nco));
 	nco *= cexpf(freq * hz2rad * I);
+}
+
+void hor_sync()
+{
+	for (int ticks = 0; ticks < (int)(0.009 * rate); ticks++)
+		add_freq(1200.0);
+}
+void sync_porch()
+{
+	for (int ticks = 0; ticks < (int)(0.003 * rate); ticks++)
+		add_freq(1500.0);
+}
+void porch()
+{
+	for (int ticks = 0; ticks < (int)(0.0015 * rate); ticks++)
+		add_freq(1900.0);
+}
+void even_seperator()
+{
+	for (int ticks = 0; ticks < (int)(0.0045 * rate); ticks++)
+		add_freq(1500.0);
+}
+void odd_seperator()
+{
+	for (int ticks = 0; ticks < (int)(0.0045 * rate); ticks++)
+		add_freq(2300.0);
+}
+void y_scan(int y)
+{
+	for (int ticks = 0; ticks < (int)(0.088 * rate); ticks++) {
+		float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
+		int x0 = xf;
+		int x1 = fclampf(x0 + 1, 0.0, 319.0);
+		int off0 = 3 * y * width + 3 * x0;
+		int off1 = 3 * y * width + 3 * x1;
+		uint8_t R0 = pixel[off0 + 0];
+		uint8_t G0 = pixel[off0 + 1];
+		uint8_t B0 = pixel[off0 + 2];
+		uint8_t R1 = pixel[off1 + 0];
+		uint8_t G1 = pixel[off1 + 1];
+		uint8_t B1 = pixel[off1 + 2];
+		uint8_t R = flerpf(R0, R1, xf - (float)x0);
+		uint8_t G = flerpf(G0, G1, xf - (float)x0);
+		uint8_t B = flerpf(B0, B1, xf - (float)x0);
+		add_freq(1500.0 + 800.0 * Y_RGB(R, G, B) / 255.0);
+	}
+}
+
+void v_scan(int y)
+{
+	for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
+		float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
+		int x0 = xf;
+		int x1 = fclampf(x0 + 1, 0.0, 159.0);
+		int evn0 = 3 * y * width + 6 * x0;
+		int evn1 = 3 * y * width + 6 * x1;
+		int odd0 = 3 * (y + 1) * width + 6 * x0;
+		int odd1 = 3 * (y + 1) * width + 6 * x1;
+		uint8_t R0 = (pixel[evn0 + 0] + pixel[odd0 + 0] + pixel[evn0 + 3] + pixel[odd0 + 3]) / 4;
+		uint8_t G0 = (pixel[evn0 + 1] + pixel[odd0 + 1] + pixel[evn0 + 4] + pixel[odd0 + 4]) / 4;
+		uint8_t B0 = (pixel[evn0 + 2] + pixel[odd0 + 2] + pixel[evn0 + 5] + pixel[odd0 + 5]) / 4;
+		uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
+		uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
+		uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
+		uint8_t R = flerpf(R0, R1, xf - (float)x0);
+		uint8_t G = flerpf(G0, G1, xf - (float)x0);
+		uint8_t B = flerpf(B0, B1, xf - (float)x0);
+		add_freq(1500.0 + 800.0 * V_RGB(R, G, B) / 255.0);
+	}
+}
+void u_scan(int y)
+{
+	for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
+		float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
+		int x0 = xf;
+		int x1 = fclampf(x0 + 1, 0.0, 159.0);
+		int evn0 = 3 * (y - 1) * width + 6 * x0;
+		int evn1 = 3 * (y - 1) * width + 6 * x1;
+		int odd0 = 3 * y * width + 6 * x0;
+		int odd1 = 3 * y * width + 6 * x1;
+		uint8_t R0 = (pixel[evn0 + 0] + pixel[odd0 + 0] + pixel[evn0 + 3] + pixel[odd0 + 3]) / 4;
+		uint8_t G0 = (pixel[evn0 + 1] + pixel[odd0 + 1] + pixel[evn0 + 4] + pixel[odd0 + 4]) / 4;
+		uint8_t B0 = (pixel[evn0 + 2] + pixel[odd0 + 2] + pixel[evn0 + 5] + pixel[odd0 + 5]) / 4;
+		uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
+		uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
+		uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
+		uint8_t R = flerpf(R0, R1, xf - (float)x0);
+		uint8_t G = flerpf(G0, G1, xf - (float)x0);
+		uint8_t B = flerpf(B0, B1, xf - (float)x0);
+		add_freq(1500.0 + 800.0 * U_RGB(R, G, B) / 255.0);
+	}
 }
 
 int main(int argc, char **argv)
@@ -46,8 +143,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "couldnt open ppm file\n");
 		return 1;
 	}
-	const int width = 320;
-	const int height = 240;
 	const char *ppm_head = "P6 320 240 255\n";
 
 	if (strncmp(ppm_head, ppm_p, strlen(ppm_head))) {
@@ -55,10 +150,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	uint8_t *pixel = (uint8_t *)ppm_p + strlen(ppm_head);
+	pixel = (uint8_t *)ppm_p + strlen(ppm_head);
 
 	char *pcm_name = "default";
-	float rate = 48000;
 	if (argc > 2)
 		pcm_name = argv[2];
 	if (argc > 3)
@@ -94,116 +188,20 @@ int main(int argc, char **argv)
 
 	for (int y = 0; y < height; y++) {
 		// EVEN LINES
-		// SYNC
-		for (int ticks = 0; ticks < (int)(0.009 * rate); ticks++) {
-			add_freq(1200.0);
-		}
-		// PORCH
-		for (int ticks = 0; ticks < (int)(0.003 * rate); ticks++) {
-			add_freq(1500.0);
-		}
-		// Y
-		for (int ticks = 0; ticks < (int)(0.088 * rate); ticks++) {
-			float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
-			int x0 = xf;
-			int x1 = fclampf(x0 + 1, 0.0, 319.0);
-			int off0 = 3 * y * width + 3 * x0;
-			int off1 = 3 * y * width + 3 * x1;
-			uint8_t R0 = pixel[off0 + 0];
-			uint8_t G0 = pixel[off0 + 1];
-			uint8_t B0 = pixel[off0 + 2];
-			uint8_t R1 = pixel[off1 + 0];
-			uint8_t G1 = pixel[off1 + 1];
-			uint8_t B1 = pixel[off1 + 2];
-			uint8_t R = flerpf(R0, R1, xf - (float)x0);
-			uint8_t G = flerpf(G0, G1, xf - (float)x0);
-			uint8_t B = flerpf(B0, B1, xf - (float)x0);
-			add_freq(1500.0 + 800.0 * Y_RGB(R, G, B) / 255.0);
-		}
-		// EVEN
-		for (int ticks = 0; ticks < (int)(0.0045 * rate); ticks++) {
-			add_freq(1500.0);
-		}
-		// PORCH
-		for (int ticks = 0; ticks < (int)(0.0015 * rate); ticks++) {
-			add_freq(1900.0);
-		}
-		// V
-		for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
-			float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
-			int x0 = xf;
-			int x1 = fclampf(x0 + 1, 0.0, 159.0);
-			int evn0 = 3 * y * width + 6 * x0;
-			int evn1 = 3 * y * width + 6 * x1;
-			int odd0 = 3 * (y + 1) * width + 6 * x0;
-			int odd1 = 3 * (y + 1) * width + 6 * x1;
-			uint8_t R0 = (pixel[evn0 + 0] + pixel[odd0 + 0] + pixel[evn0 + 3] + pixel[odd0 + 3]) / 4;
-			uint8_t G0 = (pixel[evn0 + 1] + pixel[odd0 + 1] + pixel[evn0 + 4] + pixel[odd0 + 4]) / 4;
-			uint8_t B0 = (pixel[evn0 + 2] + pixel[odd0 + 2] + pixel[evn0 + 5] + pixel[odd0 + 5]) / 4;
-			uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
-			uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
-			uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
-			uint8_t R = flerpf(R0, R1, xf - (float)x0);
-			uint8_t G = flerpf(G0, G1, xf - (float)x0);
-			uint8_t B = flerpf(B0, B1, xf - (float)x0);
-			add_freq(1500.0 + 800.0 * V_RGB(R, G, B) / 255.0);
-		}
+		hor_sync();
+		sync_porch();
+		y_scan(y);
+		even_seperator();
+		porch();
+		v_scan(y);
 		// ODD LINES
 		y++;
-		// SYNC
-		for (int ticks = 0; ticks < (int)(0.009 * rate); ticks++) {
-			add_freq(1200.0);
-		}
-		// PORCH
-		for (int ticks = 0; ticks < (int)(0.003 * rate); ticks++) {
-			add_freq(1500.0);
-		}
-		// Y
-		for (int ticks = 0; ticks < (int)(0.088 * rate); ticks++) {
-			float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
-			int x0 = xf;
-			int x1 = fclampf(x0 + 1, 0.0, 319.0);
-			int off0 = 3 * y * width + 3 * x0;
-			int off1 = 3 * y * width + 3 * x1;
-			uint8_t R0 = pixel[off0 + 0];
-			uint8_t G0 = pixel[off0 + 1];
-			uint8_t B0 = pixel[off0 + 2];
-			uint8_t R1 = pixel[off1 + 0];
-			uint8_t G1 = pixel[off1 + 1];
-			uint8_t B1 = pixel[off1 + 2];
-			uint8_t R = flerpf(R0, R1, xf - (float)x0);
-			uint8_t G = flerpf(G0, G1, xf - (float)x0);
-			uint8_t B = flerpf(B0, B1, xf - (float)x0);
-			add_freq(1500.0 + 800.0 * Y_RGB(R, G, B) / 255.0);
-		}
-		// ODD
-		for (int ticks = 0; ticks < (int)(0.0045 * rate); ticks++) {
-			add_freq(2300.0);
-		}
-		// PORCH
-		for (int ticks = 0; ticks < (int)(0.0015 * rate); ticks++) {
-			add_freq(1900.0);
-		}
-		// U
-		for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
-			float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
-			int x0 = xf;
-			int x1 = fclampf(x0 + 1, 0.0, 159.0);
-			int evn0 = 3 * (y - 1) * width + 6 * x0;
-			int evn1 = 3 * (y - 1) * width + 6 * x1;
-			int odd0 = 3 * y * width + 6 * x0;
-			int odd1 = 3 * y * width + 6 * x1;
-			uint8_t R0 = (pixel[evn0 + 0] + pixel[odd0 + 0] + pixel[evn0 + 3] + pixel[odd0 + 3]) / 4;
-			uint8_t G0 = (pixel[evn0 + 1] + pixel[odd0 + 1] + pixel[evn0 + 4] + pixel[odd0 + 4]) / 4;
-			uint8_t B0 = (pixel[evn0 + 2] + pixel[odd0 + 2] + pixel[evn0 + 5] + pixel[odd0 + 5]) / 4;
-			uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
-			uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
-			uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
-			uint8_t R = flerpf(R0, R1, xf - (float)x0);
-			uint8_t G = flerpf(G0, G1, xf - (float)x0);
-			uint8_t B = flerpf(B0, B1, xf - (float)x0);
-			add_freq(1500.0 + 800.0 * U_RGB(R, G, B) / 255.0);
-		}
+		hor_sync();
+		sync_porch();
+		y_scan(y);
+		odd_seperator();
+		porch();
+		u_scan(y);
 	}
 
 	while (add_sample(0.0));
