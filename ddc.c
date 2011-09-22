@@ -14,27 +14,25 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 void do_ddc(ddc_t *ddc, float *input, float complex *output)
 {
-	int in = 0;
-	ddc->s[ddc->last] = input[in++];
-	ddc->last = (ddc->last + 1) < ddc->samples ? ddc->last + 1 : 0;
-	ddc->skip += ddc->L;
 	// this works only for L <= M
-	for (int k = 0; k < ddc->L; k++) {
-		float complex sum = 0.0;
-		for (int i = ddc->offset, j = ddc->last; i < ddc->taps; i += ddc->L) {
-			sum += ddc->b[i] * ddc->s[j];
-			j += j ? - 1 : ddc->samples - 1;
-		}
-
-		ddc->offset = (ddc->offset + ddc->M) % ddc->L;
-
+	for (int k = 0, last = ddc->last, in = 0; k < ddc->L; k++) {
 		while (ddc->skip < ddc->M) {
 			ddc->s[ddc->last] = input[in++];
+			last = ddc->last;
 			ddc->last = (ddc->last + 1) < ddc->samples ? ddc->last + 1 : 0;
 			ddc->skip += ddc->L;
 		}
 
 		ddc->skip %= ddc->M;
+
+		float complex sum = 0.0;
+		for (int i = ddc->offset; i < ddc->taps; i += ddc->L) {
+			sum += ddc->b[i] * ddc->s[last];
+			last += last ? - 1 : ddc->samples - 1;
+		}
+
+		ddc->offset = (ddc->offset + ddc->M) % ddc->L;
+
 		output[k] = ddc->osc * sum;
 		ddc->osc *= ddc->d;
 //		ddc->osc /= cabsf(ddc->osc); // not really needed
@@ -51,7 +49,7 @@ ddc_t *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float
 	ddc->s = malloc(sizeof(float) * ddc->samples);
 	ddc->osc = I;
 	ddc->d = cexpf(-I * 2.0 * M_PI * freq * ostep);
-	ddc->offset = 0;
+	ddc->offset = (M - 1) % L;
 	ddc->last = 0;
 	ddc->skip = 0;
 	ddc->L = L;
