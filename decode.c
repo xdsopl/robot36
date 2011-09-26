@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 #if DN && !UP
 	int64_t factor_L = 1;
 	// factor_M * step should be smaller than pixel length
-	int64_t factor_M = rate * 0.088 / 320.0;
+	int64_t factor_M = rate * 0.088 / 320.0 / 2;
 #endif
 #if !DN
 	int64_t factor_L = 1;
