@@ -81,12 +81,23 @@ int main(int argc, char **argv)
 	int evn_count = 0;
 	int first_hor_sync = 0;
 
+#if DN && UP
 	// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
 	int64_t factor_L = 40000;
 	int64_t factor_M = 11 * rate;
 	int64_t factor_D = gcd(factor_L, factor_M);
 	factor_L /= factor_D;
 	factor_M /= factor_D;
+#endif
+#if DN && !UP
+	int64_t factor_L = 1;
+	// factor_M * step should be smaller than pixel length
+	int64_t factor_M = rate * 0.088 / 320.0;
+#endif
+#if !DN
+	int64_t factor_L = 1;
+	int64_t factor_M = 1;
+#endif
 
 	// we want odd number of taps, 4 and 2 ms window length gives best results
 	int cnt_taps = 1 | (int)(rate * factor_L * 0.004);
@@ -192,10 +203,11 @@ int main(int argc, char **argv)
 		begin_vis_hi = vis_hi ? 0 : begin_vis_hi;
 
 		static int ticks = 0;
-		printf("%f %f %f %d %d %d %d %d %d %d %d\n", (float)ticks++ * dstep, dat_freq, cnt_freq,
-			50*hor_sync+950, 50*cal_leader+850, 50*cal_break+750,
-			50*vis_ss+650, 50*vis_lo+550, 50*vis_hi+450,
-			50*sep_evn+350, 50*sep_odd+250);
+		if (ticks++ < 5.0 * drate)
+			printf("%f %f %f %d %d %d %d %d %d %d %d\n", (float)ticks * dstep, dat_freq, cnt_freq,
+				50*hor_sync+950, 50*cal_leader+850, 50*cal_break+750,
+				50*vis_ss+650, 50*vis_lo+550, 50*vis_hi+450,
+				50*sep_evn+350, 50*sep_odd+250);
 
 		if (cal_leader && !cal_break && got_cal_break &&
 				cal_ticks >= (int)(drate * (cal_leader_len + cal_break_len) * leader_tolerance) &&

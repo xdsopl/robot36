@@ -25,9 +25,21 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 	if (n % 2)
 	for (int y = n-1, l = 0; l < 2 && y < height; l++, y++) {
 		for (int x = 0; x < width; x++) {
+#if DN && UP
 			uint8_t Y = y_pixel[x + l*y_width];
 			uint8_t U = uv_pixel[x/2 + uv_width];
 			uint8_t V = uv_pixel[x/2];
+#else
+			float y_xf = (float)x * (float)y_width / (float)width;
+			float uv_xf = (float)x * (float)uv_width / (float)width;
+			int y_x0 = y_xf;
+			int uv_x0 = uv_xf;
+			int y_x1 = fclampf(0, y_width, y_xf + 1);
+			int uv_x1 = fclampf(0, uv_width, uv_xf + 1);
+			uint8_t Y = flerpf(y_pixel[y_x0 + l*y_width], y_pixel[y_x1 + l*y_width], y_xf - (float)y_x0);
+			uint8_t U = flerpf(uv_pixel[uv_x0 + uv_width], uv_pixel[uv_x1 + uv_width], uv_xf - (float)uv_x0);
+			uint8_t V = flerpf(uv_pixel[uv_x0], uv_pixel[uv_x1], uv_xf - (float)uv_x0);
+#endif
 			uint8_t *p = pixel + 3 * width * y + 3 * x;
 			p[0] = R_YUV(Y, U, V);
 			p[1] = G_YUV(Y, U, V);
@@ -98,12 +110,23 @@ int main(int argc, char **argv)
 	int evn_count = 0;
 	int first_hor_sync = 0;
 
+#if DN && UP
 	// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
 	int64_t factor_L = 40000;
 	int64_t factor_M = 11 * rate;
 	int64_t factor_D = gcd(factor_L, factor_M);
 	factor_L /= factor_D;
 	factor_M /= factor_D;
+#endif
+#if DN && !UP
+	int64_t factor_L = 1;
+	// factor_M * step should be smaller than pixel length
+	int64_t factor_M = rate * 0.088 / 320.0;
+#endif
+#if !DN
+	int64_t factor_L = 1;
+	int64_t factor_M = 1;
+#endif
 
 	// we want odd number of taps, 4 and 2 ms window length gives best results
 	int cnt_taps = 1 | (int)(rate * factor_L * 0.004);

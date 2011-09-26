@@ -1,5 +1,5 @@
 
-CFLAGS = -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -ffast-math
+CFLAGS = -DUP=1 -DDN=1 -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -ffast-math
 LDFLAGS = -lm -lasound
 
 all: encode decode debug
