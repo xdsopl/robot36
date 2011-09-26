@@ -17,6 +17,11 @@ test: all
 	./decode 48000.wav 48000.ppm
 
 fun: all
+	./encode smpte.ppm 8000.wav 8000
+	./encode smpte.ppm 11025.wav 11025
+	./encode smpte.ppm 40000.wav 40000
+	./encode smpte.ppm 44100.wav 44100
+	./encode smpte.ppm 48000.wav 48000
 	./debug 8000.wav 8000.ppm > 8000.dat
 	./debug 11025.wav 11025.ppm > 11025.dat
 	./debug 40000.wav 40000.ppm > 40000.dat
