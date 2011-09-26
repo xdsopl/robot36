@@ -191,11 +191,11 @@ int main(int argc, char **argv)
 		begin_vis_lo = vis_lo ? 0 : begin_vis_lo;
 		begin_vis_hi = vis_hi ? 0 : begin_vis_hi;
 
-		if ((int)(ticks * dstep) < 5.0)
-			printf("%f %f %f %d %d %d %d %d %d %d %d\n", (float)ticks * dstep, dat_freq, cnt_freq,
-				50*hor_sync+950, 50*cal_leader+850, 50*cal_break+750,
-				50*vis_ss+650, 50*vis_lo+550, 50*vis_hi+450,
-				50*sep_evn+350, 50*sep_odd+250);
+		static int ticks = 0;
+		printf("%f %f %f %d %d %d %d %d %d %d %d\n", (float)ticks++ * dstep, dat_freq, cnt_freq,
+			50*hor_sync+950, 50*cal_leader+850, 50*cal_break+750,
+			50*vis_ss+650, 50*vis_lo+550, 50*vis_hi+450,
+			50*sep_evn+350, 50*sep_odd+250);
 
 		if (cal_leader && !cal_break && got_cal_break &&
 				cal_ticks >= (int)(drate * (cal_leader_len + cal_break_len) * leader_tolerance) &&
@@ -282,6 +282,18 @@ int main(int argc, char **argv)
 			continue;
 		}
 
+		if (hor_ticks < width) {
+			uint8_t *p = pixel + 3 * y * width + 3 * hor_ticks;
+#if 1
+			uint8_t v = fclampf(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
+#else
+			uint8_t v = fclampf(0.0, 255.0, 255.0 * (cnt_freq - 1100.0) / 200.0);
+#endif
+			p[0] = v;
+			p[1] = v;
+			p[2] = v;
+		}
+
 		// if horizontal sync is too early, we reset to the beginning instead of ignoring
 		if (hor_sync && hor_ticks < (int)((hor_len - sync_porch_len) * drate)) {
 			for (int i = 0; i < 4; i++) {
@@ -298,7 +310,11 @@ int main(int argc, char **argv)
 		// we always sync if sync pulse is where it should be.
 		if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
 				hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
-			process_line(pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
+			uint8_t *p = pixel + 3 * y * width + 3 * hor_ticks + 6 * (int)(sync_porch_len * drate);
+			p[0] = 0;
+			p[1] = 255;
+			p[2] = 255;
+			y++;
 			if (y == height) {
 				munmap_file(ppm_p, ppm_size);
 				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
@@ -316,7 +332,13 @@ int main(int argc, char **argv)
 
 		// if horizontal sync is missing, we extrapolate from last sync
 		if (hor_ticks >= (int)((hor_len + sync_porch_len) * drate)) {
-			process_line(pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
+			for (int i = 0; i < 4; i++) {
+				uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 5);
+				p[0] = 255;
+				p[1] = 255;
+				p[2] = 0;
+			}
+			y++;
 			if (y == height) {
 				munmap_file(ppm_p, ppm_size);
 				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
@@ -344,22 +366,39 @@ int main(int argc, char **argv)
 			if (evn_count > odd_count && odd) {
 				odd = 0;
 				seperator_correction++;
+				for (int i = 0; i < 4; i++) {
+					uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 15);
+					p[0] = 255;
+					p[1] = 0;
+					p[2] = 0;
+				}
 			}
 			// odd seperator
 			if (odd_count > evn_count && !odd) {
 				odd = 1;
 				seperator_correction++;
+				for (int i = 0; i < 4; i++) {
+					uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 15);
+					p[0] = 0;
+					p[1] = 255;
+					p[2] = 0;
+				}
 			}
 			evn_count = 0;
 			odd_count = 0;
 		}
 		// TODO: need better way to compensate for pulse decay time
 		float fixme = 0.0007;
-		if (y_pixel_x < y_width && hor_ticks >= (int)((fixme + sync_porch_len) * drate))
-			y_pixel[y_pixel_x++ + (y % 2) * y_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
-
-		if (uv_pixel_x < uv_width && hor_ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
-			uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
+		if (hor_ticks == (int)((fixme + sync_porch_len) * drate) ||
+			hor_ticks == (int)((fixme + sync_porch_len + y_len) * drate) ||
+			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len) * drate) ||
+			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate) ||
+			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len + uv_len) * drate)) {
+			uint8_t *p = pixel + 3 * y * width + 3 * hor_ticks;
+			p[0] = 255;
+			p[1] = 0;
+			p[2] = 0;
+		}
 	}
 
 	if (pixel) {
