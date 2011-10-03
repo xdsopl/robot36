@@ -35,7 +35,7 @@ fun: all
 clean:
 	rm -f encode decode debug *.o {8000,11025,16000,40000,44100,48000}.{ppm,wav,dat}
 
-encode: encode.o mmap_file.o pcm.o wav.o alsa.o yuv.o
+encode: encode.o mmap_file.o pcm.o wav.o alsa.o yuv.o img.o ppm.o
 
 decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.o
 

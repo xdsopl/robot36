@@ -12,20 +12,18 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <math.h>
 #include <complex.h> 
 #include <limits.h>
-#include "mmap_file.h"
 #include "yuv.h"
 #include "utils.h"
 #include "pcm.h"
+#include "img.h"
 
+img_t *img;
 pcm_t *pcm;
 complex float nco;
 float hz2rad;
 int channels;
 short *buff;
-uint8_t *pixel;
 float rate = 48000;
-const int width = 320;
-const int height = 240;
 
 int add_sample(float val)
 {
@@ -70,14 +68,14 @@ void y_scan(int y)
 		float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 319.0);
-		int off0 = 3 * y * width + 3 * x0;
-		int off1 = 3 * y * width + 3 * x1;
-		uint8_t R0 = pixel[off0 + 0];
-		uint8_t G0 = pixel[off0 + 1];
-		uint8_t B0 = pixel[off0 + 2];
-		uint8_t R1 = pixel[off1 + 0];
-		uint8_t G1 = pixel[off1 + 1];
-		uint8_t B1 = pixel[off1 + 2];
+		int off0 = 3 * y * img->width + 3 * x0;
+		int off1 = 3 * y * img->width + 3 * x1;
+		uint8_t R0 = img->pixel[off0 + 0];
+		uint8_t G0 = img->pixel[off0 + 1];
+		uint8_t B0 = img->pixel[off0 + 2];
+		uint8_t R1 = img->pixel[off1 + 0];
+		uint8_t G1 = img->pixel[off1 + 1];
+		uint8_t B1 = img->pixel[off1 + 2];
 		uint8_t R = flerpf(R0, R1, xf - (float)x0);
 		uint8_t G = flerpf(G0, G1, xf - (float)x0);
 		uint8_t B = flerpf(B0, B1, xf - (float)x0);
@@ -91,16 +89,16 @@ void v_scan(int y)
 		float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 159.0);
-		int evn0 = 3 * y * width + 6 * x0;
-		int evn1 = 3 * y * width + 6 * x1;
-		int odd0 = 3 * (y + 1) * width + 6 * x0;
-		int odd1 = 3 * (y + 1) * width + 6 * x1;
-		uint8_t R0 = (pixel[evn0 + 0] + pixel[odd0 + 0] + pixel[evn0 + 3] + pixel[odd0 + 3]) / 4;
-		uint8_t G0 = (pixel[evn0 + 1] + pixel[odd0 + 1] + pixel[evn0 + 4] + pixel[odd0 + 4]) / 4;
-		uint8_t B0 = (pixel[evn0 + 2] + pixel[odd0 + 2] + pixel[evn0 + 5] + pixel[odd0 + 5]) / 4;
-		uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
-		uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
-		uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
+		int evn0 = 3 * y * img->width + 6 * x0;
+		int evn1 = 3 * y * img->width + 6 * x1;
+		int odd0 = 3 * (y + 1) * img->width + 6 * x0;
+		int odd1 = 3 * (y + 1) * img->width + 6 * x1;
+		uint8_t R0 = (img->pixel[evn0 + 0] + img->pixel[odd0 + 0] + img->pixel[evn0 + 3] + img->pixel[odd0 + 3]) / 4;
+		uint8_t G0 = (img->pixel[evn0 + 1] + img->pixel[odd0 + 1] + img->pixel[evn0 + 4] + img->pixel[odd0 + 4]) / 4;
+		uint8_t B0 = (img->pixel[evn0 + 2] + img->pixel[odd0 + 2] + img->pixel[evn0 + 5] + img->pixel[odd0 + 5]) / 4;
+		uint8_t R1 = (img->pixel[evn1 + 0] + img->pixel[odd1 + 0] + img->pixel[evn1 + 3] + img->pixel[odd1 + 3]) / 4;
+		uint8_t G1 = (img->pixel[evn1 + 1] + img->pixel[odd1 + 1] + img->pixel[evn1 + 4] + img->pixel[odd1 + 4]) / 4;
+		uint8_t B1 = (img->pixel[evn1 + 2] + img->pixel[odd1 + 2] + img->pixel[evn1 + 5] + img->pixel[odd1 + 5]) / 4;
 		uint8_t R = flerpf(R0, R1, xf - (float)x0);
 		uint8_t G = flerpf(G0, G1, xf - (float)x0);
 		uint8_t B = flerpf(B0, B1, xf - (float)x0);
@@ -113,16 +111,16 @@ void u_scan(int y)
 		float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 159.0);
-		int evn0 = 3 * (y - 1) * width + 6 * x0;
-		int evn1 = 3 * (y - 1) * width + 6 * x1;
-		int odd0 = 3 * y * width + 6 * x0;
-		int odd1 = 3 * y * width + 6 * x1;
-		uint8_t R0 = (pixel[evn0 + 0] + pixel[odd0 + 0] + pixel[evn0 + 3] + pixel[odd0 + 3]) / 4;
-		uint8_t G0 = (pixel[evn0 + 1] + pixel[odd0 + 1] + pixel[evn0 + 4] + pixel[odd0 + 4]) / 4;
-		uint8_t B0 = (pixel[evn0 + 2] + pixel[odd0 + 2] + pixel[evn0 + 5] + pixel[odd0 + 5]) / 4;
-		uint8_t R1 = (pixel[evn1 + 0] + pixel[odd1 + 0] + pixel[evn1 + 3] + pixel[odd1 + 3]) / 4;
-		uint8_t G1 = (pixel[evn1 + 1] + pixel[odd1 + 1] + pixel[evn1 + 4] + pixel[odd1 + 4]) / 4;
-		uint8_t B1 = (pixel[evn1 + 2] + pixel[odd1 + 2] + pixel[evn1 + 5] + pixel[odd1 + 5]) / 4;
+		int evn0 = 3 * (y - 1) * img->width + 6 * x0;
+		int evn1 = 3 * (y - 1) * img->width + 6 * x1;
+		int odd0 = 3 * y * img->width + 6 * x0;
+		int odd1 = 3 * y * img->width + 6 * x1;
+		uint8_t R0 = (img->pixel[evn0 + 0] + img->pixel[odd0 + 0] + img->pixel[evn0 + 3] + img->pixel[odd0 + 3]) / 4;
+		uint8_t G0 = (img->pixel[evn0 + 1] + img->pixel[odd0 + 1] + img->pixel[evn0 + 4] + img->pixel[odd0 + 4]) / 4;
+		uint8_t B0 = (img->pixel[evn0 + 2] + img->pixel[odd0 + 2] + img->pixel[evn0 + 5] + img->pixel[odd0 + 5]) / 4;
+		uint8_t R1 = (img->pixel[evn1 + 0] + img->pixel[odd1 + 0] + img->pixel[evn1 + 3] + img->pixel[odd1 + 3]) / 4;
+		uint8_t G1 = (img->pixel[evn1 + 1] + img->pixel[odd1 + 1] + img->pixel[evn1 + 4] + img->pixel[odd1 + 4]) / 4;
+		uint8_t B1 = (img->pixel[evn1 + 2] + img->pixel[odd1 + 2] + img->pixel[evn1 + 5] + img->pixel[odd1 + 5]) / 4;
 		uint8_t R = flerpf(R0, R1, xf - (float)x0);
 		uint8_t G = flerpf(G0, G1, xf - (float)x0);
 		uint8_t B = flerpf(B0, B1, xf - (float)x0);
@@ -137,61 +135,22 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	size_t ppm_size;
-	void *ppm_p;
-	if (!mmap_file_ro(&ppm_p, argv[1], &ppm_size)) {
-		fprintf(stderr, "couldnt open ppm file\n");
+	if (!open_img_read(&img, argv[1]))
+		return 1;
+
+	if (320 != img->width || 240 != img->height) {
+		fprintf(stderr, "image not 320x240\n");
+		close_img(img);
 		return 1;
 	}
-	char *ppm_c = (char *)ppm_p;
-	size_t ppm_i = 0;
-	if (ppm_size < width * height * 3 || ppm_c[ppm_i++] != 'P' || ppm_c[ppm_i++] != '6') {
-		fprintf(stderr, "unsupported image file\n");
-		return 1;
-	}
-
-	char ppm_buff[16];
-	int ppm_int[3];
-	for (int n = 0; n < 3; n++) {
-		for (; ppm_i < ppm_size; ppm_i++) {
-			if (ppm_c[ppm_i] >= '0' && ppm_c[ppm_i] <= '9')
-				break;
-			if (ppm_c[ppm_i] == '#')
-				for (; ppm_i < ppm_size && ppm_c[ppm_i] != '\n'; ppm_i++);
-		}
-		for (int i = 0; i < 16; i++)
-			ppm_buff[i] = 0;
-		for (int i = 0; ppm_i < ppm_size && i < 15; i++, ppm_i++) {
-			ppm_buff[i] = ppm_c[ppm_i];
-			if (ppm_buff[i] < '0' || ppm_buff[i] > '9') {
-				ppm_buff[i] = 0;
-				break;
-			}
-		}
-		if (ppm_i >= ppm_size) {
-			fprintf(stderr, "broken image file\n");
-			return 1;
-		}
-		ppm_int[n] = atoi(ppm_buff);
-		ppm_i++;
-	}
-
-	if (ppm_int[0] != width || ppm_int[1] != height || ppm_int[2] != 255) {
-		fprintf(stderr, "unsupported image file\n");
-		return 1;
-	}
-
-	pixel = (uint8_t *)ppm_p + ppm_i;
 
 	char *pcm_name = "default";
 	if (argc > 2)
 		pcm_name = argv[2];
 	if (argc > 3)
 		rate = atoi(argv[3]);
-	if (!open_pcm_write(&pcm, pcm_name, rate, 1, 37.5)) {
-		fprintf(stderr, "couldnt open output %s\n", pcm_name);
+	if (!open_pcm_write(&pcm, pcm_name, rate, 1, 37.5))
 		return 1;
-	}
 
 	rate = rate_pcm(pcm);
 	channels = channels_pcm(pcm);
@@ -217,7 +176,7 @@ int main(int argc, char **argv)
 		for (int ticks = 0; ticks < (int)(seq_time[i] * rate); ticks++)
 			add_freq(seq_freq[i]);
 
-	for (int y = 0; y < height; y++) {
+	for (int y = 0; y < img->height; y++) {
 		// EVEN LINES
 		hor_sync();
 		sync_porch();
@@ -238,7 +197,7 @@ int main(int argc, char **argv)
 	while (add_sample(0.0));
 	
 	close_pcm(pcm);
-	munmap_file(ppm_p, ppm_size);
+	close_img(img);
 	return 0;
 }
 
