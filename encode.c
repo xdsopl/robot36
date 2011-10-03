@@ -143,14 +143,45 @@ int main(int argc, char **argv)
 		fprintf(stderr, "couldnt open ppm file\n");
 		return 1;
 	}
-	const char *ppm_head = "P6 320 240 255\n";
-
-	if (strncmp(ppm_head, ppm_p, strlen(ppm_head))) {
+	char *ppm_c = (char *)ppm_p;
+	size_t ppm_i = 0;
+	if (ppm_size < width * height * 3 || ppm_c[ppm_i++] != 'P' || ppm_c[ppm_i++] != '6') {
 		fprintf(stderr, "unsupported image file\n");
 		return 1;
 	}
 
-	pixel = (uint8_t *)ppm_p + strlen(ppm_head);
+	char ppm_buff[16];
+	int ppm_int[3];
+	for (int n = 0; n < 3; n++) {
+		for (; ppm_i < ppm_size; ppm_i++) {
+			if (ppm_c[ppm_i] >= '0' && ppm_c[ppm_i] <= '9')
+				break;
+			if (ppm_c[ppm_i] == '#')
+				for (; ppm_i < ppm_size && ppm_c[ppm_i] != '\n'; ppm_i++);
+		}
+		for (int i = 0; i < 16; i++)
+			ppm_buff[i] = 0;
+		for (int i = 0; ppm_i < ppm_size && i < 15; i++, ppm_i++) {
+			ppm_buff[i] = ppm_c[ppm_i];
+			if (ppm_buff[i] < '0' || ppm_buff[i] > '9') {
+				ppm_buff[i] = 0;
+				break;
+			}
+		}
+		if (ppm_i >= ppm_size) {
+			fprintf(stderr, "broken image file\n");
+			return 1;
+		}
+		ppm_int[n] = atoi(ppm_buff);
+		ppm_i++;
+	}
+
+	if (ppm_int[0] != width || ppm_int[1] != height || ppm_int[2] != 255) {
+		fprintf(stderr, "unsupported image file\n");
+		return 1;
+	}
+
+	pixel = (uint8_t *)ppm_p + ppm_i;
 
 	char *pcm_name = "default";
 	if (argc > 2)
