@@ -23,11 +23,10 @@ int open_img_read(img_t **p, char *name)
 	return 0;
 }
 
-/*
 int open_img_write(img_t **p, char *name, int width, int height)
 {
 	if (strstr(name, ".ppm") == (name + (strlen(name) - strlen(".ppm"))))
 		return open_ppm_write(p, name, width, height);
 	return 0;
 }
-*/
+

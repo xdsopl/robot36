@@ -10,5 +10,5 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #define PPM_H
 #include "img.h"
 int open_ppm_read(img_t **, char *);
-//int open_ppm_write(img_t **, char *, int, int);
+int open_ppm_write(img_t **, char *, int, int);
 #endif

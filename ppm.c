@@ -90,3 +90,27 @@ int open_ppm_read(img_t **p, char *name) {
 	return 1;
 }
 
+int open_ppm_write(img_t **p, char *name, int width, int height)
+{
+	ppm_t *ppm = (ppm_t *)malloc(sizeof(ppm_t));
+	ppm->close = close_ppm;
+
+	char head[32];
+	snprintf(head, 32, "P6 %d %d 255\n", width, height);
+	ppm->size = strlen(head) + width * height * 3;
+
+	if (!mmap_file_rw(&(ppm->p), name, ppm->size)) {
+		fprintf(stderr, "couldnt open image file %s\n", name);
+		free(ppm);
+		return 0;
+	}
+
+	memcpy(ppm->p, head, strlen(head));
+	ppm->pixel = (uint8_t *)ppm->p + strlen(head);
+	memset(ppm->pixel, 0, width * height * 3);
+
+	*p = (img_t *)ppm;
+
+	return 1;
+}
+

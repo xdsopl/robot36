@@ -20,7 +20,7 @@ typedef struct img {
 
 void close_img(img_t *);
 int open_img_read(img_t **, char *);
-//int open_img_write(img_t **, char *, int, int);
+int open_img_write(img_t **, char *, int, int);
 
 #endif
 

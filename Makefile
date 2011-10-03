@@ -37,7 +37,7 @@ clean:
 
 encode: encode.o mmap_file.o pcm.o wav.o alsa.o yuv.o img.o ppm.o
 
-decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.o
+decode: decode.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.o img.o ppm.o
 
-debug: debug.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.o
+debug: debug.o mmap_file.o pcm.o wav.o alsa.o window.o ddc.o delay.o yuv.o img.o ppm.o
 

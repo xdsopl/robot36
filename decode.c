@@ -18,6 +18,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "delay.h"
 #include "yuv.h"
 #include "utils.h"
+#include "img.h"
 
 void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_width, int uv_width, int width, int height, int n)
 {
@@ -52,11 +53,11 @@ int main(int argc, char **argv)
 {
 	pcm_t *pcm;
 	char *pcm_name = "default";
-	char *ppm_name = 0;
+	char *img_name = 0;
 	if (argc != 1)
 		pcm_name = argv[1];
 	if (argc == 3)
-		ppm_name = argv[2];
+		img_name = argv[2];
 
 	if (!open_pcm_read(&pcm, pcm_name))
 		return 1;
@@ -156,12 +157,7 @@ int main(int argc, char **argv)
 
 	const int width = 320;
 	const int height = 240;
-
-	char ppm_head[32];
-	snprintf(ppm_head, 32, "P6 %d %d 255\n", width, height);
-	size_t ppm_size = strlen(ppm_head) + width * height * 3;
-	void *ppm_p = 0;
-	uint8_t *pixel = 0;
+	img_t *img;
 
 	int hor_ticks = 0;
 	int y_pixel_x = 0;
@@ -298,26 +294,26 @@ int main(int argc, char **argv)
 			uv_pixel_x = 0;
 			y = 0;
 			odd = 0;
-			if (pixel) {
-				munmap_file(ppm_p, ppm_size);
+			if (img) {
+				close_img(img);
 				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
 				missing_sync = 0;
 				seperator_correction = 0;
 			}
-			if (ppm_name)
-				mmap_file_rw(&ppm_p, ppm_name, ppm_size);
-			else
-				mmap_file_rw(&ppm_p, string_time("%F_%T.ppm"), ppm_size);
-			memcpy(ppm_p, ppm_head, strlen(ppm_head));
-			pixel = (uint8_t *)ppm_p + strlen(ppm_head);
-			memset(pixel, 0, width * height * 3);
+			if (img_name) {
+				if (!open_img_write(&img, img_name, width, height))
+					return 1;
+			} else {
+				if (!open_img_write(&img, string_time("%F_%T.ppm"), width, height))
+					return 1;
+			}
 			continue;
 		}
 
 		// if horizontal sync is too early, we reset to the beginning instead of ignoring
 		if (hor_sync && hor_ticks < (int)((hor_len - sync_porch_len) * drate)) {
 			for (int i = 0; i < 4; i++) {
-				uint8_t *p = pixel + 3 * y * width + 3 * (width - i - 10);
+				uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 10);
 				p[0] = 255;
 				p[1] = 0;
 				p[2] = 255;
@@ -330,11 +326,11 @@ int main(int argc, char **argv)
 		// we always sync if sync pulse is where it should be.
 		if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
 				hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
-			process_line(pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
+			process_line(img->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
 			if (y == height) {
-				munmap_file(ppm_p, ppm_size);
+				close_img(img);
 				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
-				pixel = 0;
+				img = 0;
 				dat_mode = 0;
 				missing_sync = 0;
 				seperator_correction = 0;
@@ -348,11 +344,11 @@ int main(int argc, char **argv)
 
 		// if horizontal sync is missing, we extrapolate from last sync
 		if (hor_ticks >= (int)((hor_len + sync_porch_len) * drate)) {
-			process_line(pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
+			process_line(img->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
 			if (y == height) {
-				munmap_file(ppm_p, ppm_size);
+				close_img(img);
 				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
-				pixel = 0;
+				img = 0;
 				dat_mode = 0;
 				missing_sync = 0;
 				seperator_correction = 0;
@@ -394,8 +390,8 @@ int main(int argc, char **argv)
 			uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 	}
 
-	if (pixel) {
-		munmap_file(ppm_p, ppm_size);
+	if (img) {
+		close_img(img);
 		fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
 		missing_sync = 0;
 		seperator_correction = 0;
