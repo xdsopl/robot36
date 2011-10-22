@@ -168,11 +168,8 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 	const float seperator_len = 0.0045;
 
 	const float sync_tolerance = 0.7;
-	const float seperator_tolerance = 0.7;
 
 	static int begin_hor_sync = 0;
-	static int begin_sep_evn = 0;
-	static int begin_sep_odd = 0;
 	static int latch_sync = 0;
 
 	static int y_width = 0;
@@ -192,11 +189,6 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 	}
 
 	begin_hor_sync = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_hor_sync + 1 : 0;
-	begin_sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? begin_sep_evn + 1 : 0;
-	begin_sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? begin_sep_odd + 1 : 0;
-
-	int sep_evn = begin_sep_evn >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
-	int sep_odd = begin_sep_odd >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
 
 	// we want a pulse at the falling edge
 	latch_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
@@ -285,8 +277,9 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 
 	static int odd_count = 0;
 	static int evn_count = 0;
-
 	if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate)) {
+		int sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? 1 : 0;
+		int sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? 1 : 0;
 		odd_count += sep_odd;
 		evn_count += sep_evn;
 	}
