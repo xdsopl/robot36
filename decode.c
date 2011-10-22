@@ -156,7 +156,7 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 	return 0;
 }
 
-int decode(int *reset, img_t **img, char *img_name, int width, int height, int *missing_sync, int *seperator_correction, float cnt_freq, float dat_freq, float drate)
+int decode(int *reset, img_t **img, char *img_name, int width, int height, float cnt_freq, float dat_freq, float drate)
 {
 	const float sync_porch_len = 0.003;
 	const float porch_len = 0.0015; (void)porch_len;
@@ -215,12 +215,8 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 		uv_pixel_x = 0;
 		y = 0;
 		odd = 0;
-		if (*img) {
+		if (*img)
 			close_img(*img);
-			fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", *missing_sync, *seperator_correction);
-			*missing_sync = 0;
-			*seperator_correction = 0;
-		}
 		if (img_name) {
 			if (!open_img_write(img, img_name, width, height))
 				exit(1);
@@ -244,10 +240,7 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 		process_line((*img)->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
 		if (y == height) {
 			close_img(*img);
-			fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", *missing_sync, *seperator_correction);
 			*img = 0;
-			*missing_sync = 0;
-			*seperator_correction = 0;
 			return 1;
 		}
 		odd ^= 1;
@@ -261,14 +254,10 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 		process_line((*img)->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
 		if (y == height) {
 			close_img(*img);
-			fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", *missing_sync, *seperator_correction);
 			*img = 0;
-			*missing_sync = 0;
-			*seperator_correction = 0;
 			return 1;
 		}
 		odd ^= 1;
-		(*missing_sync)++;
 		hor_ticks -= (int)(hor_len * drate);
 		// we are not at the pixels yet, so no correction here
 		y_pixel_x = 0;
@@ -278,22 +267,19 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, int *
 	static int odd_count = 0;
 	static int evn_count = 0;
 	if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-		int sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? 1 : 0;
-		int sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? 1 : 0;
-		odd_count += sep_odd;
-		evn_count += sep_evn;
+		int even = dat_freq < 1900.0;
+		odd_count += even ? 0 : 1;
+		evn_count += even ? 1 : 0;
 	}
 	// we try to correct from odd / even seperator
 	if (evn_count != odd_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
 		// even seperator
 		if (evn_count > odd_count && odd) {
 			odd = 0;
-			(*seperator_correction)++;
 		}
 		// odd seperator
 		if (odd_count > evn_count && !odd) {
 			odd = 1;
-			(*seperator_correction)++;
 		}
 		evn_count = 0;
 		odd_count = 0;
@@ -380,9 +366,6 @@ int main(int argc, char **argv)
 
 	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
-	int missing_sync = 0;
-	int seperator_correction = 0;
-
 	const int width = 320;
 	const int height = 240;
 	img_t *img;
@@ -431,17 +414,13 @@ int main(int argc, char **argv)
 		}
 
 		if (dat_mode) {
-			if (decode(&dat_reset, &img, img_name, width, height, &missing_sync, &seperator_correction, cnt_freq, dat_freq, drate))
+			if (decode(&dat_reset, &img, img_name, width, height, cnt_freq, dat_freq, drate))
 				dat_mode = 0;
 		}
 	}
 
-	if (img) {
+	if (img)
 		close_img(img);
-		fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
-		missing_sync = 0;
-		seperator_correction = 0;
-	}
 
 	close_pcm(pcm);
 
