@@ -19,11 +19,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "utils.h"
 #include "img.h"
 
-const float hor_sync_len = 0.009;
-const float seperator_len = 0.0045;
-
-const float sync_tolerance = 0.7;
-const float seperator_tolerance = 0.7;
+int first_hor_sync = 0;
 
 void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_width, int uv_width, int width, int height, int n)
 {
@@ -157,6 +153,165 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 	return 0;
 }
 
+int decode(img_t **img, char *img_name, int width, int height, int *missing_sync, int *seperator_correction, float cnt_freq, float dat_freq, float drate)
+{
+	const float sync_porch_len = 0.003;
+	const float porch_len = 0.0015; (void)porch_len;
+	const float y_len = 0.088;
+	const float uv_len = 0.044;
+	const float hor_len = 0.15;
+
+	const float hor_sync_len = 0.009;
+	const float seperator_len = 0.0045;
+
+	const float sync_tolerance = 0.7;
+	const float seperator_tolerance = 0.7;
+
+	static int begin_hor_sync = 0;
+	static int begin_sep_evn = 0;
+	static int begin_sep_odd = 0;
+	static int latch_sync = 0;
+
+	static int y_width = 0;
+	static int uv_width = 0;
+	static uint8_t *y_pixel = 0;
+	static uint8_t *uv_pixel = 0;
+
+	static int init = 0;
+	if (!init) {
+		y_width = drate * y_len;
+		uv_width = drate * uv_len;
+		y_pixel = malloc(y_width * 2);
+		memset(y_pixel, 0, y_width * 2);
+		uv_pixel = malloc(uv_width * 2);
+		memset(uv_pixel, 0, uv_width * 2);
+		init = 1;
+	}
+
+	begin_hor_sync = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_hor_sync + 1 : 0;
+	begin_sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? begin_sep_evn + 1 : 0;
+	begin_sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? begin_sep_odd + 1 : 0;
+
+	int sep_evn = begin_sep_evn >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
+	int sep_odd = begin_sep_odd >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
+
+	// we want a pulse at the falling edge
+	latch_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
+	int hor_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 0 : latch_sync;
+	latch_sync = hor_sync ? 0 : latch_sync;
+
+	// we wait until first sync
+	if (first_hor_sync && !hor_sync)
+		return 0;
+
+	static int y = 0;
+	static int odd = 0;
+	static int y_pixel_x = 0;
+	static int uv_pixel_x = 0;
+
+	static int hor_ticks = -1;
+	hor_ticks++;
+
+	// data comes after first sync
+	if (first_hor_sync && hor_sync) {
+		first_hor_sync = 0;
+		hor_ticks = 0;
+		y_pixel_x = 0;
+		uv_pixel_x = 0;
+		y = 0;
+		odd = 0;
+		if (*img) {
+			close_img(*img);
+			fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", *missing_sync, *seperator_correction);
+			*missing_sync = 0;
+			*seperator_correction = 0;
+		}
+		if (img_name) {
+			if (!open_img_write(img, img_name, width, height))
+				exit(1);
+		} else {
+			if (!open_img_write(img, string_time("%F_%T.ppm"), width, height))
+				exit(1);
+		}
+		return 0;
+	}
+
+	// if horizontal sync is too early, we reset to the beginning instead of ignoring
+	if (hor_sync && hor_ticks < (int)((hor_len - sync_porch_len) * drate)) {
+		hor_ticks = 0;
+		y_pixel_x = 0;
+		uv_pixel_x = 0;
+	}
+
+	// we always sync if sync pulse is where it should be.
+	if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
+			hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
+		process_line((*img)->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
+		if (y == height) {
+			close_img(*img);
+			fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", *missing_sync, *seperator_correction);
+			*img = 0;
+			*missing_sync = 0;
+			*seperator_correction = 0;
+			return 1;
+		}
+		odd ^= 1;
+		hor_ticks = 0;
+		y_pixel_x = 0;
+		uv_pixel_x = 0;
+	}
+
+	// if horizontal sync is missing, we extrapolate from last sync
+	if (hor_ticks >= (int)((hor_len + sync_porch_len) * drate)) {
+		process_line((*img)->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
+		if (y == height) {
+			close_img(*img);
+			fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", *missing_sync, *seperator_correction);
+			*img = 0;
+			*missing_sync = 0;
+			*seperator_correction = 0;
+			return 1;
+		}
+		odd ^= 1;
+		(*missing_sync)++;
+		hor_ticks -= (int)(hor_len * drate);
+		// we are not at the pixels yet, so no correction here
+		y_pixel_x = 0;
+		uv_pixel_x = 0;
+	}
+
+	static int odd_count = 0;
+	static int evn_count = 0;
+
+	if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate)) {
+		odd_count += sep_odd;
+		evn_count += sep_evn;
+	}
+	// we try to correct from odd / even seperator
+	if (evn_count != odd_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
+		// even seperator
+		if (evn_count > odd_count && odd) {
+			odd = 0;
+			(*seperator_correction)++;
+		}
+		// odd seperator
+		if (odd_count > evn_count && !odd) {
+			odd = 1;
+			(*seperator_correction)++;
+		}
+		evn_count = 0;
+		odd_count = 0;
+	}
+	// TODO: need better way to compensate for pulse decay time
+	float fixme = 0.0007;
+	if (y_pixel_x < y_width && hor_ticks >= (int)((fixme + sync_porch_len) * drate))
+		y_pixel[y_pixel_x++ + (y % 2) * y_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
+
+	if (uv_pixel_x < uv_width && hor_ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
+		uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	pcm_t *pcm;
@@ -186,19 +341,8 @@ int main(int argc, char **argv)
 	float complex cnt_last = -I;
 	float complex dat_last = -I;
 
-	int begin_hor_sync = 0;
-	int begin_sep_evn = 0;
-	int begin_sep_odd = 0;
-	int latch_sync = 0;
-
 	int vis_mode = 0;
 	int dat_mode = 0;
-
-	int y = 0;
-	int odd = 0;
-	int odd_count = 0;
-	int evn_count = 0;
-	int first_hor_sync = 0;
 
 #if DN && UP
 	// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
@@ -238,11 +382,6 @@ int main(int argc, char **argv)
 
 	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
-	const float sync_porch_len = 0.003;
-	const float porch_len = 0.0015; (void)porch_len;
-	const float y_len = 0.088;
-	const float uv_len = 0.044;
-	const float hor_len = 0.15;
 	int missing_sync = 0;
 	int seperator_correction = 0;
 
@@ -250,17 +389,7 @@ int main(int argc, char **argv)
 	const int height = 240;
 	img_t *img;
 
-	int hor_ticks = 0;
-	int y_pixel_x = 0;
-	int uv_pixel_x = 0;
-	int y_width = drate * y_len;
-	int uv_width = drate * uv_len;
-	uint8_t *y_pixel = malloc(y_width * 2);
-	memset(y_pixel, 0, y_width * 2);
-	uint8_t *uv_pixel = malloc(uv_width * 2);
-	memset(uv_pixel, 0, uv_width * 2);
-
-	for (int out = factor_L;; out++, hor_ticks++) {
+	for (int out = factor_L;; out++) {
 		if (out >= factor_L) {
 			out = 0;
 			if (!read_pcm(pcm, buff, factor_M))
@@ -279,18 +408,6 @@ int main(int argc, char **argv)
 
 		cnt_last = cnt_q[out];
 		dat_last = dat_q[out];
-
-		begin_hor_sync = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_hor_sync + 1 : 0;
-		begin_sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? begin_sep_evn + 1 : 0;
-		begin_sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? begin_sep_odd + 1 : 0;
-
-		int sep_evn = begin_sep_evn >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
-		int sep_odd = begin_sep_odd >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
-
-		// we want a pulse at the falling edge
-		latch_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
-		int hor_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 0 : latch_sync;
-		latch_sync = hor_sync ? 0 : latch_sync;
 
 		if (cal_header(cnt_freq, dat_freq, drate)) {
 			vis_mode = 1;
@@ -313,115 +430,10 @@ int main(int argc, char **argv)
 			vis_mode = 0;
 		}
 
-		if (!dat_mode)
-			continue;
-
-		// we wait until first sync
-		if (first_hor_sync && !hor_sync)
-			continue;
-
-		// data comes after first sync
-		if (first_hor_sync && hor_sync) {
-			first_hor_sync = 0;
-			hor_ticks = 0;
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
-			y = 0;
-			odd = 0;
-			if (img) {
-				close_img(img);
-				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
-				missing_sync = 0;
-				seperator_correction = 0;
-			}
-			if (img_name) {
-				if (!open_img_write(&img, img_name, width, height))
-					return 1;
-			} else {
-				if (!open_img_write(&img, string_time("%F_%T.ppm"), width, height))
-					return 1;
-			}
-			continue;
-		}
-
-		// if horizontal sync is too early, we reset to the beginning instead of ignoring
-		if (hor_sync && hor_ticks < (int)((hor_len - sync_porch_len) * drate)) {
-			for (int i = 0; i < 4; i++) {
-				uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 10);
-				p[0] = 255;
-				p[1] = 0;
-				p[2] = 255;
-			}
-			hor_ticks = 0;
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
-		}
-
-		// we always sync if sync pulse is where it should be.
-		if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
-				hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
-			process_line(img->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
-			if (y == height) {
-				close_img(img);
-				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
-				img = 0;
+		if (dat_mode) {
+			if (decode(&img, img_name, width, height, &missing_sync, &seperator_correction, cnt_freq, dat_freq, drate))
 				dat_mode = 0;
-				missing_sync = 0;
-				seperator_correction = 0;
-				continue;
-			}
-			odd ^= 1;
-			hor_ticks = 0;
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
 		}
-
-		// if horizontal sync is missing, we extrapolate from last sync
-		if (hor_ticks >= (int)((hor_len + sync_porch_len) * drate)) {
-			process_line(img->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
-			if (y == height) {
-				close_img(img);
-				fprintf(stderr, "%d missing sync's and %d corrections from seperator\n", missing_sync, seperator_correction);
-				img = 0;
-				dat_mode = 0;
-				missing_sync = 0;
-				seperator_correction = 0;
-				continue;
-			}
-			odd ^= 1;
-			missing_sync++;
-			hor_ticks -= (int)(hor_len * drate);
-			// we are not at the pixels yet, so no correction here
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
-		}
-
-		if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-			odd_count += sep_odd;
-			evn_count += sep_evn;
-		}
-		// we try to correct from odd / even seperator
-		if (evn_count != odd_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-			// even seperator
-			if (evn_count > odd_count && odd) {
-				odd = 0;
-				seperator_correction++;
-			}
-			// odd seperator
-			if (odd_count > evn_count && !odd) {
-				odd = 1;
-				seperator_correction++;
-			}
-			evn_count = 0;
-			odd_count = 0;
-		}
-		// TODO: need better way to compensate for pulse decay time
-		float fixme = 0.0007;
-		if (y_pixel_x < y_width && hor_ticks >= (int)((fixme + sync_porch_len) * drate))
-			y_pixel[y_pixel_x++ + (y % 2) * y_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
-
-		if (uv_pixel_x < uv_width && hor_ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
-			uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 	}
 
 	if (img) {
