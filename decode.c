@@ -19,8 +19,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "utils.h"
 #include "img.h"
 
-int first_hor_sync = 0;
-
 void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_width, int uv_width, int width, int height, int n)
 {
 	// we only process after 2 full lines: on odd lines
@@ -50,7 +48,7 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 	}
 }
 
-int vis_code(int *code, float cnt_freq, float drate)
+int vis_code(int *reset, int *code, float cnt_freq, float drate)
 {
 	const float tolerance = 0.9;
 	const float length = 0.03;
@@ -77,6 +75,11 @@ int vis_code(int *code, float cnt_freq, float drate)
 
 	static int bit = -1;
 	static int byte = 0;
+
+	if (*reset) {
+		bit = -1;
+		*reset = 0;
+	}
 
 	if (bit < 0) {
 		if (sig_ss) {
@@ -153,7 +156,7 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 	return 0;
 }
 
-int decode(img_t **img, char *img_name, int width, int height, int *missing_sync, int *seperator_correction, float cnt_freq, float dat_freq, float drate)
+int decode(int *reset, img_t **img, char *img_name, int width, int height, int *missing_sync, int *seperator_correction, float cnt_freq, float dat_freq, float drate)
 {
 	const float sync_porch_len = 0.003;
 	const float porch_len = 0.0015; (void)porch_len;
@@ -201,7 +204,7 @@ int decode(img_t **img, char *img_name, int width, int height, int *missing_sync
 	latch_sync = hor_sync ? 0 : latch_sync;
 
 	// we wait until first sync
-	if (first_hor_sync && !hor_sync)
+	if (*reset && !hor_sync)
 		return 0;
 
 	static int y = 0;
@@ -213,8 +216,8 @@ int decode(img_t **img, char *img_name, int width, int height, int *missing_sync
 	hor_ticks++;
 
 	// data comes after first sync
-	if (first_hor_sync && hor_sync) {
-		first_hor_sync = 0;
+	if (*reset && hor_sync) {
+		*reset = 0;
 		hor_ticks = 0;
 		y_pixel_x = 0;
 		uv_pixel_x = 0;
@@ -343,6 +346,8 @@ int main(int argc, char **argv)
 
 	int vis_mode = 0;
 	int dat_mode = 0;
+	int vis_reset = 0;
+	int dat_reset = 0;
 
 #if DN && UP
 	// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
@@ -411,14 +416,15 @@ int main(int argc, char **argv)
 
 		if (cal_header(cnt_freq, dat_freq, drate)) {
 			vis_mode = 1;
+			vis_reset = 1;
 			dat_mode = 0;
-			first_hor_sync = 1;
+			dat_reset = 1;
 			fprintf(stderr, "%s got calibration header\n", string_time("%F %T"));
 		}
 
 		if (vis_mode) {
 			int code = 0;
-			if (!vis_code(&code, cnt_freq, drate))
+			if (!vis_code(&vis_reset, &code, cnt_freq, drate))
 				continue;
 			if (0x88 != code) {
 				fprintf(stderr, "%s got unsupported VIS 0x%x, ignoring\n", string_time("%F %T"), code);
@@ -427,11 +433,12 @@ int main(int argc, char **argv)
 			}
 			fprintf(stderr, "%s got VIS = 0x%x\n", string_time("%F %T"), code);
 			dat_mode = 1;
+			dat_reset = 1;
 			vis_mode = 0;
 		}
 
 		if (dat_mode) {
-			if (decode(&img, img_name, width, height, &missing_sync, &seperator_correction, cnt_freq, dat_freq, drate))
+			if (decode(&dat_reset, &img, img_name, width, height, &missing_sync, &seperator_correction, cnt_freq, dat_freq, drate))
 				dat_mode = 0;
 		}
 	}
