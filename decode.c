@@ -12,13 +12,18 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <math.h>
 #include <complex.h> 
 #include <time.h>
-#include "mmap_file.h"
 #include "pcm.h"
 #include "ddc.h"
 #include "delay.h"
 #include "yuv.h"
 #include "utils.h"
 #include "img.h"
+
+const float hor_sync_len = 0.009;
+const float seperator_len = 0.0045;
+
+const float sync_tolerance = 0.7;
+const float seperator_tolerance = 0.7;
 
 void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_width, int uv_width, int width, int height, int n)
 {
@@ -47,6 +52,109 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 			p[2] = B_YUV(Y, U, V);
 		}
 	}
+}
+
+int vis_code(int *code, float cnt_freq, float drate)
+{
+	const float tolerance = 0.9;
+	const float length = 0.03;
+
+	static int ss_ticks = 0;
+	static int lo_ticks = 0;
+	static int hi_ticks = 0;
+
+	ss_ticks = fabsf(cnt_freq - 1200.0) < 50.0 ? ss_ticks + 1 : 0;
+	lo_ticks = fabsf(cnt_freq - 1300.0) < 50.0 ? lo_ticks + 1 : 0;
+	hi_ticks = fabsf(cnt_freq - 1100.0) < 50.0 ? hi_ticks + 1 : 0;
+
+	int sig_ss = ss_ticks >= (int)(drate * tolerance * length) ? 1 : 0;
+	int sig_lo = lo_ticks >= (int)(drate * tolerance * length) ? 1 : 0;
+	int sig_hi = hi_ticks >= (int)(drate * tolerance * length) ? 1 : 0;
+
+	// we only want a pulse for the bits
+	ss_ticks = sig_ss ? 0 : ss_ticks;
+	lo_ticks = sig_lo ? 0 : lo_ticks;
+	hi_ticks = sig_hi ? 0 : hi_ticks;
+
+	static int ticks = -1;
+	ticks++;
+
+	static int bit = -1;
+	static int byte = 0;
+
+	if (bit < 0) {
+		if (sig_ss) {
+			ticks = 0;
+			byte = 0;
+			bit = 0;
+		}
+		return 0;
+	}
+	if (ticks <= (int)(drate * 10.0 * length * (2.0 - tolerance))) {
+		if (sig_ss) {
+			bit = -1;
+			*code = byte;
+			return 1;
+		}
+		if (bit < 8) {
+			if (sig_lo) bit++;
+			if (sig_hi) byte |= 1 << bit++;
+		}
+		return 0;
+	}
+	// stop bit is missing.
+	if (bit >= 8) {
+		bit = -1;
+		*code = byte;
+		return 1;
+	}
+	// something went wrong and we shouldnt be here. return what we got anyway.
+	bit = -1;
+	*code = byte;
+	return 1;
+}
+
+int cal_header(float cnt_freq, float dat_freq, float drate)
+{
+	const float break_len = 0.01;
+	const float leader_len = 0.3;
+	const float break_tolerance = 0.7;
+	const float leader_tolerance = 0.3;
+
+	static float dat_avg = 1900.0;
+	const float dat_a = 0.05;
+	dat_avg = dat_a * dat_freq + (1.0 - dat_a) * dat_avg;
+
+	static int break_ticks = 0;
+	static int leader_ticks = 0;
+
+	break_ticks = fabsf(cnt_freq - 1200.0) < 50.0 ? break_ticks + 1 : 0;
+	leader_ticks = fabsf(dat_avg - 1900.0) < 50.0 ? leader_ticks + 1 : 0;
+
+	int sig_break = break_ticks >= (int)(drate * break_tolerance * break_len) ? 1 : 0;
+	int sig_leader = leader_ticks >= (int)(drate * leader_tolerance * leader_len) ? 1 : 0;
+
+	static int ticks = -1;
+	ticks++;
+	static int got_break = 0;
+
+	if (sig_leader && !sig_break && got_break &&
+			ticks >= (int)(drate * (leader_len + break_len) * leader_tolerance) &&
+			ticks <= (int)(drate * (leader_len + break_len) * (2.0 - leader_tolerance))) {
+		got_break = 0;
+		return 1;
+	}
+
+	if (sig_break && !sig_leader &&
+			ticks >= (int)(drate * break_len * break_tolerance) &&
+			ticks <= (int)(drate * break_len * (2.0 - break_tolerance)))
+		got_break = 1;
+
+	if (sig_leader && !sig_break) {
+		ticks = 0;
+		got_break = 0;
+	}
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -78,30 +186,13 @@ int main(int argc, char **argv)
 	float complex cnt_last = -I;
 	float complex dat_last = -I;
 
-	float cal_avg = 1900.0;
-
-	int begin_vis_ss = 0;
-	int begin_vis_lo = 0;
-	int begin_vis_hi = 0;
 	int begin_hor_sync = 0;
-	int begin_cal_break = 0;
-	int begin_cal_leader = 0;
 	int begin_sep_evn = 0;
 	int begin_sep_odd = 0;
 	int latch_sync = 0;
 
-	const float vis_len = 0.03;
-	const float hor_sync_len = 0.009;
-	const float cal_break_len = 0.01;
-	const float cal_leader_len = 0.3;
-	const float seperator_len = 0.0045;
-	int cal_ticks = 0;
-	int got_cal_break = 0;
 	int vis_mode = 0;
 	int dat_mode = 0;
-	int vis_ticks = 0;
-	int vis_bit = -1;
-	int vis_byte = 0;
 
 	int y = 0;
 	int odd = 0;
@@ -169,7 +260,7 @@ int main(int argc, char **argv)
 	uint8_t *uv_pixel = malloc(uv_width * 2);
 	memset(uv_pixel, 0, uv_width * 2);
 
-	for (int out = factor_L;; out++, hor_ticks++, cal_ticks++, vis_ticks++) {
+	for (int out = factor_L;; out++, hor_ticks++) {
 		if (out >= factor_L) {
 			out = 0;
 			if (!read_pcm(pcm, buff, factor_M))
@@ -189,29 +280,10 @@ int main(int argc, char **argv)
 		cnt_last = cnt_q[out];
 		dat_last = dat_q[out];
 
-		const float cal_a = 0.05;
-		cal_avg = cal_a * dat_freq + (1.0 - cal_a) * cal_avg;
-
-		begin_vis_ss = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_vis_ss + 1 : 0;
-		begin_vis_lo = fabsf(cnt_freq - 1300.0) < 50.0 ? begin_vis_lo + 1 : 0;
-		begin_vis_hi = fabsf(cnt_freq - 1100.0) < 50.0 ? begin_vis_hi + 1 : 0;
 		begin_hor_sync = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_hor_sync + 1 : 0;
-		begin_cal_break = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_cal_break + 1 : 0;
-		begin_cal_leader = fabsf(cal_avg - 1900.0) < 50.0 ? begin_cal_leader + 1 : 0;
 		begin_sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? begin_sep_evn + 1 : 0;
 		begin_sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? begin_sep_odd + 1 : 0;
 
-		const float vis_tolerance = 0.9;
-		const float sync_tolerance = 0.7;
-		const float break_tolerance = 0.7;
-		const float leader_tolerance = 0.3;
-		const float seperator_tolerance = 0.7;
-
-		int vis_ss = begin_vis_ss >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
-		int vis_lo = begin_vis_lo >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
-		int vis_hi = begin_vis_hi >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
-		int cal_break = begin_cal_break >= (int)(drate * break_tolerance * cal_break_len) ? 1 : 0;
-		int cal_leader = begin_cal_leader >= (int)(drate * leader_tolerance * cal_leader_len) ? 1 : 0;
 		int sep_evn = begin_sep_evn >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
 		int sep_odd = begin_sep_odd >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
 
@@ -220,65 +292,27 @@ int main(int argc, char **argv)
 		int hor_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 0 : latch_sync;
 		latch_sync = hor_sync ? 0 : latch_sync;
 
-		// we only want a pulse for the bits
-		begin_vis_ss = vis_ss ? 0 : begin_vis_ss;
-		begin_vis_lo = vis_lo ? 0 : begin_vis_lo;
-		begin_vis_hi = vis_hi ? 0 : begin_vis_hi;
-
-		if (cal_leader && !cal_break && got_cal_break &&
-				cal_ticks >= (int)(drate * (cal_leader_len + cal_break_len) * leader_tolerance) &&
-				cal_ticks <= (int)(drate * (cal_leader_len + cal_break_len) * (2.0 - leader_tolerance))) {
+		if (cal_header(cnt_freq, dat_freq, drate)) {
 			vis_mode = 1;
-			vis_bit = -1;
 			dat_mode = 0;
 			first_hor_sync = 1;
-			got_cal_break = 0;
 			fprintf(stderr, "%s got calibration header\n", string_time("%F %T"));
 		}
 
-		if (cal_break && !cal_leader &&
-				cal_ticks >= (int)(drate * cal_break_len * break_tolerance) &&
-				cal_ticks <= (int)(drate * cal_break_len * (2.0 - break_tolerance)))
-			got_cal_break = 1;
-
-		if (cal_leader && !cal_break) {
-			cal_ticks = 0;
-			got_cal_break = 0;
-		}
-
 		if (vis_mode) {
-			if (vis_bit < 0) {
-				if (vis_ss) {
-					vis_ticks = 0;
-					vis_byte = 0;
-					vis_bit = 0;
-					dat_mode = 0;
-				}
-			} else if (vis_ticks <= (int)(drate * 10.0 * vis_len * (2.0 - vis_tolerance))) {
-				if (vis_ss) {
-					dat_mode = 1;
-					vis_mode = 0;
-					vis_bit = -1;
-					fprintf(stderr, "%s got VIS = 0x%x (complete)\n", string_time("%F %T"), vis_byte);
-				}
-				if (vis_bit < 8) {
-					if (vis_lo) vis_bit++;
-					if (vis_hi) vis_byte |= 1 << vis_bit++;
-				}
-			} else {
-				if (vis_bit >= 8) {
-					dat_mode = 1;
-					vis_mode = 0;
-					vis_bit = -1;
-					fprintf(stderr, "%s got VIS = 0x%x (missing stop bit)\n", string_time("%F %T"), vis_byte);
-				}
+			int code = 0;
+			if (!vis_code(&code, cnt_freq, drate))
+				continue;
+			if (0x88 != code) {
+				fprintf(stderr, "%s got unsupported VIS 0x%x, ignoring\n", string_time("%F %T"), code);
+				vis_mode = 0;
+				continue;
 			}
-			if (!vis_mode && vis_byte != 0x88) {
-				fprintf(stderr, "unsupported mode 0x%x, ignoring\n", vis_byte);
-				dat_mode = 0;
-			}
-			continue;
+			fprintf(stderr, "%s got VIS = 0x%x\n", string_time("%F %T"), code);
+			dat_mode = 1;
+			vis_mode = 0;
 		}
+
 		if (!dat_mode)
 			continue;
 
