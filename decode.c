@@ -156,8 +156,10 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 	return 0;
 }
 
-int decode(int *reset, img_t **img, char *img_name, int width, int height, float cnt_freq, float dat_freq, float drate)
+int decode(int *reset, img_t **img, char *img_name, float cnt_freq, float dat_freq, float drate)
 {
+	const int width = 320;
+	const int height = 240;
 	const float sync_porch_len = 0.003;
 	const float porch_len = 0.0015;
 	const float y_len = 0.088;
@@ -165,7 +167,6 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, float
 	const float hor_len = 0.15;
 	const float hor_sync_len = 0.009;
 	const float seperator_len = 0.0045;
-
 	const float sync_tolerance = 0.7;
 
 	static int begin_hor_sync = 0;
@@ -358,8 +359,6 @@ int main(int argc, char **argv)
 
 	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
-	const int width = 320;
-	const int height = 240;
 	img_t *img;
 
 	for (int out = factor_L;; out++) {
@@ -406,7 +405,7 @@ int main(int argc, char **argv)
 		}
 
 		if (dat_mode) {
-			if (decode(&dat_reset, &img, img_name, width, height, cnt_freq, dat_freq, drate))
+			if (decode(&dat_reset, &img, img_name, cnt_freq, dat_freq, drate))
 				dat_mode = 0;
 		}
 	}
