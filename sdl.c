@@ -22,12 +22,40 @@ typedef struct {
 	int quit;
 } sdl_t;
 
+void handle_events()
+{
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		switch (event.type) {
+			case SDL_KEYDOWN:
+				switch (event.key.keysym.sym) {
+					case SDLK_q:
+						exit(0);
+						break;
+					case SDLK_ESCAPE:
+						exit(0);
+						break;
+					default:
+						break;
+				}
+				break;
+			case SDL_QUIT:
+				exit(0);
+				break;
+			default:
+				break;
+		}
+	}
+
+}
+
 int update_sdl(void *data)
 {
 	sdl_t *sdl = (sdl_t *)data;
 	while (!sdl->quit) {
 		SDL_Flip(sdl->screen);
 		SDL_Delay(100);
+		handle_events();
 	}
 	return 0;
 }
