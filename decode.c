@@ -159,11 +159,10 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 int decode(int *reset, img_t **img, char *img_name, int width, int height, float cnt_freq, float dat_freq, float drate)
 {
 	const float sync_porch_len = 0.003;
-	const float porch_len = 0.0015; (void)porch_len;
+	const float porch_len = 0.0015;
 	const float y_len = 0.088;
 	const float uv_len = 0.044;
 	const float hor_len = 0.15;
-
 	const float hor_sync_len = 0.009;
 	const float seperator_len = 0.0045;
 
@@ -273,14 +272,7 @@ int decode(int *reset, img_t **img, char *img_name, int width, int height, float
 	}
 	// we try to correct from odd / even seperator
 	if (evn_count != odd_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-		// even seperator
-		if (evn_count > odd_count && odd) {
-			odd = 0;
-		}
-		// odd seperator
-		if (odd_count > evn_count && !odd) {
-			odd = 1;
-		}
+		odd = odd_count > evn_count;
 		evn_count = 0;
 		odd_count = 0;
 	}
