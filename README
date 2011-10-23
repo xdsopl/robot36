@@ -1,0 +1,32 @@
+
+robot36 - encode and decode images using SSTV in Robot 36 mode
+Written in 2011 by <Ahmet Inan> <xdsopl@googlemail.com>
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+smpte.ppm is converted from http://en.wikipedia.org/wiki/File:SMPTE_Color_Bars.svg 
+
+compile everything:
+# make
+
+test encode and decode using smpte.ppm and various rates:
+# make test
+
+remove generated files:
+# make clean
+
+listen to default alsa device and write out ppm images with %F-%T.ppm as filename:
+# ./decode
+
+listen to alsa device hw:0,0 and write out ppm images with %F-%T.ppm as filename:
+# ./decode hw:0,0
+
+read from wav file input.wav and write out to ppm image output.ppm:
+# ./decode input.wav output.ppm
+
+encode ppm image input.ppm to output.wav using rate of 40000Hz
+# ./encode input.ppm output.wav 40000
+
+encode ppm image input.ppm and write out to default alsa device
+# ./encode input.ppm
+
