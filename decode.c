@@ -359,7 +359,7 @@ int main(int argc, char **argv)
 
 	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
-	img_t *img;
+	img_t *img = 0;
 
 	for (int out = factor_L;; out++) {
 		if (out >= factor_L) {
