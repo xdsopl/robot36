@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 
 	const int width = (0.150 + 3.0 * sync_porch_len) * drate + 20;
 	const int height = 256;
-	img_t *img;
+	img_t *img = 0;
 
 	int hor_ticks = 0;
 	int y_pixel_x = 0;
