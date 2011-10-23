@@ -53,6 +53,14 @@ int update_sdl(void *data)
 {
 	sdl_t *sdl = (sdl_t *)data;
 	while (!sdl->quit) {
+		for (int i = 0; i < sdl->width * sdl->height; i++) {
+			uint8_t *src = sdl->pixel + i * 3;
+			uint8_t *dst = sdl->screen->pixels + i * 4;
+			dst[0] = src[2];
+			dst[1] = src[1];
+			dst[2] = src[0];
+			dst[3] = 0;
+		}
 		SDL_Flip(sdl->screen);
 		SDL_Delay(100);
 		handle_events();
@@ -66,6 +74,7 @@ void close_sdl(img_t *img)
 	sdl->quit = 1;
 	SDL_WaitThread(sdl->thread, 0);
 	SDL_Quit();
+	free(sdl->pixel);
 }
 
 int open_sdl_write(img_t **p, char *name, int width, int height)
@@ -75,15 +84,15 @@ int open_sdl_write(img_t **p, char *name, int width, int height)
 
 	atexit(SDL_Quit);
 	SDL_Init(SDL_INIT_VIDEO);
-	sdl->screen = SDL_SetVideoMode(width, height, 24, SDL_SWSURFACE);
+	sdl->screen = SDL_SetVideoMode(width, height, 32, SDL_SWSURFACE);
 	if (!sdl->screen) {
-		fprintf(stderr, "couldnt open %s window %dx%d@24\n", name, width, height);
+		fprintf(stderr, "couldnt open %s window %dx%d@32\n", name, width, height);
 		SDL_Quit();
 		free(sdl);
 		return 0;
 	}
-	if (sdl->screen->format->BytesPerPixel != 3 || sdl->screen->w != width || sdl->screen->h != height) {
-		fprintf(stderr, "requested %dx%d@24 but got %s window %dx%d@24\n", width, height, name, sdl->screen->w, sdl->screen->h);
+	if (sdl->screen->format->BytesPerPixel != 4 || sdl->screen->w != width || sdl->screen->h != height) {
+		fprintf(stderr, "requested %dx%d@32 but got %s window %dx%d@32\n", width, height, name, sdl->screen->w, sdl->screen->h);
 		SDL_Quit();
 		free(sdl);
 		return 0;
@@ -91,8 +100,12 @@ int open_sdl_write(img_t **p, char *name, int width, int height)
 	SDL_WM_SetCaption("robot36", "robot36");
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
-	sdl->pixel = sdl->screen->pixels;
+	sdl->width = width;
+	sdl->height = height;
+
+	sdl->pixel = malloc(width * height * 3);
 	memset(sdl->pixel, 0, width * height * 3);
+	memset(sdl->screen->pixels, 0, width * height * 4);
 
 	sdl->quit = 0;
 	sdl->thread = SDL_CreateThread(update_sdl, sdl);
