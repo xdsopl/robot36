@@ -18,12 +18,25 @@ typedef struct {
 	int width;
 	int height;
 	SDL_Surface *screen;
+	SDL_Thread *thread;
+	int quit;
 } sdl_t;
+
+int update_sdl(void *data)
+{
+	sdl_t *sdl = (sdl_t *)data;
+	while (!sdl->quit) {
+		SDL_Flip(sdl->screen);
+		SDL_Delay(100);
+	}
+	return 0;
+}
 
 void close_sdl(img_t *img)
 {
 	sdl_t *sdl = (sdl_t *)img;
-	(void)sdl;
+	sdl->quit = 1;
+	SDL_WaitThread(sdl->thread, 0);
 	SDL_Quit();
 }
 
@@ -52,6 +65,15 @@ int open_sdl_write(img_t **p, char *name, int width, int height)
 
 	sdl->pixel = sdl->screen->pixels;
 	memset(sdl->pixel, 0, width * height * 3);
+
+	sdl->quit = 0;
+	sdl->thread = SDL_CreateThread(update_sdl, sdl);
+	if (!sdl->thread) {
+		fprintf(stderr, "Unable to create thread: %s\n", SDL_GetError());
+		SDL_Quit();
+		free(sdl);
+		return 0;
+	}
 
 	*p = (img_t *)sdl;
 
