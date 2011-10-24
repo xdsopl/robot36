@@ -13,13 +13,21 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "img.h"
 
 typedef struct {
+	uint8_t *pixel;
+	int quit;
+	int stop;
+	int busy;
+	int okay;
+	SDL_Surface *screen;
+	SDL_Thread *thread;
+} data_t;
+
+typedef struct {
 	void (*close)(img_t *);
 	uint8_t *pixel;
 	int width;
 	int height;
-	SDL_Surface *screen;
-	SDL_Thread *thread;
-	int quit;
+	data_t *data;
 } sdl_t;
 
 void handle_events()
@@ -49,19 +57,27 @@ void handle_events()
 
 }
 
-int update_sdl(void *data)
+int update_sdl(void *ptr)
 {
-	sdl_t *sdl = (sdl_t *)data;
-	while (!sdl->quit) {
-		for (int i = 0; i < sdl->width * sdl->height; i++) {
-			uint8_t *src = sdl->pixel + i * 3;
-			uint8_t *dst = sdl->screen->pixels + i * 4;
-			dst[0] = src[2];
-			dst[1] = src[1];
-			dst[2] = src[0];
-			dst[3] = 0;
+	data_t *data = (data_t *)ptr;
+	while (!data->quit) {
+		if (data->stop) {
+			data->busy = 0;
+			SDL_Delay(100);
+			continue;
 		}
-		SDL_Flip(sdl->screen);
+		data->busy = 1;
+		if (data->okay) {
+			for (int i = 0; i < data->screen->w * data->screen->h; i++) {
+				uint8_t *src = data->pixel + i * 3;
+				uint8_t *dst = data->screen->pixels + i * 4;
+				dst[0] = src[2];
+				dst[1] = src[1];
+				dst[2] = src[0];
+				dst[3] = 0;
+			}
+		}
+		SDL_Flip(data->screen);
 		SDL_Delay(100);
 		handle_events();
 	}
@@ -71,9 +87,11 @@ int update_sdl(void *data)
 void close_sdl(img_t *img)
 {
 	sdl_t *sdl = (sdl_t *)img;
-	sdl->quit = 1;
-	SDL_WaitThread(sdl->thread, 0);
-	SDL_Quit();
+	sdl->data->okay = 0;
+	sdl->data->stop = 1;
+	while (sdl->data->busy)
+		SDL_Delay(50);
+	sdl->data->stop = 0;
 	free(sdl->pixel);
 }
 
@@ -82,39 +100,61 @@ int open_sdl_write(img_t **p, char *name, int width, int height)
 	sdl_t *sdl = (sdl_t *)malloc(sizeof(sdl_t));
 	sdl->close = close_sdl;
 
-	atexit(SDL_Quit);
-	SDL_Init(SDL_INIT_VIDEO);
-	sdl->screen = SDL_SetVideoMode(width, height, 32, SDL_SWSURFACE);
-	if (!sdl->screen) {
+	static data_t *data = 0;
+	if (!data) {
+		data = (data_t *)malloc(sizeof(data_t));
+		data->quit = 0;
+		data->stop = 1;
+		data->okay = 0;
+		data->busy = 0;
+		atexit(SDL_Quit);
+		SDL_Init(SDL_INIT_VIDEO);
+		data->thread = SDL_CreateThread(update_sdl, data);
+		if (!data->thread) {
+			fprintf(stderr, "Unable to create thread: %s\n", SDL_GetError());
+			SDL_Quit();
+			free(data);
+			free(sdl);
+			return 0;
+		}
+	}
+	data->okay = 0;
+	data->stop = 1;
+	while (data->busy)
+		SDL_Delay(50);
+	data->screen = SDL_SetVideoMode(width, height, 32, SDL_SWSURFACE);
+	if (!data->screen) {
 		fprintf(stderr, "couldnt open %s window %dx%d@32\n", name, width, height);
+		data->quit = 1;
+		SDL_WaitThread(data->thread, 0);
 		SDL_Quit();
+		free(data);
 		free(sdl);
 		return 0;
 	}
-	if (sdl->screen->format->BytesPerPixel != 4 || sdl->screen->w != width || sdl->screen->h != height) {
-		fprintf(stderr, "requested %dx%d@32 but got %s window %dx%d@32\n", width, height, name, sdl->screen->w, sdl->screen->h);
+	if (data->screen->format->BytesPerPixel != 4 || data->screen->w != width || data->screen->h != height) {
+		fprintf(stderr, "requested %dx%d@32 but got %s window %dx%d@32\n", width, height, name, data->screen->w, data->screen->h);
+		data->quit = 1;
+		SDL_WaitThread(data->thread, 0);
 		SDL_Quit();
+		free(data);
 		free(sdl);
 		return 0;
 	}
 	SDL_WM_SetCaption("robot36", "robot36");
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
+	data->pixel = malloc(width * height * 3);
+	memset(data->pixel, 0, width * height * 3);
+	memset(data->screen->pixels, 0, width * height * 4);
+
 	sdl->width = width;
 	sdl->height = height;
+	sdl->data = data;
+	sdl->pixel = data->pixel;
 
-	sdl->pixel = malloc(width * height * 3);
-	memset(sdl->pixel, 0, width * height * 3);
-	memset(sdl->screen->pixels, 0, width * height * 4);
-
-	sdl->quit = 0;
-	sdl->thread = SDL_CreateThread(update_sdl, sdl);
-	if (!sdl->thread) {
-		fprintf(stderr, "Unable to create thread: %s\n", SDL_GetError());
-		SDL_Quit();
-		free(sdl);
-		return 0;
-	}
+	data->okay = 1;
+	data->stop = 0;
 
 	*p = (img_t *)sdl;
 
