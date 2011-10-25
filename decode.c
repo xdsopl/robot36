@@ -286,6 +286,97 @@ int decode(int *reset, img_t **img, char *img_name, float cnt_freq, float dat_fr
 		uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 	return 0;
 }
+int demodulate(pcm_t *pcm, float *cnt_freq, float *dat_freq, float *drate)
+{
+	static float rate;
+	static int channels;
+	static int64_t factor_L;
+	static int64_t factor_M;
+	static int out;
+	static float dstep;
+	static float complex cnt_last = -I;
+	static float complex dat_last = -I;
+	static float *cnt_amp;
+	static float *dat_amp;
+	static float complex *cnt_q;
+	static float complex *dat_q;
+	static ddc_t *cnt_ddc;
+	static ddc_t *dat_ddc;
+	static delay_t *cnt_delay;
+	static delay_t *dat_delay;
+	static short *buff;
+
+	static int init = 0;
+	if (!init) {
+		init = 1;
+		rate = rate_pcm(pcm);
+		channels = channels_pcm(pcm);
+		const float step = 1.0 / rate;
+
+#if DN && UP
+		// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
+		factor_L = 40000;
+		factor_M = 11 * rate;
+		int64_t factor_D = gcd(factor_L, factor_M);
+		factor_L /= factor_D;
+		factor_M /= factor_D;
+#endif
+#if DN && !UP
+		factor_L = 1;
+		// factor_M * step should be smaller than pixel length
+		factor_M = rate * 0.088 / 320.0 / 2;
+#endif
+#if !DN
+		factor_L = 1;
+		factor_M = 1;
+#endif
+
+		// we want odd number of taps, 4 and 2 ms window length gives best results
+		int cnt_taps = 1 | (int)(rate * factor_L * 0.004);
+		int dat_taps = 1 | (int)(rate * factor_L * 0.002);
+		fprintf(stderr, "using %d and %d tap filter\n", cnt_taps, dat_taps);
+		*drate = rate * (float)factor_L / (float)factor_M;
+		dstep = 1.0 / *drate;
+		fprintf(stderr, "using factor of %ld/%ld, working at %.2fhz\n", factor_L, factor_M, *drate);
+		cnt_amp = malloc(sizeof(float) * factor_M);
+		dat_amp = malloc(sizeof(float) * factor_M);
+		cnt_q = malloc(sizeof(float complex) * factor_L);
+		dat_q = malloc(sizeof(float complex) * factor_L);
+		// same factor to keep life simple and have accurate horizontal sync
+		cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser, 2.0);
+		dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser, 2.0);
+		// delay input by phase shift of other filter to synchronize outputs
+		cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
+		dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
+
+		buff = (short *)malloc(sizeof(short) * channels * factor_M);
+
+		// start immediately below
+		out = factor_L;
+	}
+
+	if (out >= factor_L) {
+		out = 0;
+		if (!read_pcm(pcm, buff, factor_M))
+			return 0;
+		for (int j = 0; j < factor_M; j++) {
+			float amp = (float)buff[j * channels] / 32767.0;
+			cnt_amp[j] = do_delay(cnt_delay, amp);
+			dat_amp[j] = do_delay(dat_delay, amp);
+		}
+		do_ddc(cnt_ddc, cnt_amp, cnt_q);
+		do_ddc(dat_ddc, dat_amp, dat_q);
+	}
+
+	*cnt_freq = fclampf(1200.0 + cargf(cnt_q[out] * conjf(cnt_last)) / (2.0 * M_PI * dstep), 1100.0, 1300.0);
+	*dat_freq = fclampf(1900.0 + cargf(dat_q[out] * conjf(dat_last)) / (2.0 * M_PI * dstep), 1500.0, 2300.0);
+
+	cnt_last = cnt_q[out];
+	dat_last = dat_q[out];
+
+	out++;
+	return 1;
+}
 
 int main(int argc, char **argv)
 {
@@ -312,75 +403,17 @@ int main(int argc, char **argv)
 	if (channels > 1)
 		fprintf(stderr, "using first of %d channels\n", channels);
 
-	const float step = 1.0 / rate;
-	float complex cnt_last = -I;
-	float complex dat_last = -I;
-
 	int vis_mode = 0;
 	int dat_mode = 0;
 	int vis_reset = 0;
 	int dat_reset = 0;
 
-#if DN && UP
-	// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
-	int64_t factor_L = 40000;
-	int64_t factor_M = 11 * rate;
-	int64_t factor_D = gcd(factor_L, factor_M);
-	factor_L /= factor_D;
-	factor_M /= factor_D;
-#endif
-#if DN && !UP
-	int64_t factor_L = 1;
-	// factor_M * step should be smaller than pixel length
-	int64_t factor_M = rate * 0.088 / 320.0 / 2;
-#endif
-#if !DN
-	int64_t factor_L = 1;
-	int64_t factor_M = 1;
-#endif
-
-	// we want odd number of taps, 4 and 2 ms window length gives best results
-	int cnt_taps = 1 | (int)(rate * factor_L * 0.004);
-	int dat_taps = 1 | (int)(rate * factor_L * 0.002);
-	fprintf(stderr, "using %d and %d tap filter\n", cnt_taps, dat_taps);
-	float drate = rate * (float)factor_L / (float)factor_M;
-	float dstep = 1.0 / drate;
-	fprintf(stderr, "using factor of %ld/%ld, working at %.2fhz\n", factor_L, factor_M, drate);
-	float *cnt_amp = malloc(sizeof(float) * factor_M);
-	float *dat_amp = malloc(sizeof(float) * factor_M);
-	float complex *cnt_q = malloc(sizeof(float complex) * factor_L);
-	float complex *dat_q = malloc(sizeof(float complex) * factor_L);
-	// same factor to keep life simple and have accurate horizontal sync
-	ddc_t *cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser, 2.0);
-	ddc_t *dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser, 2.0);
-	// delay input by phase shift of other filter to synchronize outputs
-	delay_t *cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
-	delay_t *dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
-
-	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
-
 	img_t *img = 0;
+	float cnt_freq = 0.0;
+	float dat_freq = 0.0;
+	float drate = 0.0;
 
-	for (int out = factor_L;; out++) {
-		if (out >= factor_L) {
-			out = 0;
-			if (!read_pcm(pcm, buff, factor_M))
-				break;
-			for (int j = 0; j < factor_M; j++) {
-				float amp = (float)buff[j * channels] / 32767.0;
-				cnt_amp[j] = do_delay(cnt_delay, amp);
-				dat_amp[j] = do_delay(dat_delay, amp);
-			}
-			do_ddc(cnt_ddc, cnt_amp, cnt_q);
-			do_ddc(dat_ddc, dat_amp, dat_q);
-		}
-
-		float cnt_freq = fclampf(1200.0 + cargf(cnt_q[out] * conjf(cnt_last)) / (2.0 * M_PI * dstep), 1100.0, 1300.0);
-		float dat_freq = fclampf(1900.0 + cargf(dat_q[out] * conjf(dat_last)) / (2.0 * M_PI * dstep), 1500.0, 2300.0);
-
-		cnt_last = cnt_q[out];
-		dat_last = dat_q[out];
-
+	while (demodulate(pcm, &cnt_freq, &dat_freq, &drate)) {
 		if (cal_header(cnt_freq, dat_freq, drate)) {
 			vis_mode = 1;
 			vis_reset = 1;
@@ -414,11 +447,6 @@ int main(int argc, char **argv)
 		close_img(img);
 
 	close_pcm(pcm);
-
-	free_ddc(cnt_ddc);
-	free_ddc(dat_ddc);
-	free(cnt_amp);
-	free(dat_amp);
 
 	return 0;
 }
