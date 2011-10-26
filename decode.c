@@ -357,8 +357,15 @@ int demodulate(pcm_t *pcm, float *cnt_freq, float *dat_freq, float *drate)
 
 	if (out >= factor_L) {
 		out = 0;
-		if (!read_pcm(pcm, buff, factor_M))
+		if (!read_pcm(pcm, buff, factor_M)) {
+			init = 0;
+			free(buff);
+			free_ddc(cnt_ddc);
+			free_ddc(dat_ddc);
+			free(cnt_amp);
+			free(dat_amp);
 			return 0;
+		}
 		for (int j = 0; j < factor_M; j++) {
 			float amp = (float)buff[j * channels] / 32767.0;
 			cnt_amp[j] = do_delay(cnt_delay, amp);
