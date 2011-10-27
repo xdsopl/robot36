@@ -4,36 +4,27 @@ LDFLAGS = -lm -lasound $(shell sdl-config --libs)
 
 all: encode decode debug
 
-test: all
-	./encode smpte.ppm 8000.wav 8000
-	./encode smpte.ppm 11025.wav 11025
-	./encode smpte.ppm 16000.wav 16000
-	./encode smpte.ppm 40000.wav 40000
-	./encode smpte.ppm 44100.wav 44100
-	./encode smpte.ppm 48000.wav 48000
-	./decode 8000.wav 8000.ppm
-	./decode 11025.wav 11025.ppm
-	./decode 16000.wav 16000.ppm
-	./decode 40000.wav 40000.ppm
-	./decode 44100.wav 44100.ppm
-	./decode 48000.wav 48000.ppm
+test: 8000.ppm 11025.ppm 16000.ppm 40000.ppm 44100.ppm 48000.ppm
 
-fun: all
-	./encode smpte.ppm 8000.wav 8000
-	./encode smpte.ppm 11025.wav 11025
-	./encode smpte.ppm 16000.wav 16000
-	./encode smpte.ppm 40000.wav 40000
-	./encode smpte.ppm 44100.wav 44100
-	./encode smpte.ppm 48000.wav 48000
-	./debug 8000.wav 8000.ppm > 8000.dat
-	./debug 11025.wav 11025.ppm > 11025.dat
-	./debug 16000.wav 16000.ppm > 16000.dat
-	./debug 40000.wav 40000.ppm > 40000.dat
-	./debug 44100.wav 44100.ppm > 44100.dat
-	./debug 48000.wav 48000.ppm > 48000.dat
+fun: 8000.gnu 11025.gnu 16000.gnu 40000.gnu 44100.gnu 48000.gnu
 
 clean:
-	rm -f encode decode debug *.o {8000,11025,16000,40000,44100,48000}.{ppm,wav,dat}
+	rm -f encode decode debug *.o {8000,11025,16000,40000,44100,48000}.{ppm,wav,dat,gnu}
+
+.PRECIOUS: %.wav %.dat %.ppm %.gnu
+
+%.wav: encode
+	./encode smpte.ppm $@ $(basename $@)
+
+%.dat: %.wav debug
+	./debug $< $(basename $<).ppm > $@
+
+%.ppm: %.wav decode
+	./decode $< $@
+
+%.gnu: %.dat
+	echo 'plot "$<" u 1:2 w l t "data", "$<" u 1:3 w l t "control", "$<" u 1:4 w l t "sync", "$<" u 1:5 w l t "leader", "$<" u 1:6 w l t "break", "$<" u 1:7 w l t "vis ss", "$<" u 1:8 w l t "vis lo", "$<" u 1:9 w l t "vis hi", "$<" u 1:10 w l t "even", "$<" u 1:11 w l t "odd"' > $@
+
 
 encode: encode.o mmap_file.o pcm.o wav.o alsa.o yuv.o img.o ppm.o sdl.o
 
