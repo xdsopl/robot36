@@ -55,3 +55,16 @@ encode ppm image input.ppm to output.wav using rate of 40000Hz
 encode ppm image input.ppm and write out to default alsa device
 # ./encode input.ppm
 
+last but not least, have fun with a debugging session:
+# make fun
+
+now ppm files have debugging pixels and show raw data like this:
+http://aam.mathematik.uni-freiburg.de/IAM/homepages/ainan/robot36_raw_image.png
+
+you can look at the signal analysis using gnuplot:
+# gnuplot
+gnuplot> load "8000.gnu"
+
+this should give you an output like this:
+http://aam.mathematik.uni-freiburg.de/IAM/homepages/ainan/robot36_signal_analysis.png
+
