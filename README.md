@@ -1,1 +1,52 @@
+robot36 - encode and decode images using SSTV in Robot 36 mode
+Written in 2011 by <Ahmet Inan> <xdsopl@googlemail.com>
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+
 ![gnuplot screenshot of signal analysis](signal_analysis.png)
+
+robot36 is written from scratch just for the fun of it.
+i have no ham radio and started this project out of curiosity how people are able to encode or decode FM in very good quality just using an DSP with DAC or ADC.
+
+Theory of operation:
+Robot 36 is one mode of many SSTV modes which transfers images using the luminance / chrominance information of the image.
+Like with other SSTV modes, the information is send using FM and needs only 800hz bandwidth for data (1500hz-2300hz) and 200hz for control (1100hz-1300hz).
+Robot 36 transfers 320x240 color images in around 36 seconds, hence the name Robot 36.
+More information about Robot 36 mode and SSTV can be found on the Internet.
+I suggest finding and reading the wonderful "Dayton Paper" of JL Barber (N7CXI).
+
+encode:
+Here we simply change the rate of an complex oscillator according to the Y, U and V values we get from the input image and only use the real part of the oscillator as output.
+
+decode:
+FM demodulation is not so easy. After many frustrating attempts to emulate hardware and playing around with zero cross detection and Phase-locked loop detectors i finally found a very nice way to do it:
+Using Hilbert Transformation we get a complex valued function from a real valued function, which we differentiate in time using polar coordinates and getting the instantaneous frequency from the argument.
+Doing Hilbert Transform in discrete space for this purpose is also know as Digital Down Conversion.
+my DDC consists of an complex valued decimating ideal fir filter using Kaiser window at its input and an complex oscillator mixer at its output.
+You can find a lot more about DDC's and FM demodulation on the Internet.
+I Suggest finding and reading the enlightening "Virtual Radios" Paper of Vanu Bose, Michael Ismert, Matt Welborn, and John Guttag.
+You should also look at GNU Radio: http://gnuradio.org/ and at the invaluable information at dspGuru: http://www.dspguru.com/
+
+smpte.ppm is converted from http://en.wikipedia.org/wiki/File:SMPTE_Color_Bars.svg 
+
+compile everything:
+# make
+
+test encode and decode using smpte.ppm and various rates:
+# make test
+
+remove generated files:
+# make clean
+
+listen to default alsa device and write out ppm images with %F-%T.ppm as file name:
+# ./decode
+
+listen to alsa device plughw:0,0 and write out ppm images with %F-%T.ppm as file name:
+# ./decode plughw:0,0
+
+listen to default alsa device and show image in sdl window:
+# ./decode default sdl:
+
+read from wav file input.wav and write out to ppm image output.ppm:
+# ./decode input.wav output.ppm
+
