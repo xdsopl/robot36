@@ -264,18 +264,13 @@ int decode(int *reset, img_t **img, char *img_name, float cnt_freq, float dat_fr
 		uv_pixel_x = 0;
 	}
 
-	static int odd_count = 0;
-	static int evn_count = 0;
-	if (ticks > (int)((sync_porch_len + y_len) * drate) && ticks < (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-		int even = dat_freq < 1900.0;
-		odd_count += even ? 0 : 1;
-		evn_count += even ? 1 : 0;
-	}
+	static int sep_count = 0;
+	if (ticks > (int)((sync_porch_len + y_len) * drate) && ticks < (int)((sync_porch_len + y_len + seperator_len) * drate))
+		sep_count += dat_freq < 1900.0 ? 1 : -1;
 	// we try to correct from odd / even seperator
-	if (evn_count != odd_count && ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-		odd = odd_count > evn_count;
-		evn_count = 0;
-		odd_count = 0;
+	if (sep_count && ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
+		odd = sep_count < 0;
+		sep_count = 0;
 	}
 	// TODO: need better way to compensate for pulse decay time
 	float fixme = 0.0007;
