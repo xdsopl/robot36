@@ -55,7 +55,8 @@ int read_alsa(pcm_t *pcm, short *buff, int frames)
 	int got = 0;
 	while (0 < frames) {
 		while ((got = snd_pcm_readi(alsa->pcm, buff, frames)) < 0)
-			snd_pcm_prepare(alsa->pcm);
+			if (snd_pcm_prepare(alsa->pcm) < 0)
+				return 0;
 		buff += got * alsa->c;
 		frames -= got;
 	}
@@ -71,7 +72,8 @@ int write_alsa(pcm_t *pcm, short *buff, int frames)
 	int got = 0;
 	while (0 < frames) {
 		while ((got = snd_pcm_writei(alsa->pcm, buff, frames)) < 0)
-			snd_pcm_prepare(alsa->pcm);
+			if (snd_pcm_prepare(alsa->pcm) < 0)
+				return 0;
 		buff += got * alsa->c;
 		frames -= got;
 	}
@@ -148,6 +150,7 @@ int open_alsa_read(pcm_t **p, char *name)
 	alsa->pcm = pcm;
 	alsa->r = rate;
 	alsa->c = channels;
+	alsa->frames = 0;
 	*p = (pcm_t *)alsa;
 	return 1;
 }
