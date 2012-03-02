@@ -23,10 +23,7 @@ typedef struct {
 } data_t;
 
 typedef struct {
-	void (*close)(img_t *);
-	uint8_t *pixel;
-	int width;
-	int height;
+	img_t base;
 	data_t *data;
 } sdl_t;
 
@@ -86,19 +83,21 @@ int update_sdl(void *ptr)
 
 void close_sdl(img_t *img)
 {
-	sdl_t *sdl = (sdl_t *)img;
+	sdl_t *sdl = (sdl_t *)(img->data);
 	sdl->data->okay = 0;
 	sdl->data->stop = 1;
 	while (sdl->data->busy)
 		SDL_Delay(50);
 	sdl->data->stop = 0;
-	free(sdl->pixel);
+	free(sdl->base.pixel);
+	free(sdl);
 }
 
 int open_sdl_write(img_t **p, char *name, int width, int height)
 {
 	sdl_t *sdl = (sdl_t *)malloc(sizeof(sdl_t));
-	sdl->close = close_sdl;
+	sdl->base.close = close_sdl;
+	sdl->base.data = (void *)sdl;
 
 	static data_t *data = 0;
 	if (!data) {
@@ -148,15 +147,15 @@ int open_sdl_write(img_t **p, char *name, int width, int height)
 	memset(data->pixel, 0, width * height * 3);
 	memset(data->screen->pixels, 0, width * height * 4);
 
-	sdl->width = width;
-	sdl->height = height;
+	sdl->base.width = width;
+	sdl->base.height = height;
 	sdl->data = data;
-	sdl->pixel = data->pixel;
+	sdl->base.pixel = data->pixel;
 
 	data->okay = 1;
 	data->stop = 0;
 
-	*p = (img_t *)sdl;
+	*p = &(sdl->base);
 
 	return 1;
 }

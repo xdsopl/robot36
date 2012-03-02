@@ -16,7 +16,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 void close_pcm(pcm_t *pcm)
 {
 	pcm->close(pcm);
-	free(pcm);
 }
 
 void info_pcm(pcm_t *pcm)
