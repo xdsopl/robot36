@@ -121,7 +121,7 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 	const float leader_tolerance = 0.3;
 
 	static float dat_avg = 1900.0;
-	const float dat_a = 0.05;
+	const float dat_a = 1.0 / (drate * 0.00238 + 1.0);
 	dat_avg = dat_a * dat_freq + (1.0 - dat_a) * dat_avg;
 
 	static int break_ticks = 0;
