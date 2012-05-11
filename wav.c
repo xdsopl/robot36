@@ -30,11 +30,7 @@ typedef struct {
 } wav_head_t;
 
 typedef struct {
-	void (*close)(pcm_t *);
-	void (*info)(pcm_t *);
-	int (*rate)(pcm_t *);
-	int (*channels)(pcm_t *);
-	int (*rw)(pcm_t *, short *, int);
+	pcm_t base;
 	void *p;
 	short *b;
 	size_t size;
@@ -46,28 +42,29 @@ typedef struct {
 
 void close_wav(pcm_t *pcm)
 {
-	wav_t *wav = (wav_t *)pcm;
+	wav_t *wav = (wav_t *)(pcm->data);
 	munmap_file(wav->p, wav->size);
+	free(wav);
 }
 
 void info_wav(pcm_t *pcm)
 {
-	wav_t *wav = (wav_t *)pcm;
+	wav_t *wav = (wav_t *)(pcm->data);
 	fprintf(stderr, "%d channel(s), %d rate, %.2f seconds\n", wav->c, wav->r, (float)wav->frames / (float)wav->r);
 }
 int rate_wav(pcm_t *pcm)
 {
-	wav_t *wav = (wav_t *)pcm;
+	wav_t *wav = (wav_t *)(pcm->data);
 	return wav->r;
 }
 int channels_wav(pcm_t *pcm)
 {
-	wav_t *wav = (wav_t *)pcm;
+	wav_t *wav = (wav_t *)(pcm->data);
 	return wav->c;
 }
 int read_wav(pcm_t *pcm, short *buff, int frames)
 {
-	wav_t *wav = (wav_t *)pcm;
+	wav_t *wav = (wav_t *)(pcm->data);
 	if ((wav->index + frames) > wav->frames)
 		return 0;
 	memcpy(buff, wav->b + wav->index * wav->c, sizeof(short) * frames * wav->c);
@@ -76,7 +73,7 @@ int read_wav(pcm_t *pcm, short *buff, int frames)
 }
 int write_wav(pcm_t *pcm, short *buff, int frames)
 {
-	wav_t *wav = (wav_t *)pcm;
+	wav_t *wav = (wav_t *)(pcm->data);
 	if ((wav->index + frames) > wav->frames)
 		return 0;
 	memcpy(wav->b + wav->index * wav->c, buff, sizeof(short) * frames * wav->c);
@@ -87,11 +84,12 @@ int write_wav(pcm_t *pcm, short *buff, int frames)
 int open_wav_read(pcm_t **p, char *name)
 {
 	wav_t *wav = (wav_t *)malloc(sizeof(wav_t));
-	wav->close = close_wav;
-	wav->info = info_wav;
-	wav->rate = rate_wav;
-	wav->channels = channels_wav;
-	wav->rw = read_wav;
+	wav->base.close = close_wav;
+	wav->base.info = info_wav;
+	wav->base.rate = rate_wav;
+	wav->base.channels = channels_wav;
+	wav->base.rw = read_wav;
+	wav->base.data = (void *)wav;
 	if (!mmap_file_ro(&wav->p, name, &wav->size)) {
 		fprintf(stderr, "couldnt open wav file %s!\n", name);
 		free(wav);
@@ -118,18 +116,19 @@ int open_wav_read(pcm_t **p, char *name)
 	wav->frames = head->Subchunk2Size / (sizeof(short) * head->NumChannels);
 	wav->r = head->SampleRate;
 	wav->c = head->NumChannels;
-	*p = (pcm_t *)wav;
+	*p = &(wav->base);
 	return 1;
 }
 
 int open_wav_write(pcm_t **p, char *name, int rate, int channels, float seconds)
 {
 	wav_t *wav = (wav_t *)malloc(sizeof(wav_t));
-	wav->close = close_wav;
-	wav->info = info_wav;
-	wav->rate = rate_wav;
-	wav->channels = channels_wav;
-	wav->rw = write_wav;
+	wav->base.close = close_wav;
+	wav->base.info = info_wav;
+	wav->base.rate = rate_wav;
+	wav->base.channels = channels_wav;
+	wav->base.rw = write_wav;
+	wav->base.data = (void *)wav;
 	int frames = seconds * rate;
 	wav->size = frames * channels * sizeof(short) + sizeof(wav_head_t);
 	if (!mmap_file_rw(&wav->p, name, wav->size)) {
@@ -159,6 +158,6 @@ int open_wav_write(pcm_t **p, char *name, int rate, int channels, float seconds)
 	wav->frames = frames;
 	wav->index = 0;
 
-	*p = (pcm_t *)wav;
+	*p = &(wav->base);
 	return 1;
 }

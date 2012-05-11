@@ -14,7 +14,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 void close_img(img_t *img)
 {
 	img->close(img);
-	free(img);
 }
 
 int open_img_read(img_t **p, char *name)

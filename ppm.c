@@ -13,23 +13,22 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "img.h"
 
 typedef struct {
-	void (*close)(img_t *);
-	uint8_t *pixel;
-	int width;
-	int height;
+	img_t base;
 	void *p;
 	size_t size;
 } ppm_t;
 
 void close_ppm(img_t *img)
 {
-	ppm_t *ppm = (ppm_t *)img;
+	ppm_t *ppm = (ppm_t *)(img->data);
 	munmap_file(ppm->p, ppm->size);
+	free(ppm);
 }
 
 int open_ppm_read(img_t **p, char *name) {
 	ppm_t *ppm = (ppm_t *)malloc(sizeof(ppm_t));
-	ppm->close = close_ppm;
+	ppm->base.close = close_ppm;
+	ppm->base.data = (void *)ppm;
 
 	if (!mmap_file_ro(&(ppm->p), name, &(ppm->size))) {
 		fprintf(stderr, "couldnt open image file %s\n", name);
@@ -80,12 +79,12 @@ int open_ppm_read(img_t **p, char *name) {
 		free(ppm);
 		return 0;
 	}
-	ppm->width = integer[0];
-	ppm->height = integer[1];
+	ppm->base.width = integer[0];
+	ppm->base.height = integer[1];
 
-	ppm->pixel = (uint8_t *)ppm->p + index;
+	ppm->base.pixel = (uint8_t *)ppm->p + index;
 
-	*p = (img_t *)ppm;
+	*p = &(ppm->base);
 
 	return 1;
 }
@@ -93,7 +92,8 @@ int open_ppm_read(img_t **p, char *name) {
 int open_ppm_write(img_t **p, char *name, int width, int height)
 {
 	ppm_t *ppm = (ppm_t *)malloc(sizeof(ppm_t));
-	ppm->close = close_ppm;
+	ppm->base.close = close_ppm;
+	ppm->base.data = (void *)ppm;
 
 	char head[32];
 	snprintf(head, 32, "P6 %d %d 255\n", width, height);
@@ -106,10 +106,10 @@ int open_ppm_write(img_t **p, char *name, int width, int height)
 	}
 
 	memcpy(ppm->p, head, strlen(head));
-	ppm->pixel = (uint8_t *)ppm->p + strlen(head);
-	memset(ppm->pixel, 0, width * height * 3);
+	ppm->base.pixel = (uint8_t *)ppm->p + strlen(head);
+	memset(ppm->base.pixel, 0, width * height * 3);
 
-	*p = (img_t *)ppm;
+	*p = &(ppm->base);
 
 	return 1;
 }

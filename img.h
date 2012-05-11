@@ -14,6 +14,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 typedef struct img {
 	void (*close)(struct img *);
 	uint8_t *pixel;
+	void *data;
 	int width;
 	int height;
 } img_t;

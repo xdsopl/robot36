@@ -15,6 +15,7 @@ typedef struct pcm {
 	int (*rate)(struct pcm *);
 	int (*channels)(struct pcm *);
 	int (*rw)(struct pcm *, short *, int);
+	void *data;
 } pcm_t;
 
 void close_pcm(pcm_t *);

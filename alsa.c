@@ -12,11 +12,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "alsa.h"
 
 typedef struct {
-	void (*close)(pcm_t *);
-	void (*info)(pcm_t *);
-	int (*rate)(pcm_t *);
-	int (*channels)(pcm_t *);
-	int (*rw)(pcm_t *, short *, int);
+	pcm_t base;
 	snd_pcm_t *pcm;
 	int index;
 	int frames;
@@ -26,14 +22,15 @@ typedef struct {
 
 void close_alsa(pcm_t *pcm)
 {
-	alsa_t *alsa = (alsa_t *)pcm;
+	alsa_t *alsa = (alsa_t *)(pcm->data);
 	snd_pcm_drain(alsa->pcm);
 	snd_pcm_close(alsa->pcm);
+	free(alsa);
 }
 
 void info_alsa(pcm_t *pcm)
 {
-	alsa_t *alsa = (alsa_t *)pcm;
+	alsa_t *alsa = (alsa_t *)(pcm->data);
 	if (alsa->frames)
 		fprintf(stderr, "%d channel(s), %d rate, %.2f seconds\n", alsa->c, alsa->r, (float)alsa->frames / (float)alsa->r);
 	else
@@ -41,17 +38,17 @@ void info_alsa(pcm_t *pcm)
 }
 int rate_alsa(pcm_t *pcm)
 {
-	alsa_t *alsa = (alsa_t *)pcm;
+	alsa_t *alsa = (alsa_t *)(pcm->data);
 	return alsa->r;
 }
 int channels_alsa(pcm_t *pcm)
 {
-	alsa_t *alsa = (alsa_t *)pcm;
+	alsa_t *alsa = (alsa_t *)(pcm->data);
 	return alsa->c;
 }
 int read_alsa(pcm_t *pcm, short *buff, int frames)
 {
-	alsa_t *alsa = (alsa_t *)pcm;
+	alsa_t *alsa = (alsa_t *)(pcm->data);
 	int got = 0;
 	while (0 < frames) {
 		while ((got = snd_pcm_readi(alsa->pcm, buff, frames)) < 0)
@@ -65,7 +62,7 @@ int read_alsa(pcm_t *pcm, short *buff, int frames)
 
 int write_alsa(pcm_t *pcm, short *buff, int frames)
 {
-	alsa_t *alsa = (alsa_t *)pcm;
+	alsa_t *alsa = (alsa_t *)(pcm->data);
 	if (alsa->frames && (alsa->index + frames) > alsa->frames)
 		return 0;
 	alsa->index += frames;
@@ -83,11 +80,12 @@ int write_alsa(pcm_t *pcm, short *buff, int frames)
 int open_alsa_read(pcm_t **p, char *name)
 {
 	alsa_t *alsa = (alsa_t *)malloc(sizeof(alsa_t));
-	alsa->close = close_alsa;
-	alsa->info = info_alsa;
-	alsa->rate = rate_alsa;
-	alsa->channels = channels_alsa;
-	alsa->rw = read_alsa;
+	alsa->base.close = close_alsa;
+	alsa->base.info = info_alsa;
+	alsa->base.rate = rate_alsa;
+	alsa->base.channels = channels_alsa;
+	alsa->base.rw = read_alsa;
+	alsa->base.data = (void *)alsa;
 
 	snd_pcm_t *pcm;
 	snd_pcm_hw_params_t *params;
@@ -151,18 +149,19 @@ int open_alsa_read(pcm_t **p, char *name)
 	alsa->r = rate;
 	alsa->c = channels;
 	alsa->frames = 0;
-	*p = (pcm_t *)alsa;
+	*p = &(alsa->base);
 	return 1;
 }
 
 int open_alsa_write(pcm_t **p, char *name, int rate, int channels, float seconds)
 {
 	alsa_t *alsa = (alsa_t *)malloc(sizeof(alsa_t));
-	alsa->close = close_alsa;
-	alsa->info = info_alsa;
-	alsa->rate = rate_alsa;
-	alsa->channels = channels_alsa;
-	alsa->rw = write_alsa;
+	alsa->base.close = close_alsa;
+	alsa->base.info = info_alsa;
+	alsa->base.rate = rate_alsa;
+	alsa->base.channels = channels_alsa;
+	alsa->base.rw = write_alsa;
+	alsa->base.data = (void *)alsa;
 
 	snd_pcm_t *pcm;
 	snd_pcm_hw_params_t *params;
@@ -223,6 +222,6 @@ int open_alsa_write(pcm_t **p, char *name, int rate, int channels, float seconds
 	alsa->c = channels;
 	alsa->frames = seconds * rate;
 	alsa->index = 0;
-	*p = (pcm_t *)alsa;
+	*p = &(alsa->base);
 	return 1;
 }
