@@ -17,8 +17,8 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "pcm.h"
 #include "img.h"
 
-img_t *img;
-pcm_t *pcm;
+struct img *img;
+struct pcm *pcm;
 complex float nco;
 float hz2rad;
 int channels;

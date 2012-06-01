@@ -12,7 +12,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <SDL.h>
 #include "img.h"
 
-typedef struct {
+struct data {
 	uint8_t *pixel;
 	int quit;
 	int stop;
@@ -20,12 +20,12 @@ typedef struct {
 	int okay;
 	SDL_Surface *screen;
 	SDL_Thread *thread;
-} data_t;
+};
 
-typedef struct {
-	img_t base;
-	data_t *data;
-} sdl_t;
+struct sdl {
+	struct img base;
+	struct data *data;
+};
 
 void handle_events()
 {
@@ -56,7 +56,7 @@ void handle_events()
 
 int update_sdl(void *ptr)
 {
-	data_t *data = (data_t *)ptr;
+	struct data *data = (struct data *)ptr;
 	while (!data->quit) {
 		if (data->stop) {
 			data->busy = 0;
@@ -81,9 +81,9 @@ int update_sdl(void *ptr)
 	return 0;
 }
 
-void close_sdl(img_t *img)
+void close_sdl(struct img *img)
 {
-	sdl_t *sdl = (sdl_t *)(img->data);
+	struct sdl *sdl = (struct sdl *)(img->data);
 	sdl->data->okay = 0;
 	sdl->data->stop = 1;
 	while (sdl->data->busy)
@@ -93,15 +93,15 @@ void close_sdl(img_t *img)
 	free(sdl);
 }
 
-int open_sdl_write(img_t **p, char *name, int width, int height)
+int open_sdl_write(struct img **p, char *name, int width, int height)
 {
-	sdl_t *sdl = (sdl_t *)malloc(sizeof(sdl_t));
+	struct sdl *sdl = (struct sdl *)malloc(sizeof(struct sdl));
 	sdl->base.close = close_sdl;
 	sdl->base.data = (void *)sdl;
 
-	static data_t *data = 0;
+	static struct data *data = 0;
 	if (!data) {
-		data = (data_t *)malloc(sizeof(data_t));
+		data = (struct data *)malloc(sizeof(struct data));
 		data->quit = 0;
 		data->stop = 1;
 		data->okay = 0;

@@ -156,7 +156,7 @@ int cal_header(float cnt_freq, float dat_freq, float drate)
 	return 0;
 }
 
-int decode(int *reset, img_t **img, char *img_name, float cnt_freq, float dat_freq, float drate)
+int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float dat_freq, float drate)
 {
 	const int width = 320;
 	const int height = 240;
@@ -281,7 +281,7 @@ int decode(int *reset, img_t **img, char *img_name, float cnt_freq, float dat_fr
 		uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 	return 0;
 }
-int demodulate(pcm_t *pcm, float *cnt_freq, float *dat_freq, float *drate)
+int demodulate(struct pcm *pcm, float *cnt_freq, float *dat_freq, float *drate)
 {
 	static float rate;
 	static int channels;
@@ -295,10 +295,10 @@ int demodulate(pcm_t *pcm, float *cnt_freq, float *dat_freq, float *drate)
 	static float *dat_amp;
 	static float complex *cnt_q;
 	static float complex *dat_q;
-	static ddc_t *cnt_ddc;
-	static ddc_t *dat_ddc;
-	static delay_t *cnt_delay;
-	static delay_t *dat_delay;
+	static struct ddc *cnt_ddc;
+	static struct ddc *dat_ddc;
+	static struct delay *cnt_delay;
+	static struct delay *dat_delay;
 	static short *buff;
 
 	static int init = 0;
@@ -382,7 +382,7 @@ int demodulate(pcm_t *pcm, float *cnt_freq, float *dat_freq, float *drate)
 
 int main(int argc, char **argv)
 {
-	pcm_t *pcm;
+	struct pcm *pcm;
 	char *pcm_name = "default";
 	char *img_name = 0;
 	if (argc != 1)
@@ -410,7 +410,7 @@ int main(int argc, char **argv)
 	int vis_reset = 0;
 	int dat_reset = 0;
 
-	img_t *img = 0;
+	struct img *img = 0;
 	float cnt_freq = 0.0;
 	float dat_freq = 0.0;
 	float drate = 0.0;

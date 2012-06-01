@@ -11,19 +11,19 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "ppm.h"
 #include "sdl.h"
 
-void close_img(img_t *img)
+void close_img(struct img *img)
 {
 	img->close(img);
 }
 
-int open_img_read(img_t **p, char *name)
+int open_img_read(struct img **p, char *name)
 {
 	if (strstr(name, ".ppm") == (name + (strlen(name) - strlen(".ppm"))))
 		return open_ppm_read(p, name);
 	return 0;
 }
 
-int open_img_write(img_t **p, char *name, int width, int height)
+int open_img_write(struct img **p, char *name, int width, int height)
 {
 	if (strstr(name, ".ppm") == (name + (strlen(name) - strlen(".ppm"))))
 		return open_ppm_write(p, name, width, height);

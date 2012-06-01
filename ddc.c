@@ -12,7 +12,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "window.h"
 #include "ddc.h"
 
-void do_ddc(ddc_t *ddc, float *input, float complex *output)
+void do_ddc(struct ddc *ddc, float *input, float complex *output)
 {
 	// this works only for L <= M
 	for (int k = 0, last = ddc->last, in = 0; k < ddc->L; k++) {
@@ -38,11 +38,11 @@ void do_ddc(ddc_t *ddc, float *input, float complex *output)
 //		ddc->osc /= cabsf(ddc->osc); // not really needed
 	}
 }
-ddc_t *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float (*window)(float, float, float), float a)
+struct ddc *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float (*window)(float, float, float), float a)
 {
 	float lstep = step / (float)L;
 	float ostep = step * (float)M / (float)L;
-	ddc_t *ddc = malloc(sizeof(ddc_t));
+	struct ddc *ddc = malloc(sizeof(struct ddc));
 	ddc->taps = taps;
 	ddc->samples = (taps + L - 1) / L;
 	ddc->b = malloc(sizeof(float complex) * ddc->taps);
@@ -73,7 +73,7 @@ ddc_t *alloc_ddc(float freq, float bw, float step, int taps, int L, int M, float
 		ddc->b[i] /= sum;
 	return ddc;
 }
-void free_ddc(ddc_t *ddc)
+void free_ddc(struct ddc *ddc)
 {
 	free(ddc->b);
 	free(ddc->s);

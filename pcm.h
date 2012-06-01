@@ -9,23 +9,23 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #ifndef PCM_H
 #define PCM_H
 
-typedef struct pcm {
+struct pcm {
 	void (*close)(struct pcm *);
 	void (*info)(struct pcm *);
 	int (*rate)(struct pcm *);
 	int (*channels)(struct pcm *);
 	int (*rw)(struct pcm *, short *, int);
 	void *data;
-} pcm_t;
+};
 
-void close_pcm(pcm_t *);
-void info_pcm(pcm_t *);
-int rate_pcm(pcm_t *);
-int channels_pcm(pcm_t *);
-int read_pcm(pcm_t *, short *, int);
-int write_pcm(pcm_t *, short *, int);
-int open_pcm_read(pcm_t **, char *);
-int open_pcm_write(pcm_t **, char *, int, int, float);
+void close_pcm(struct pcm *);
+void info_pcm(struct pcm *);
+int rate_pcm(struct pcm *);
+int channels_pcm(struct pcm *);
+int read_pcm(struct pcm *, short *, int);
+int write_pcm(struct pcm *, short *, int);
+int open_pcm_read(struct pcm **, char *);
+int open_pcm_write(struct pcm **, char *, int, int, float);
 
 #endif
 

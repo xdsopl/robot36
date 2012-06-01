@@ -9,17 +9,17 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "delay.h"
 #include <stdlib.h>
 
-float do_delay(delay_t *d, float input)
+float do_delay(struct delay *d, float input)
 {
 	d->s[d->last] = input;
 	d->last = (d->last + 1) < d->len ? d->last + 1 : 0;
 	return d->s[d->last];
 }
 
-delay_t *alloc_delay(int samples)
+struct delay *alloc_delay(int samples)
 {
 	int len = samples + 1;
-	delay_t *d = malloc(sizeof(delay_t));
+	struct delay *d = malloc(sizeof(struct delay));
 	d->s = malloc(sizeof(float) * len);
 	d->last = 0;
 	d->len = len;
@@ -27,7 +27,7 @@ delay_t *alloc_delay(int samples)
 		d->s[i] = 0.0;
 	return d;
 }
-void free_delay(delay_t *delay)
+void free_delay(struct delay *delay)
 {
 	free(delay->s);
 	free(delay);

@@ -12,21 +12,21 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "mmap_file.h"
 #include "img.h"
 
-typedef struct {
-	img_t base;
+struct ppm {
+	struct img base;
 	void *p;
 	size_t size;
-} ppm_t;
+};
 
-void close_ppm(img_t *img)
+void close_ppm(struct img *img)
 {
-	ppm_t *ppm = (ppm_t *)(img->data);
+	struct ppm *ppm = (struct ppm *)(img->data);
 	munmap_file(ppm->p, ppm->size);
 	free(ppm);
 }
 
-int open_ppm_read(img_t **p, char *name) {
-	ppm_t *ppm = (ppm_t *)malloc(sizeof(ppm_t));
+int open_ppm_read(struct img **p, char *name) {
+	struct ppm *ppm = (struct ppm *)malloc(sizeof(struct ppm));
 	ppm->base.close = close_ppm;
 	ppm->base.data = (void *)ppm;
 
@@ -89,9 +89,9 @@ int open_ppm_read(img_t **p, char *name) {
 	return 1;
 }
 
-int open_ppm_write(img_t **p, char *name, int width, int height)
+int open_ppm_write(struct img **p, char *name, int width, int height)
 {
-	ppm_t *ppm = (ppm_t *)malloc(sizeof(ppm_t));
+	struct ppm *ppm = (struct ppm *)malloc(sizeof(struct ppm));
 	ppm->base.close = close_ppm;
 	ppm->base.data = (void *)ppm;
 

@@ -8,14 +8,14 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 #ifndef DELAY_H
 #define DELAY_H
-typedef struct {
+struct delay {
 	float *s;
 	int last;
 	int len;
-} delay_t;
+};
 
-float do_delay(delay_t *, float);
-delay_t *alloc_delay(int);
-void free_delay(delay_t *);
+float do_delay(struct delay *, float);
+struct delay *alloc_delay(int);
+void free_delay(struct delay *);
 #endif
 

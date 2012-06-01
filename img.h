@@ -11,17 +11,17 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 #include <stdint.h>
 
-typedef struct img {
+struct img {
 	void (*close)(struct img *);
 	uint8_t *pixel;
 	void *data;
 	int width;
 	int height;
-} img_t;
+};
 
-void close_img(img_t *);
-int open_img_read(img_t **, char *);
-int open_img_write(img_t **, char *, int, int);
+void close_img(struct img *);
+int open_img_read(struct img **, char *);
+int open_img_write(struct img **, char *, int, int);
 
 #endif
 

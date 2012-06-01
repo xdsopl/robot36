@@ -9,6 +9,6 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #ifndef WAV_H
 #define WAV_H
 #include "pcm.h"
-int open_wav_read(pcm_t **, char *);
-int open_wav_write(pcm_t **, char *, int, int, float);
+int open_wav_read(struct pcm **, char *);
+int open_wav_write(struct pcm **, char *, int, int, float);
 #endif

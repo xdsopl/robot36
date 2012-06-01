@@ -11,44 +11,44 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <alsa/asoundlib.h> 
 #include "alsa.h"
 
-typedef struct {
-	pcm_t base;
+struct alsa {
+	struct pcm base;
 	snd_pcm_t *pcm;
 	int index;
 	int frames;
 	int r;
 	int c;
-} alsa_t;
+};
 
-void close_alsa(pcm_t *pcm)
+void close_alsa(struct pcm *pcm)
 {
-	alsa_t *alsa = (alsa_t *)(pcm->data);
+	struct alsa *alsa = (struct alsa *)(pcm->data);
 	snd_pcm_drain(alsa->pcm);
 	snd_pcm_close(alsa->pcm);
 	free(alsa);
 }
 
-void info_alsa(pcm_t *pcm)
+void info_alsa(struct pcm *pcm)
 {
-	alsa_t *alsa = (alsa_t *)(pcm->data);
+	struct alsa *alsa = (struct alsa *)(pcm->data);
 	if (alsa->frames)
 		fprintf(stderr, "%d channel(s), %d rate, %.2f seconds\n", alsa->c, alsa->r, (float)alsa->frames / (float)alsa->r);
 	else
 		fprintf(stderr, "%d channel(s), %d rate\n", alsa->c, alsa->r);
 }
-int rate_alsa(pcm_t *pcm)
+int rate_alsa(struct pcm *pcm)
 {
-	alsa_t *alsa = (alsa_t *)(pcm->data);
+	struct alsa *alsa = (struct alsa *)(pcm->data);
 	return alsa->r;
 }
-int channels_alsa(pcm_t *pcm)
+int channels_alsa(struct pcm *pcm)
 {
-	alsa_t *alsa = (alsa_t *)(pcm->data);
+	struct alsa *alsa = (struct alsa *)(pcm->data);
 	return alsa->c;
 }
-int read_alsa(pcm_t *pcm, short *buff, int frames)
+int read_alsa(struct pcm *pcm, short *buff, int frames)
 {
-	alsa_t *alsa = (alsa_t *)(pcm->data);
+	struct alsa *alsa = (struct alsa *)(pcm->data);
 	int got = 0;
 	while (0 < frames) {
 		while ((got = snd_pcm_readi(alsa->pcm, buff, frames)) < 0)
@@ -60,9 +60,9 @@ int read_alsa(pcm_t *pcm, short *buff, int frames)
 	return 1;
 }
 
-int write_alsa(pcm_t *pcm, short *buff, int frames)
+int write_alsa(struct pcm *pcm, short *buff, int frames)
 {
-	alsa_t *alsa = (alsa_t *)(pcm->data);
+	struct alsa *alsa = (struct alsa *)(pcm->data);
 	if (alsa->frames && (alsa->index + frames) > alsa->frames)
 		return 0;
 	alsa->index += frames;
@@ -77,9 +77,9 @@ int write_alsa(pcm_t *pcm, short *buff, int frames)
 	return 1;
 }
 
-int open_alsa_read(pcm_t **p, char *name)
+int open_alsa_read(struct pcm **p, char *name)
 {
-	alsa_t *alsa = (alsa_t *)malloc(sizeof(alsa_t));
+	struct alsa *alsa = (struct alsa *)malloc(sizeof(struct alsa));
 	alsa->base.close = close_alsa;
 	alsa->base.info = info_alsa;
 	alsa->base.rate = rate_alsa;
@@ -153,9 +153,9 @@ int open_alsa_read(pcm_t **p, char *name)
 	return 1;
 }
 
-int open_alsa_write(pcm_t **p, char *name, int rate, int channels, float seconds)
+int open_alsa_write(struct pcm **p, char *name, int rate, int channels, float seconds)
 {
-	alsa_t *alsa = (alsa_t *)malloc(sizeof(alsa_t));
+	struct alsa *alsa = (struct alsa *)malloc(sizeof(struct alsa));
 	alsa->base.close = close_alsa;
 	alsa->base.info = info_alsa;
 	alsa->base.rate = rate_alsa;

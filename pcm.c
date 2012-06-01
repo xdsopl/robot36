@@ -13,37 +13,37 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "alsa.h"
 #include "wav.h"
 
-void close_pcm(pcm_t *pcm)
+void close_pcm(struct pcm *pcm)
 {
 	pcm->close(pcm);
 }
 
-void info_pcm(pcm_t *pcm)
+void info_pcm(struct pcm *pcm)
 {
 	pcm->info(pcm);
 }
 
-int rate_pcm(pcm_t *pcm)
+int rate_pcm(struct pcm *pcm)
 {
 	return pcm->rate(pcm);
 }
 
-int channels_pcm(pcm_t *pcm)
+int channels_pcm(struct pcm *pcm)
 {
 	return pcm->channels(pcm);
 }
 
-int read_pcm(pcm_t *pcm, short *buff, int frames)
+int read_pcm(struct pcm *pcm, short *buff, int frames)
 {
 	return pcm->rw(pcm, buff, frames);
 }
 
-int write_pcm(pcm_t *pcm, short *buff, int frames)
+int write_pcm(struct pcm *pcm, short *buff, int frames)
 {
 	return pcm->rw(pcm, buff, frames);
 }
 
-int open_pcm_read(pcm_t **p, char *name)
+int open_pcm_read(struct pcm **p, char *name)
 {
 	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
 		return open_alsa_read(p, name);
@@ -52,7 +52,7 @@ int open_pcm_read(pcm_t **p, char *name)
 	return 0;
 }
 
-int open_pcm_write(pcm_t **p, char *name, int rate, int channels, float seconds)
+int open_pcm_write(struct pcm **p, char *name, int rate, int channels, float seconds)
 {
 	if (strstr(name, "plughw:") == name || strstr(name, "hw:") == name || strstr(name, "default") == name)
 		return open_alsa_write(p, name, rate, channels, seconds);

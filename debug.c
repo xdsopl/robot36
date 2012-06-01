@@ -22,7 +22,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 int main(int argc, char **argv)
 {
-	pcm_t *pcm;
+	struct pcm *pcm;
 	char *pcm_name = "default";
 	char *img_name = 0;
 	if (argc != 1)
@@ -112,11 +112,11 @@ int main(int argc, char **argv)
 	float complex *cnt_q = malloc(sizeof(float complex) * factor_L);
 	float complex *dat_q = malloc(sizeof(float complex) * factor_L);
 	// same factor to keep life simple and have accurate horizontal sync
-	ddc_t *cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser, 2.0);
-	ddc_t *dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser, 2.0);
+	struct ddc *cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser, 2.0);
+	struct ddc *dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser, 2.0);
 	// delay input by phase shift of other filter to synchronize outputs
-	delay_t *cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
-	delay_t *dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
+	struct delay *cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
+	struct delay *dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
 
 	short *buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 
 	const int width = (0.150 + 3.0 * sync_porch_len) * drate + 20;
 	const int height = 256;
-	img_t *img = 0;
+	struct img *img = 0;
 
 	int hor_ticks = 0;
 	int y_pixel_x = 0;

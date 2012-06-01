@@ -10,7 +10,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #define DDC_H
 #include "window.h"
 
-typedef struct {
+struct ddc {
 	float complex *b;
 	float *s;
 	float complex osc;
@@ -22,11 +22,11 @@ typedef struct {
 	int samples;
 	int L;
 	int M;
-} ddc_t;
+};
 
-void do_ddc(ddc_t *, float *, float complex *);
-ddc_t *alloc_ddc(float, float, float, int, int, int, float (*)(float, float, float), float);
-void free_ddc(ddc_t *);
+void do_ddc(struct ddc *, float *, float complex *);
+struct ddc *alloc_ddc(float, float, float, int, int, int, float (*)(float, float, float), float);
+void free_ddc(struct ddc *);
 
 #endif
 

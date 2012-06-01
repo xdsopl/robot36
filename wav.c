@@ -13,7 +13,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include "wav.h"
 #include "mmap_file.h"
 
-typedef struct {
+struct wav_head {
 	uint32_t ChunkID;
 	uint32_t ChunkSize;
 	uint32_t Format;
@@ -27,10 +27,10 @@ typedef struct {
 	uint16_t BitsPerSample;
 	uint32_t Subchunk2ID;
 	uint32_t Subchunk2Size;
-} wav_head_t;
+};
 
-typedef struct {
-	pcm_t base;
+struct wav {
+	struct pcm base;
 	void *p;
 	short *b;
 	size_t size;
@@ -38,42 +38,42 @@ typedef struct {
 	int frames;
 	int r;
 	int c;
-} wav_t;
+};
 
-void close_wav(pcm_t *pcm)
+void close_wav(struct pcm *pcm)
 {
-	wav_t *wav = (wav_t *)(pcm->data);
+	struct wav *wav = (struct wav *)(pcm->data);
 	munmap_file(wav->p, wav->size);
 	free(wav);
 }
 
-void info_wav(pcm_t *pcm)
+void info_wav(struct pcm *pcm)
 {
-	wav_t *wav = (wav_t *)(pcm->data);
+	struct wav *wav = (struct wav *)(pcm->data);
 	fprintf(stderr, "%d channel(s), %d rate, %.2f seconds\n", wav->c, wav->r, (float)wav->frames / (float)wav->r);
 }
-int rate_wav(pcm_t *pcm)
+int rate_wav(struct pcm *pcm)
 {
-	wav_t *wav = (wav_t *)(pcm->data);
+	struct wav *wav = (struct wav *)(pcm->data);
 	return wav->r;
 }
-int channels_wav(pcm_t *pcm)
+int channels_wav(struct pcm *pcm)
 {
-	wav_t *wav = (wav_t *)(pcm->data);
+	struct wav *wav = (struct wav *)(pcm->data);
 	return wav->c;
 }
-int read_wav(pcm_t *pcm, short *buff, int frames)
+int read_wav(struct pcm *pcm, short *buff, int frames)
 {
-	wav_t *wav = (wav_t *)(pcm->data);
+	struct wav *wav = (struct wav *)(pcm->data);
 	if ((wav->index + frames) > wav->frames)
 		return 0;
 	memcpy(buff, wav->b + wav->index * wav->c, sizeof(short) * frames * wav->c);
 	wav->index += frames;
 	return 1;
 }
-int write_wav(pcm_t *pcm, short *buff, int frames)
+int write_wav(struct pcm *pcm, short *buff, int frames)
 {
-	wav_t *wav = (wav_t *)(pcm->data);
+	struct wav *wav = (struct wav *)(pcm->data);
 	if ((wav->index + frames) > wav->frames)
 		return 0;
 	memcpy(wav->b + wav->index * wav->c, buff, sizeof(short) * frames * wav->c);
@@ -81,9 +81,9 @@ int write_wav(pcm_t *pcm, short *buff, int frames)
 	return 1;
 }
 
-int open_wav_read(pcm_t **p, char *name)
+int open_wav_read(struct pcm **p, char *name)
 {
-	wav_t *wav = (wav_t *)malloc(sizeof(wav_t));
+	struct wav *wav = (struct wav *)malloc(sizeof(struct wav));
 	wav->base.close = close_wav;
 	wav->base.info = info_wav;
 	wav->base.rate = rate_wav;
@@ -95,8 +95,8 @@ int open_wav_read(pcm_t **p, char *name)
 		free(wav);
 		return 0;
 	}
-	wav_head_t *head = (wav_head_t *)wav->p;
-	wav->b = (short *)(wav->p + sizeof(wav_head_t));
+	struct wav_head *head = (struct wav_head *)wav->p;
+	wav->b = (short *)(wav->p + sizeof(struct wav_head));
 
 	if (head->ChunkID != 0x46464952 || head->Format != 0x45564157 ||
 			head->Subchunk1ID != 0x20746d66 || head->Subchunk1Size != 16 ||
@@ -120,9 +120,9 @@ int open_wav_read(pcm_t **p, char *name)
 	return 1;
 }
 
-int open_wav_write(pcm_t **p, char *name, int rate, int channels, float seconds)
+int open_wav_write(struct pcm **p, char *name, int rate, int channels, float seconds)
 {
-	wav_t *wav = (wav_t *)malloc(sizeof(wav_t));
+	struct wav *wav = (struct wav *)malloc(sizeof(struct wav));
 	wav->base.close = close_wav;
 	wav->base.info = info_wav;
 	wav->base.rate = rate_wav;
@@ -130,14 +130,14 @@ int open_wav_write(pcm_t **p, char *name, int rate, int channels, float seconds)
 	wav->base.rw = write_wav;
 	wav->base.data = (void *)wav;
 	int frames = seconds * rate;
-	wav->size = frames * channels * sizeof(short) + sizeof(wav_head_t);
+	wav->size = frames * channels * sizeof(short) + sizeof(struct wav_head);
 	if (!mmap_file_rw(&wav->p, name, wav->size)) {
 		fprintf(stderr, "couldnt open wav file %s!\n", name);
 		free(wav);
 		return 0;
 	}
-	wav_head_t *head = (wav_head_t *)wav->p;
-	wav->b = (short *)(wav->p + sizeof(wav_head_t));
+	struct wav_head *head = (struct wav_head *)wav->p;
+	wav->b = (short *)(wav->p + sizeof(struct wav_head));
 
 	head->ChunkID = 0x46464952;
 	head->ChunkSize = 36 + frames * sizeof(short) * channels;
