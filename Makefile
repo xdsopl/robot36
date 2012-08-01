@@ -1,5 +1,5 @@
 
-CFLAGS = -g -DUP=0 -DDN=1 -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -ffast-math $(shell sdl-config --cflags)
+CFLAGS = -g -DUP=0 -DDN=1 -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -ffast-math -fsingle-precision-constant $(shell sdl-config --cflags)
 LDFLAGS = -lm -lasound $(shell sdl-config --libs)
 
 all: encode decode debug
