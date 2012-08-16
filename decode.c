@@ -192,7 +192,7 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 
 	// we want a pulse at the falling edge
 	latch_sync = hor_ticks > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
-	int hor_sync = hor_ticks > (int)(drate * sync_tolerance * hor_sync_len) ? 0 : latch_sync;
+	int hor_sync = (cnt_freq > 1299.0) && latch_sync;
 	latch_sync = hor_sync ? 0 : latch_sync;
 
 	// we wait until first sync
@@ -272,12 +272,10 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 		odd = sep_count < 0;
 		sep_count = 0;
 	}
-	// TODO: need better way to compensate for pulse decay time
-	float fixme = 0.0007;
-	if (y_pixel_x < y_width && ticks >= (int)((fixme + sync_porch_len) * drate))
+	if (y_pixel_x < y_width && ticks >= (int)(sync_porch_len * drate))
 		y_pixel[y_pixel_x++ + (y % 2) * y_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 
-	if (uv_pixel_x < uv_width && ticks >= (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate))
+	if (uv_pixel_x < uv_width && ticks >= (int)((sync_porch_len + y_len + seperator_len + porch_len) * drate))
 		uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 	return 0;
 }

@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 
 		// we want a pulse at the falling edge
 		latch_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
-		int hor_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 0 : latch_sync;
+		int hor_sync = (cnt_freq > 1299.0) && latch_sync;
 		latch_sync = hor_sync ? 0 : latch_sync;
 
 		// we only want a pulse for the bits
@@ -395,13 +395,11 @@ int main(int argc, char **argv)
 			evn_count = 0;
 			odd_count = 0;
 		}
-		// TODO: need better way to compensate for pulse decay time
-		float fixme = 0.0007;
-		if (hor_ticks == (int)((fixme + sync_porch_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len) * drate) ||
-			hor_ticks == (int)((fixme + sync_porch_len + y_len + seperator_len + porch_len + uv_len) * drate)) {
+		if (hor_ticks == (int)(sync_porch_len * drate) ||
+			hor_ticks == (int)((sync_porch_len + y_len) * drate) ||
+			hor_ticks == (int)((sync_porch_len + y_len + seperator_len) * drate) ||
+			hor_ticks == (int)((sync_porch_len + y_len + seperator_len + porch_len) * drate) ||
+			hor_ticks == (int)((sync_porch_len + y_len + seperator_len + porch_len + uv_len) * drate)) {
 			uint8_t *p = img->pixel + 3 * y * width + 3 * hor_ticks;
 			p[0] = 255;
 			p[1] = 0;
