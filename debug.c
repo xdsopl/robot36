@@ -59,8 +59,6 @@ int main(int argc, char **argv)
 	int begin_hor_sync = 0;
 	int begin_cal_break = 0;
 	int begin_cal_leader = 0;
-	int begin_sep_evn = 0;
-	int begin_sep_odd = 0;
 	int latch_sync = 0;
 
 	const float vis_len = 0.03;
@@ -75,11 +73,11 @@ int main(int argc, char **argv)
 	int vis_ticks = 0;
 	int vis_bit = -1;
 	int vis_byte = 0;
+	int sep_evn = 0;
+	int sep_odd = 0;
 
 	int y = 0;
 	int odd = 0;
-	int odd_count = 0;
-	int evn_count = 0;
 	int first_hor_sync = 0;
 
 #if DN && UP
@@ -171,22 +169,17 @@ int main(int argc, char **argv)
 		begin_hor_sync = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_hor_sync + 1 : 0;
 		begin_cal_break = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_cal_break + 1 : 0;
 		begin_cal_leader = fabsf(cal_avg - 1900.0) < 50.0 ? begin_cal_leader + 1 : 0;
-		begin_sep_evn = fabsf(dat_freq - 1500.0) < 50.0 ? begin_sep_evn + 1 : 0;
-		begin_sep_odd = fabsf(dat_freq - 2300.0) < 350.0 ? begin_sep_odd + 1 : 0;
 
 		const float vis_tolerance = 0.9;
 		const float sync_tolerance = 0.7;
 		const float break_tolerance = 0.7;
 		const float leader_tolerance = 0.3;
-		const float seperator_tolerance = 0.7;
 
 		int vis_ss = begin_vis_ss >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
 		int vis_lo = begin_vis_lo >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
 		int vis_hi = begin_vis_hi >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
 		int cal_break = begin_cal_break >= (int)(drate * break_tolerance * cal_break_len) ? 1 : 0;
 		int cal_leader = begin_cal_leader >= (int)(drate * leader_tolerance * cal_leader_len) ? 1 : 0;
-		int sep_evn = begin_sep_evn >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
-		int sep_odd = begin_sep_odd >= (int)(drate * seperator_tolerance * seperator_len) ? 1 : 0;
 
 		// we want a pulse at the falling edge
 		latch_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
@@ -204,6 +197,10 @@ int main(int argc, char **argv)
 				50*hor_sync+950, 50*cal_leader+850, 50*cal_break+750,
 				50*vis_ss+650, 50*vis_lo+550, 50*vis_hi+450,
 				50*sep_evn+350, 50*sep_odd+250);
+
+		// only want to see a pulse
+		sep_evn = 0;
+		sep_odd = 0;
 
 		if (cal_leader && !cal_break && got_cal_break &&
 				cal_ticks >= (int)(drate * (cal_leader_len + cal_break_len) * leader_tolerance) &&
@@ -364,36 +361,38 @@ int main(int argc, char **argv)
 			uv_pixel_x = 0;
 		}
 
-		if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-			odd_count += sep_odd;
-			evn_count += sep_evn;
-		}
+		static int sep_count = 0;
+		if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate))
+			sep_count += dat_freq < 1900.0 ? 1 : -1;
+
 		// we try to correct from odd / even seperator
-		if (evn_count != odd_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
-			// even seperator
-			if (evn_count > odd_count && odd) {
-				odd = 0;
-				seperator_correction++;
-				for (int i = 0; i < 4; i++) {
-					uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 15);
-					p[0] = 255;
-					p[1] = 0;
-					p[2] = 0;
+		if (sep_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
+			if (sep_count > 0) {
+				sep_evn = 1;
+				if (odd) {
+					odd = 0;
+					seperator_correction++;
+					for (int i = 0; i < 4; i++) {
+						uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 15);
+						p[0] = 255;
+						p[1] = 0;
+						p[2] = 0;
+					}
+				}
+			} else {
+				sep_odd = 1;
+				if (!odd) {
+					odd = 1;
+					seperator_correction++;
+					for (int i = 0; i < 4; i++) {
+						uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 15);
+						p[0] = 0;
+						p[1] = 255;
+						p[2] = 0;
+					}
 				}
 			}
-			// odd seperator
-			if (odd_count > evn_count && !odd) {
-				odd = 1;
-				seperator_correction++;
-				for (int i = 0; i < 4; i++) {
-					uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 15);
-					p[0] = 0;
-					p[1] = 255;
-					p[2] = 0;
-				}
-			}
-			evn_count = 0;
-			odd_count = 0;
+			sep_count = 0;
 		}
 		if (hor_ticks == (int)(sync_porch_len * drate) ||
 			hor_ticks == (int)((sync_porch_len + y_len) * drate) ||
