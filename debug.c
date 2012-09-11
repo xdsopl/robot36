@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	float complex cnt_last = -I;
 	float complex dat_last = -I;
 
-	float cal_avg = 1900.0;
+	float dat_avg = 1900.0;
 
 	int begin_vis_ss = 0;
 	int begin_vis_lo = 0;
@@ -160,15 +160,15 @@ int main(int argc, char **argv)
 		cnt_last = cnt_q[out];
 		dat_last = dat_q[out];
 
-		const float cal_a = 0.05;
-		cal_avg = cal_a * dat_freq + (1.0 - cal_a) * cal_avg;
+		const float dat_a = 1.0 / (drate * 0.00238 + 1.0);
+		dat_avg = dat_a * dat_freq + (1.0 - dat_a) * dat_avg;
 
 		begin_vis_ss = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_vis_ss + 1 : 0;
 		begin_vis_lo = fabsf(cnt_freq - 1300.0) < 50.0 ? begin_vis_lo + 1 : 0;
 		begin_vis_hi = fabsf(cnt_freq - 1100.0) < 50.0 ? begin_vis_hi + 1 : 0;
 		begin_hor_sync = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_hor_sync + 1 : 0;
 		begin_cal_break = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_cal_break + 1 : 0;
-		begin_cal_leader = fabsf(cal_avg - 1900.0) < 50.0 ? begin_cal_leader + 1 : 0;
+		begin_cal_leader = fabsf(dat_avg - 1900.0) < 50.0 ? begin_cal_leader + 1 : 0;
 
 		const float vis_tolerance = 0.9;
 		const float sync_tolerance = 0.7;
