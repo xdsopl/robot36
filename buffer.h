@@ -5,17 +5,17 @@ To the extent possible under law, the author(s) have dedicated all copyright and
 You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
 
-
-#ifndef DELAY_H
-#define DELAY_H
-struct delay {
+#ifndef BUFFER_H
+#define BUFFER_H
+struct buffer {
 	float *s;
-	int last;
+	int last0;
+	int last1;
 	int len;
 };
 
-float do_delay(struct delay *, float);
-struct delay *alloc_delay(int);
-void free_delay(struct delay *);
+float *do_buffer(struct buffer *d, float input);
+struct buffer *alloc_buffer(int samples);
+void free_buffer(struct buffer *buffer);
 #endif
 

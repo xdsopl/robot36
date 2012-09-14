@@ -5,31 +5,34 @@ To the extent possible under law, the author(s) have dedicated all copyright and
 You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
 
-
-#include "delay.h"
+#include "buffer.h"
 #include <stdlib.h>
 
-float do_delay(struct delay *d, float input)
+float *do_buffer(struct buffer *d, float input)
 {
-	d->s[d->last] = input;
-	d->last = (d->last + 1) < d->len ? d->last + 1 : 0;
-	return d->s[d->last];
+	d->s[d->last0] = input;
+	d->s[d->last1] = input;
+	d->last0 = (d->last0 - 1) < 0 ? d->len : d->last0 - 1;
+	d->last1 = (d->last1 - 1) < 0 ? d->len : d->last1 - 1;
+	int last = d->last0 < d->last1 ? d->last0 : d->last1;
+	return d->s + last;
 }
 
-struct delay *alloc_delay(int samples)
+struct buffer *alloc_buffer(int samples)
 {
-	int len = samples + 1;
-	struct delay *d = malloc(sizeof(struct delay));
+	int len = 2 * samples;
+	struct buffer *d = malloc(sizeof(struct buffer));
 	d->s = malloc(sizeof(float) * len);
-	d->last = 0;
+	d->last0 = 0;
+	d->last1 = samples;
 	d->len = len;
 	for (int i = 0; i < len; i++)
 		d->s[i] = 0.0;
 	return d;
 }
-void free_delay(struct delay *delay)
+void free_buffer(struct buffer *buffer)
 {
-	free(delay->s);
-	free(delay);
+	free(buffer->s);
+	free(buffer);
 }
 

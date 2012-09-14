@@ -14,7 +14,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <time.h>
 #include "pcm.h"
 #include "ddc.h"
-#include "delay.h"
+#include "buffer.h"
 #include "yuv.h"
 #include "utils.h"
 #include "img.h"
@@ -289,23 +289,20 @@ int demodulate(struct pcm *pcm, float *cnt_freq, float *dat_freq, float *drate)
 	static float dstep;
 	static float complex cnt_last = -I;
 	static float complex dat_last = -I;
-	static float *cnt_amp;
-	static float *dat_amp;
 	static float complex *cnt_q;
 	static float complex *dat_q;
 	static struct ddc *cnt_ddc;
 	static struct ddc *dat_ddc;
-	static struct delay *cnt_delay;
-	static struct delay *dat_delay;
-	static short *buff;
+	static struct buffer *buffer;
+	static int cnt_delay;
+	static int dat_delay;
+	static short *pcm_buff;
 
 	static int init = 0;
 	if (!init) {
 		init = 1;
 		rate = rate_pcm(pcm);
 		channels = channels_pcm(pcm);
-		const float step = 1.0 / rate;
-
 #if DN && UP
 		// 320 / 0.088 = 160 / 0.044 = 40000 / 11 = 3636.(36)~ pixels per second for Y, U and V
 		factor_L = 40000;
@@ -331,18 +328,19 @@ int demodulate(struct pcm *pcm, float *cnt_freq, float *dat_freq, float *drate)
 		*drate = rate * (float)factor_L / (float)factor_M;
 		dstep = 1.0 / *drate;
 		fprintf(stderr, "using factor of %ld/%ld, working at %.2fhz\n", factor_L, factor_M, *drate);
-		cnt_amp = malloc(sizeof(float) * factor_M);
-		dat_amp = malloc(sizeof(float) * factor_M);
 		cnt_q = malloc(sizeof(float complex) * factor_L);
 		dat_q = malloc(sizeof(float complex) * factor_L);
 		// same factor to keep life simple and have accurate horizontal sync
-		cnt_ddc = alloc_ddc(1200.0, 200.0, step, cnt_taps, factor_L, factor_M, kaiser, 2.0);
-		dat_ddc = alloc_ddc(1900.0, 800.0, step, dat_taps, factor_L, factor_M, kaiser, 2.0);
+		cnt_ddc = alloc_ddc(factor_L, factor_M, 1200.0, 200.0, rate, cnt_taps, kaiser, 2.0);
+		dat_ddc = alloc_ddc(factor_L, factor_M, 1900.0, 800.0, rate, dat_taps, kaiser, 2.0);
 		// delay input by phase shift of other filter to synchronize outputs
-		cnt_delay = alloc_delay((dat_taps - 1) / (2 * factor_L));
-		dat_delay = alloc_delay((cnt_taps - 1) / (2 * factor_L));
+		cnt_delay = (dat_taps - 1) / (2 * factor_L);
+		dat_delay = (cnt_taps - 1) / (2 * factor_L);
 
-		buff = (short *)malloc(sizeof(short) * channels * factor_M);
+		pcm_buff = (short *)malloc(sizeof(short) * channels * factor_M);
+
+		// 0.1 second history + enough room for delay and taps
+		buffer = alloc_buffer(0.1 * rate + 2 * fmaxf(cnt_delay, dat_delay));
 
 		// start immediately below
 		out = factor_L;
@@ -350,22 +348,20 @@ int demodulate(struct pcm *pcm, float *cnt_freq, float *dat_freq, float *drate)
 
 	if (out >= factor_L) {
 		out = 0;
-		if (!read_pcm(pcm, buff, factor_M)) {
+		if (!read_pcm(pcm, pcm_buff, factor_M)) {
 			init = 0;
-			free(buff);
+			free(pcm_buff);
 			free_ddc(cnt_ddc);
 			free_ddc(dat_ddc);
-			free(cnt_amp);
-			free(dat_amp);
+			free_buffer(buffer);
 			return 0;
 		}
-		for (int j = 0; j < factor_M; j++) {
-			float amp = (float)buff[j * channels] / 32767.0;
-			cnt_amp[j] = do_delay(cnt_delay, amp);
-			dat_amp[j] = do_delay(dat_delay, amp);
-		}
-		do_ddc(cnt_ddc, cnt_amp, cnt_q);
-		do_ddc(dat_ddc, dat_amp, dat_q);
+		float *buff = 0;
+		for (int j = 0; j < factor_M; j++)
+			buff = do_buffer(buffer, (float)pcm_buff[j * channels] / 32767.0);
+
+		do_ddc(cnt_ddc, buff + cnt_delay, cnt_q);
+		do_ddc(dat_ddc, buff + dat_delay, dat_q);
 	}
 
 	*cnt_freq = fclampf(1200.0 + cargf(cnt_q[out] * conjf(cnt_last)) / (2.0 * M_PI * dstep), 1100.0, 1300.0);
