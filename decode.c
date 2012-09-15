@@ -340,7 +340,8 @@ int demodulate(struct pcm *pcm, float *cnt_freq, float *dat_freq, float *drate)
 		pcm_buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
 		// 0.1 second history + enough room for delay and taps
-		buffer = alloc_buffer(0.1 * rate + 2 * fmaxf(cnt_delay, dat_delay));
+		int buff_len = 0.1 * rate + factor_M + 2 * fmaxf(cnt_delay, dat_delay);
+		buffer = alloc_buffer(buff_len);
 
 		// start immediately below
 		out = factor_L;
