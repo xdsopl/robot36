@@ -54,7 +54,7 @@ struct ddc *alloc_ddc(int L, int M, float carrier, float bw, float rate, int tap
 		float t = w * h;
 		sum += t;
 		complex float o = cexpf(I * 2.0 * M_PI * carrier * lstep * n);
-		b[i] = t * o;
+		b[i] = t * o * (float)L;
 	}
 	for (int i = 0; i < taps; i++)
 		b[i] /= sum;
