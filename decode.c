@@ -337,6 +337,15 @@ int demodulate(struct pcm *pcm, float *cnt_freq, float *dat_freq, float *drate)
 		cnt_delay = (dat_taps - 1) / (2 * factor_L);
 		dat_delay = (cnt_taps - 1) / (2 * factor_L);
 
+		// minimize delay
+		if (cnt_delay > dat_delay) {
+			cnt_delay -= dat_delay;
+			dat_delay = 0;
+		} else {
+			dat_delay -= cnt_delay;
+			cnt_delay = 0;
+		}
+
 		pcm_buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
 		// 0.1 second history + enough room for delay and taps

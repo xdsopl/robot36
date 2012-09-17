@@ -113,6 +113,7 @@ int main(int argc, char **argv)
 	int cnt_delay = (dat_taps - 1) / (2 * factor_L);
 	int dat_delay = (cnt_taps - 1) / (2 * factor_L);
 
+	// minimize delay
 	if (cnt_delay > dat_delay) {
 		cnt_delay -= dat_delay;
 		dat_delay = 0;
