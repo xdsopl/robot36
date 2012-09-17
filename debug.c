@@ -125,7 +125,9 @@ int main(int argc, char **argv)
 	short *pcm_buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
 	// 0.1 second history + enough room for delay and taps
-	int buff_len = 0.1 * rate + factor_M + 2 * fmaxf(cnt_delay, dat_delay);
+	int buff_len = 0.1 * rate + factor_M
+		+ fmaxf(cnt_delay, dat_delay)
+		+ fmaxf(cnt_taps, dat_taps) / factor_L;
 	struct buffer *buffer = alloc_buffer(buff_len);
 
 	const float sync_porch_len = 0.003;
