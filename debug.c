@@ -113,6 +113,14 @@ int main(int argc, char **argv)
 	int cnt_delay = (dat_taps - 1) / (2 * factor_L);
 	int dat_delay = (cnt_taps - 1) / (2 * factor_L);
 
+	if (cnt_delay > dat_delay) {
+		cnt_delay -= dat_delay;
+		dat_delay = 0;
+	} else {
+		dat_delay -= cnt_delay;
+		cnt_delay = 0;
+	}
+
 	short *pcm_buff = (short *)malloc(sizeof(short) * channels * factor_M);
 
 	// 0.1 second history + enough room for delay and taps
