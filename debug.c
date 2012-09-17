@@ -157,6 +157,11 @@ int main(int argc, char **argv)
 		float cnt_freq = fclampf(1200.0 + cargf(cnt_q[out] * conjf(cnt_last)) / (2.0 * M_PI * dstep), 1100.0, 1300.0);
 		float dat_freq = fclampf(1900.0 + cargf(dat_q[out] * conjf(dat_last)) / (2.0 * M_PI * dstep), 1500.0, 2300.0);
 
+		if (cabsf(cnt_q[out]) > cabsf(dat_q[out]))
+			dat_freq = 1500.0;
+		else
+			cnt_freq = 1300.0;
+
 		cnt_last = cnt_q[out];
 		dat_last = dat_q[out];
 
