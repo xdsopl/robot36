@@ -12,9 +12,9 @@ float *do_buffer(struct buffer *d, float input)
 {
 	d->s[d->last0] = input;
 	d->s[d->last1] = input;
+	int last = d->last0 < d->last1 ? d->last0 : d->last1;
 	d->last0 = (d->last0 - 1) < 0 ? d->len - 1 : d->last0 - 1;
 	d->last1 = (d->last1 - 1) < 0 ? d->len - 1 : d->last1 - 1;
-	int last = d->last0 < d->last1 ? d->last0 : d->last1;
 	return d->s + last;
 }
 
