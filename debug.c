@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 	int missing_sync = 0;
 	int seperator_correction = 0;
 
-	const int width = (0.150 + 3.0 * sync_porch_len) * drate + 20;
+	const int width = (0.150 + sync_porch_len) * drate + 24;
 	const int height = 256;
 	struct img *img = 0;
 
@@ -331,10 +331,10 @@ int main(int argc, char **argv)
 		// we always sync if sync pulse is where it should be.
 		if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
 				hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
-			uint8_t *p = img->pixel + 3 * y * width + 3 * hor_ticks + 6 * (int)(sync_porch_len * drate);
-			p[0] = 0;
-			p[1] = 255;
-			p[2] = 255;
+			uint8_t *p = img->pixel + 3 * y * width + 3 * hor_ticks;
+			p[0] = 255;
+			p[1] = 0;
+			p[2] = 0;
 			y++;
 			if (y == height) {
 				close_img(img);
