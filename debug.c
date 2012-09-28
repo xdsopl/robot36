@@ -305,14 +305,11 @@ int main(int argc, char **argv)
 
 		if (hor_ticks < width) {
 			uint8_t *p = img->pixel + 3 * y * width + 3 * hor_ticks;
-#if 1
-			uint8_t v = fclampf(0.0, 255.0, 255.0 * (dat_freq - 1500.0) / 800.0);
-#else
-			uint8_t v = fclampf(0.0, 255.0, 255.0 * (cnt_freq - 1100.0) / 200.0);
-#endif
-			p[0] = v;
-			p[1] = v;
-			p[2] = v;
+			float dat_v = (dat_freq - 1500.0) / 800.0;
+			float cnt_v = (1300.0 - cnt_freq) / 200.0;
+			p[0] = fclampf(0.0, 255.0, 255.0 * dat_v);
+			p[1] = fclampf(0.0, 255.0, 255.0 * (dat_v + cnt_v));
+			p[2] = fclampf(0.0, 255.0, 255.0 * dat_v);
 		}
 
 		// if horizontal sync is too early, we reset to the beginning instead of ignoring
