@@ -10,7 +10,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <complex.h> 
+#include <complex.h>
 #include <limits.h>
 #include "yuv.h"
 #include "utils.h"
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 	}
 
 	while (add_sample(0.0));
-	
+
 	close_pcm(pcm);
 	close_img(img);
 	return 0;

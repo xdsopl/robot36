@@ -26,7 +26,7 @@ You can find a lot more about DDC's and FM demodulation on the Internet.
 I Suggest finding and reading the enlightening "Virtual Radios" Paper of Vanu Bose, Michael Ismert, Matt Welborn, and John Guttag.
 You should also look at GNU Radio: http://gnuradio.org/ and at the invaluable information at dspGuru: http://www.dspguru.com/
 
-smpte.ppm is converted from http://en.wikipedia.org/wiki/File:SMPTE_Color_Bars.svg 
+smpte.ppm is converted from http://en.wikipedia.org/wiki/File:SMPTE_Color_Bars.svg
 
 compile everything:
 # make

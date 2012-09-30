@@ -8,7 +8,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <alsa/asoundlib.h> 
+#include <alsa/asoundlib.h>
 #include "alsa.h"
 
 struct alsa {
@@ -96,14 +96,14 @@ int open_alsa_read(struct pcm **p, char *name)
 		free(alsa);
 		return 0;
 	}
-  
+
 	if (snd_pcm_hw_params_any(pcm, params) < 0) {
 		fprintf(stderr, "Can not configure this PCM device.\n");
 		snd_pcm_close(alsa->pcm);
 		free(alsa);
 		return 0;
 	}
-  
+
 	if (snd_pcm_hw_params_set_access(pcm, params, SND_PCM_ACCESS_RW_INTERLEAVED) < 0) {
 		fprintf(stderr, "Error setting access.\n");
 		snd_pcm_close(alsa->pcm);
@@ -172,14 +172,14 @@ int open_alsa_write(struct pcm **p, char *name, int rate, int channels, float se
 		free(alsa);
 		return 0;
 	}
-  
+
 	if (snd_pcm_hw_params_any(pcm, params) < 0) {
 		fprintf(stderr, "Can not configure this PCM device.\n");
 		snd_pcm_close(alsa->pcm);
 		free(alsa);
 		return 0;
 	}
-  
+
 	if (snd_pcm_hw_params_set_access(pcm, params, SND_PCM_ACCESS_RW_INTERLEAVED) < 0) {
 		fprintf(stderr, "Error setting access.\n");
 		snd_pcm_close(alsa->pcm);

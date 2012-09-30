@@ -39,12 +39,12 @@ int mmap_file_ro(void **p, char *name, size_t *size)
 	if (*p == MAP_FAILED) {
 		perror("mmap");
 		close(fd);
-		return 0; 
+		return 0;
 	}
 
 	if (close(fd) == -1) {
 		perror ("close");
-		return 0; 
+		return 0;
 	}
 	*size = sb.st_size;
 	return 1;
@@ -87,12 +87,12 @@ int mmap_file_rw(void **p, char *name, size_t size)
 	if (*p == MAP_FAILED) {
 		perror("mmap");
 		close(fd);
-		return 0; 
+		return 0;
 	}
 
 	if (close(fd) == -1) {
 		perror ("close");
-		return 0; 
+		return 0;
 	}
 	return 1;
 }

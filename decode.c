@@ -10,7 +10,7 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <complex.h> 
+#include <complex.h>
 #include <time.h>
 #include "pcm.h"
 #include "ddc.h"
