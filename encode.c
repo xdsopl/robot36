@@ -23,7 +23,21 @@ complex float nco;
 float hz2rad;
 int channels;
 short *buff;
-float rate = 48000;
+int rate = 48000;
+
+const double sync_porch_len = 0.003l;
+const double porch_len = 0.0015l;
+const double y_len = 0.088l;
+const double uv_len = 0.044l;
+const double hor_sync_len = 0.009l;
+const double seperator_len = 0.0045l;
+
+int sync_porch_ticks = 0;
+int porch_ticks = 0;
+int y_ticks = 0;
+int uv_ticks = 0;
+int hor_sync_ticks = 0;
+int seperator_ticks = 0;
 
 int add_sample(float val)
 {
@@ -39,33 +53,33 @@ void add_freq(float freq)
 
 void hor_sync()
 {
-	for (int ticks = 0; ticks < (int)(0.009 * rate); ticks++)
+	for (int ticks = 0; ticks < hor_sync_ticks; ticks++)
 		add_freq(1200.0);
 }
 void sync_porch()
 {
-	for (int ticks = 0; ticks < (int)(0.003 * rate); ticks++)
+	for (int ticks = 0; ticks < sync_porch_ticks; ticks++)
 		add_freq(1500.0);
 }
 void porch()
 {
-	for (int ticks = 0; ticks < (int)(0.0015 * rate); ticks++)
+	for (int ticks = 0; ticks < porch_ticks; ticks++)
 		add_freq(1900.0);
 }
 void even_seperator()
 {
-	for (int ticks = 0; ticks < (int)(0.0045 * rate); ticks++)
+	for (int ticks = 0; ticks < seperator_ticks; ticks++)
 		add_freq(1500.0);
 }
 void odd_seperator()
 {
-	for (int ticks = 0; ticks < (int)(0.0045 * rate); ticks++)
+	for (int ticks = 0; ticks < seperator_ticks; ticks++)
 		add_freq(2300.0);
 }
 void y_scan(int y)
 {
-	for (int ticks = 0; ticks < (int)(0.088 * rate); ticks++) {
-		float xf = fclampf((320.0 * (float)ticks) / (0.088 * rate), 0.0, 319.0);
+	for (int ticks = 0; ticks < y_ticks; ticks++) {
+		float xf = fclampf((320.0 * ticks) / (y_len * rate), 0.0, 319.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 319.0);
 		int off0 = 3 * y * img->width + 3 * x0;
@@ -85,8 +99,8 @@ void y_scan(int y)
 
 void v_scan(int y)
 {
-	for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
-		float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
+	for (int ticks = 0; ticks < uv_ticks; ticks++) {
+		float xf = fclampf((160.0 * ticks) / (uv_len * rate), 0.0, 159.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 159.0);
 		int evn0 = 3 * y * img->width + 6 * x0;
@@ -107,8 +121,8 @@ void v_scan(int y)
 }
 void u_scan(int y)
 {
-	for (int ticks = 0; ticks < (int)(0.044 * rate); ticks++) {
-		float xf = fclampf((160.0 * (float)ticks) / (0.044 * rate), 0.0, 159.0);
+	for (int ticks = 0; ticks < uv_ticks; ticks++) {
+		float xf = fclampf((160.0 * ticks) / (uv_len * rate), 0.0, 159.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 159.0);
 		int evn0 = 3 * (y - 1) * img->width + 6 * x0;
@@ -155,12 +169,21 @@ int main(int argc, char **argv)
 	rate = rate_pcm(pcm);
 	channels = channels_pcm(pcm);
 
+	sync_porch_ticks = rate * sync_porch_len;
+	porch_ticks = rate * porch_len;
+	y_ticks = rate * y_len;
+	uv_ticks = rate * uv_len;
+	hor_sync_ticks = rate * hor_sync_len;
+	seperator_ticks = rate * seperator_len;
+
+//	fprintf(stderr, "%d %d %d %d %d %d\n", sync_porch_ticks, porch_ticks, y_ticks, uv_ticks, hor_sync_ticks, seperator_ticks);
+
 	buff = (short *)malloc(sizeof(short)*channels);
 
 	info_pcm(pcm);
 
-	if (fabsf(0.0015 * rate - (int)(0.0015 * rate)) > 0.0001)
-		fprintf(stderr, "this rate will not give accurate (smooth) results.\ntry 40000Hz and resample to %0.fHz\n", rate);
+	if (fabsf(porch_len * rate - (int)(porch_len * rate)) > 0.0001)
+		fprintf(stderr, "this rate will not give accurate (smooth) results.\ntry 40000Hz and resample to %dHz\n", rate);
 
 	hz2rad = (2.0 * M_PI) / rate;
 	nco = -I * 0.7;
