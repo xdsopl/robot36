@@ -29,7 +29,7 @@ float fclampf(float x, float min, float max)
 
 float flerpf(float a, float b, float x)
 {
-	return a - a * x + b * x;
+	return a * (1.0 - x) + b * x;
 }
 
 char *string_time(char *fmt)
