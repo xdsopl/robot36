@@ -25,19 +25,19 @@ int channels;
 short *buff;
 int rate = 48000;
 
-const double sync_porch_len = 0.003l;
-const double porch_len = 0.0015l;
-const double y_len = 0.088l;
-const double uv_len = 0.044l;
-const double hor_sync_len = 0.009l;
-const double seperator_len = 0.0045l;
+const double sync_porch_sec = 0.003l;
+const double porch_sec = 0.0015l;
+const double y_sec = 0.088l;
+const double uv_sec = 0.044l;
+const double hor_sync_sec = 0.009l;
+const double seperator_sec = 0.0045l;
 
-int sync_porch_ticks = 0;
-int porch_ticks = 0;
-int y_ticks = 0;
-int uv_ticks = 0;
-int hor_sync_ticks = 0;
-int seperator_ticks = 0;
+int sync_porch_len = 0;
+int porch_len = 0;
+int y_len = 0;
+int uv_len = 0;
+int hor_sync_len = 0;
+int seperator_len = 0;
 
 int add_sample(float val)
 {
@@ -53,33 +53,33 @@ void add_freq(float freq)
 
 void hor_sync()
 {
-	for (int ticks = 0; ticks < hor_sync_ticks; ticks++)
+	for (int ticks = 0; ticks < hor_sync_len; ticks++)
 		add_freq(1200.0);
 }
 void sync_porch()
 {
-	for (int ticks = 0; ticks < sync_porch_ticks; ticks++)
+	for (int ticks = 0; ticks < sync_porch_len; ticks++)
 		add_freq(1500.0);
 }
 void porch()
 {
-	for (int ticks = 0; ticks < porch_ticks; ticks++)
+	for (int ticks = 0; ticks < porch_len; ticks++)
 		add_freq(1900.0);
 }
 void even_seperator()
 {
-	for (int ticks = 0; ticks < seperator_ticks; ticks++)
+	for (int ticks = 0; ticks < seperator_len; ticks++)
 		add_freq(1500.0);
 }
 void odd_seperator()
 {
-	for (int ticks = 0; ticks < seperator_ticks; ticks++)
+	for (int ticks = 0; ticks < seperator_len; ticks++)
 		add_freq(2300.0);
 }
 void y_scan(int y)
 {
-	for (int ticks = 0; ticks < y_ticks; ticks++) {
-		float xf = fclampf((320.0 * ticks) / (y_len * rate), 0.0, 319.0);
+	for (int ticks = 0; ticks < y_len; ticks++) {
+		float xf = fclampf((320.0 * ticks) / (float)y_len, 0.0, 319.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 319.0);
 		int off0 = 3 * y * img->width + 3 * x0;
@@ -99,8 +99,8 @@ void y_scan(int y)
 
 void v_scan(int y)
 {
-	for (int ticks = 0; ticks < uv_ticks; ticks++) {
-		float xf = fclampf((160.0 * ticks) / (uv_len * rate), 0.0, 159.0);
+	for (int ticks = 0; ticks < uv_len; ticks++) {
+		float xf = fclampf((160.0 * ticks) / (float)uv_len, 0.0, 159.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 159.0);
 		int evn0 = 3 * y * img->width + 6 * x0;
@@ -121,8 +121,8 @@ void v_scan(int y)
 }
 void u_scan(int y)
 {
-	for (int ticks = 0; ticks < uv_ticks; ticks++) {
-		float xf = fclampf((160.0 * ticks) / (uv_len * rate), 0.0, 159.0);
+	for (int ticks = 0; ticks < uv_len; ticks++) {
+		float xf = fclampf((160.0 * ticks) / (float)uv_len, 0.0, 159.0);
 		int x0 = xf;
 		int x1 = fclampf(x0 + 1, 0.0, 159.0);
 		int evn0 = 3 * (y - 1) * img->width + 6 * x0;
@@ -169,20 +169,20 @@ int main(int argc, char **argv)
 	rate = rate_pcm(pcm);
 	channels = channels_pcm(pcm);
 
-	sync_porch_ticks = rate * sync_porch_len;
-	porch_ticks = rate * porch_len;
-	y_ticks = rate * y_len;
-	uv_ticks = rate * uv_len;
-	hor_sync_ticks = rate * hor_sync_len;
-	seperator_ticks = rate * seperator_len;
+	sync_porch_len = rate * sync_porch_sec;
+	porch_len = rate * porch_sec;
+	y_len = rate * y_sec;
+	uv_len = rate * uv_sec;
+	hor_sync_len = rate * hor_sync_sec;
+	seperator_len = rate * seperator_sec;
 
-//	fprintf(stderr, "%d %d %d %d %d %d\n", sync_porch_ticks, porch_ticks, y_ticks, uv_ticks, hor_sync_ticks, seperator_ticks);
+//	fprintf(stderr, "%d %d %d %d %d %d\n", sync_porch_len, porch_len, y_len, uv_len, hor_sync_len, seperator_len);
 
 	buff = (short *)malloc(sizeof(short)*channels);
 
 	info_pcm(pcm);
 
-	if (fabsf(porch_len * rate - (int)(porch_len * rate)) > 0.0001)
+	if (fabsf(porch_sec * rate - porch_len) > 0.0001)
 		fprintf(stderr, "this rate will not give accurate (smooth) results.\ntry 40000Hz and resample to %dHz\n", rate);
 
 	hz2rad = (2.0 * M_PI) / rate;
