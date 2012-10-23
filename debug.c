@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 	struct buffer *buffer = alloc_buffer(buff_len);
 
 	const float sync_porch_len = 0.003;
-	const float porch_len = 0.0015; (void)porch_len;
+	const float porch_len = 0.0015;
 	const float y_len = 0.088;
 	const float uv_len = 0.044;
 	const float hor_len = 0.15;
