@@ -60,11 +60,6 @@ int main(int argc, char **argv)
 	int begin_cal_leader = 0;
 	int latch_sync = 0;
 
-	const float vis_len = 0.03;
-	const float hor_sync_len = 0.009;
-	const float cal_break_len = 0.01;
-	const float cal_leader_len = 0.3;
-	const float seperator_len = 0.0045;
 	int cal_ticks = 0;
 	int got_cal_break = 0;
 	int vis_mode = 0;
@@ -130,23 +125,40 @@ int main(int argc, char **argv)
 		+ fmaxf(cnt_taps, dat_taps) / factor_L;
 	struct buffer *buffer = alloc_buffer(buff_len);
 
-	const float sync_porch_len = 0.003;
-	const float porch_len = 0.0015;
-	const float y_len = 0.088;
-	const float uv_len = 0.044;
-	const float hor_len = 0.15;
+	const double vis_sec = 0.03l;
+	const double hor_sync_sec = 0.009l;
+	const double cal_break_sec = 0.01l;
+	const double cal_leader_sec = 0.3l;
+	const double seperator_sec = 0.0045l;
+	const double sync_porch_sec = 0.003l;
+	const double porch_sec = 0.0015l;
+	const double y_sec = 0.088l;
+	const double uv_sec = 0.044l;
+	const double hor_sec = 0.15l;
+
+	int vis_len = vis_sec * drate;
+	int hor_sync_len = hor_sync_sec * drate;
+	int cal_break_len = cal_break_sec * drate;
+	int cal_leader_len = cal_leader_sec * drate;
+	int seperator_len = seperator_sec * drate;
+	int sync_porch_len = sync_porch_sec * drate;
+	int porch_len = porch_sec * drate;
+	int y_len = y_sec * drate;
+	int uv_len = uv_sec * drate;
+	int hor_len = hor_sec * drate;
+
 	int missing_sync = 0;
 	int seperator_correction = 0;
 
-	const int width = (0.150 + sync_porch_len) * drate + 24;
+	const int width = hor_len + sync_porch_len + 24;
 	const int height = 256;
 	struct img *img = 0;
 
 	int hor_ticks = 0;
 	int y_pixel_x = 0;
 	int uv_pixel_x = 0;
-	int y_width = drate * y_len;
-	int uv_width = drate * uv_len;
+	int y_width = y_len;
+	int uv_width = uv_len;
 	uint8_t *y_pixel = malloc(y_width * 2);
 	memset(y_pixel, 0, y_width * 2);
 	uint8_t *uv_pixel = malloc(uv_width * 2);
@@ -186,19 +198,20 @@ int main(int argc, char **argv)
 		begin_cal_break = fabsf(cnt_freq - 1200.0) < 50.0 ? begin_cal_break + 1 : 0;
 		begin_cal_leader = fabsf(dat_avg - 1900.0) < 50.0 ? begin_cal_leader + 1 : 0;
 
+		// TODO: remove floats
 		const float vis_tolerance = 0.9;
 		const float sync_tolerance = 0.7;
 		const float break_tolerance = 0.7;
 		const float leader_tolerance = 0.3;
 
-		int vis_ss = begin_vis_ss >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
-		int vis_lo = begin_vis_lo >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
-		int vis_hi = begin_vis_hi >= (int)(drate * vis_tolerance * vis_len) ? 1 : 0;
-		int cal_break = begin_cal_break >= (int)(drate * break_tolerance * cal_break_len) ? 1 : 0;
-		int cal_leader = begin_cal_leader >= (int)(drate * leader_tolerance * cal_leader_len) ? 1 : 0;
+		int vis_ss = begin_vis_ss >= (int)(vis_tolerance * vis_len) ? 1 : 0;
+		int vis_lo = begin_vis_lo >= (int)(vis_tolerance * vis_len) ? 1 : 0;
+		int vis_hi = begin_vis_hi >= (int)(vis_tolerance * vis_len) ? 1 : 0;
+		int cal_break = begin_cal_break >= (int)(break_tolerance * cal_break_len) ? 1 : 0;
+		int cal_leader = begin_cal_leader >= (int)(leader_tolerance * cal_leader_len) ? 1 : 0;
 
 		// we want a pulse at the falling edge
-		latch_sync = begin_hor_sync > (int)(drate * sync_tolerance * hor_sync_len) ? 1 : latch_sync;
+		latch_sync = begin_hor_sync > (int)(sync_tolerance * hor_sync_len) ? 1 : latch_sync;
 		int hor_sync = (cnt_freq > 1299.0) && latch_sync;
 		latch_sync = hor_sync ? 0 : latch_sync;
 
@@ -219,8 +232,8 @@ int main(int argc, char **argv)
 		sep_odd = 0;
 
 		if (cal_leader && !cal_break && got_cal_break &&
-				cal_ticks >= (int)(drate * (cal_leader_len + cal_break_len) * leader_tolerance) &&
-				cal_ticks <= (int)(drate * (cal_leader_len + cal_break_len) * (2.0 - leader_tolerance))) {
+				(cal_ticks >= (cal_leader_len + cal_break_len) * leader_tolerance) &&
+				(cal_ticks <= (cal_leader_len + cal_break_len) * (2.0 - leader_tolerance))) {
 			vis_mode = 1;
 			vis_bit = -1;
 			dat_mode = 0;
@@ -230,8 +243,8 @@ int main(int argc, char **argv)
 		}
 
 		if (cal_break && !cal_leader &&
-				cal_ticks >= (int)(drate * cal_break_len * break_tolerance) &&
-				cal_ticks <= (int)(drate * cal_break_len * (2.0 - break_tolerance)))
+				cal_ticks >= (int)(cal_break_len * break_tolerance) &&
+				cal_ticks <= (int)(cal_break_len * (2.0 - break_tolerance)))
 			got_cal_break = 1;
 
 		if (cal_leader && !cal_break) {
@@ -247,7 +260,7 @@ int main(int argc, char **argv)
 					vis_bit = 0;
 					dat_mode = 0;
 				}
-			} else if (vis_ticks <= (int)(drate * 10.0 * vis_len * (2.0 - vis_tolerance))) {
+			} else if (vis_ticks <= (int)(10.0 * vis_len * (2.0 - vis_tolerance))) {
 				if (vis_ss) {
 					dat_mode = 1;
 					vis_mode = 0;
@@ -313,7 +326,7 @@ int main(int argc, char **argv)
 		}
 
 		// if horizontal sync is too early, we reset to the beginning instead of ignoring
-		if (hor_sync && hor_ticks < (int)((hor_len - sync_porch_len) * drate)) {
+		if (hor_sync && hor_ticks < (hor_len - sync_porch_len)) {
 			for (int i = 0; i < 4; i++) {
 				uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 10);
 				p[0] = 255;
@@ -326,8 +339,8 @@ int main(int argc, char **argv)
 		}
 
 		// we always sync if sync pulse is where it should be.
-		if (hor_sync && (hor_ticks >= (int)((hor_len - sync_porch_len) * drate) &&
-				hor_ticks < (int)((hor_len + sync_porch_len) * drate))) {
+		if (hor_sync && (hor_ticks >= (hor_len - sync_porch_len)) &&
+				(hor_ticks < (hor_len + sync_porch_len))) {
 			uint8_t *p = img->pixel + 3 * y * width + 3 * hor_ticks;
 			p[0] = 255;
 			p[1] = 0;
@@ -349,7 +362,7 @@ int main(int argc, char **argv)
 		}
 
 		// if horizontal sync is missing, we extrapolate from last sync
-		if (hor_ticks >= (int)((hor_len + sync_porch_len) * drate)) {
+		if (hor_ticks >= (hor_len + sync_porch_len)) {
 			for (int i = 0; i < 4; i++) {
 				uint8_t *p = img->pixel + 3 * y * width + 3 * (width - i - 5);
 				p[0] = 255;
@@ -368,18 +381,19 @@ int main(int argc, char **argv)
 			}
 			odd ^= 1;
 			missing_sync++;
-			hor_ticks -= (int)(hor_len * drate);
+			hor_ticks -= hor_len;
 			// we are not at the pixels yet, so no correction here
 			y_pixel_x = 0;
 			uv_pixel_x = 0;
 		}
 
 		static int sep_count = 0;
-		if (hor_ticks > (int)((sync_porch_len + y_len) * drate) && hor_ticks < (int)((sync_porch_len + y_len + seperator_len) * drate))
+		if ((hor_ticks > (sync_porch_len + y_len)) &&
+				(hor_ticks < (sync_porch_len + y_len + seperator_len)))
 			sep_count += dat_freq < 1900.0 ? 1 : -1;
 
 		// we try to correct from odd / even seperator
-		if (sep_count && hor_ticks > (int)((sync_porch_len + y_len + seperator_len) * drate)) {
+		if (sep_count && (hor_ticks > (sync_porch_len + y_len + seperator_len))) {
 			if (sep_count > 0) {
 				sep_evn = 1;
 				if (odd) {
@@ -407,11 +421,11 @@ int main(int argc, char **argv)
 			}
 			sep_count = 0;
 		}
-		if (hor_ticks == (int)(sync_porch_len * drate) ||
-			hor_ticks == (int)((sync_porch_len + y_len) * drate) ||
-			hor_ticks == (int)((sync_porch_len + y_len + seperator_len) * drate) ||
-			hor_ticks == (int)((sync_porch_len + y_len + seperator_len + porch_len) * drate) ||
-			hor_ticks == (int)((sync_porch_len + y_len + seperator_len + porch_len + uv_len) * drate)) {
+		if ((hor_ticks == sync_porch_len) ||
+			(hor_ticks == (sync_porch_len + y_len)) ||
+			(hor_ticks == (sync_porch_len + y_len + seperator_len)) ||
+			(hor_ticks == (sync_porch_len + y_len + seperator_len + porch_len)) ||
+			(hor_ticks == (sync_porch_len + y_len + seperator_len + porch_len + uv_len))) {
 			uint8_t *p = img->pixel + 3 * y * width + 3 * hor_ticks;
 			p[0] = 255;
 			p[1] = 0;
