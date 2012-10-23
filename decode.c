@@ -169,13 +169,13 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 	const double seperator_sec = 0.0045l;
 	const float sync_tolerance = 0.7;
 
-	static int sync_porch_drate_ticks = 0;
-	static int porch_drate_ticks = 0;
-	static int y_drate_ticks = 0;
-	static int uv_drate_ticks = 0;
-	static int hor_drate_ticks = 0;
-	static int hor_sync_drate_ticks = 0;
-	static int seperator_drate_ticks = 0;
+	static int sync_porch_len = 0;
+	static int porch_len = 0;
+	static int y_len = 0;
+	static int uv_len = 0;
+	static int hor_len = 0;
+	static int hor_sync_len = 0;
+	static int seperator_len = 0;
 
 	static int hor_ticks = 0;
 	static int latch_sync = 0;
@@ -187,16 +187,16 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 
 	static int init = 0;
 	if (!init) {
-		sync_porch_drate_ticks = sync_porch_sec * drate;
-		porch_drate_ticks = porch_sec * drate;
-		y_drate_ticks = y_sec * drate;
-		uv_drate_ticks = uv_sec * drate;
-		hor_drate_ticks = hor_sec * drate;
-		hor_sync_drate_ticks = hor_sync_sec * drate;
-		seperator_drate_ticks = seperator_sec * drate;
+		sync_porch_len = sync_porch_sec * drate;
+		porch_len = porch_sec * drate;
+		y_len = y_sec * drate;
+		uv_len = uv_sec * drate;
+		hor_len = hor_sec * drate;
+		hor_sync_len = hor_sync_sec * drate;
+		seperator_len = seperator_sec * drate;
 
-		y_width = y_drate_ticks;
-		uv_width = uv_drate_ticks;
+		y_width = y_len;
+		uv_width = uv_len;
 		y_pixel = malloc(y_width * 2);
 		memset(y_pixel, 0, y_width * 2);
 		uv_pixel = malloc(uv_width * 2);
@@ -207,7 +207,7 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 	hor_ticks = fabsf(cnt_freq - 1200.0) < 50.0 ? hor_ticks + 1 : 0;
 
 	// we want a pulse at the falling edge
-	latch_sync = hor_ticks > (int)(sync_tolerance * hor_sync_drate_ticks) ? 1 : latch_sync;
+	latch_sync = hor_ticks > (int)(sync_tolerance * hor_sync_len) ? 1 : latch_sync;
 	int hor_sync = (cnt_freq > 1299.0) && latch_sync;
 	latch_sync = hor_sync ? 0 : latch_sync;
 
@@ -244,15 +244,15 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 	}
 
 	// if horizontal sync is too early, we reset to the beginning instead of ignoring
-	if (hor_sync && (ticks < (hor_drate_ticks - sync_porch_drate_ticks))) {
+	if (hor_sync && (ticks < (hor_len - sync_porch_len))) {
 		ticks = 0;
 		y_pixel_x = 0;
 		uv_pixel_x = 0;
 	}
 
 	// we always sync if sync pulse is where it should be.
-	if (hor_sync && (ticks >= (hor_drate_ticks - sync_porch_drate_ticks)) &&
-			(ticks < (hor_drate_ticks + sync_porch_drate_ticks))) {
+	if (hor_sync && (ticks >= (hor_len - sync_porch_len)) &&
+			(ticks < (hor_len + sync_porch_len))) {
 		process_line((*img)->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
 		if (y == height) {
 			close_img(*img);
@@ -266,7 +266,7 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 	}
 
 	// if horizontal sync is missing, we extrapolate from last sync
-	if (ticks >= (hor_drate_ticks + sync_porch_drate_ticks)) {
+	if (ticks >= (hor_len + sync_porch_len)) {
 		process_line((*img)->pixel, y_pixel, uv_pixel, y_width, uv_width, width, height, y++);
 		if (y == height) {
 			close_img(*img);
@@ -274,25 +274,25 @@ int decode(int *reset, struct img **img, char *img_name, float cnt_freq, float d
 			return 1;
 		}
 		odd ^= 1;
-		ticks -= hor_drate_ticks;
+		ticks -= hor_len;
 		// we are not at the pixels yet, so no correction here
 		y_pixel_x = 0;
 		uv_pixel_x = 0;
 	}
 
 	static int sep_count = 0;
-	if ((ticks > (sync_porch_drate_ticks + y_drate_ticks)) &&
-			(ticks < (sync_porch_drate_ticks + y_drate_ticks + seperator_drate_ticks)))
+	if ((ticks > (sync_porch_len + y_len)) &&
+			(ticks < (sync_porch_len + y_len + seperator_len)))
 		sep_count += dat_freq < 1900.0 ? 1 : -1;
 	// we try to correct from odd / even seperator
-	if (sep_count && (ticks > (sync_porch_drate_ticks + y_drate_ticks + seperator_drate_ticks))) {
+	if (sep_count && (ticks > (sync_porch_len + y_len + seperator_len))) {
 		odd = sep_count < 0;
 		sep_count = 0;
 	}
-	if ((y_pixel_x < y_width) && (ticks >= sync_porch_drate_ticks))
+	if ((y_pixel_x < y_width) && (ticks >= sync_porch_len))
 		y_pixel[y_pixel_x++ + (y % 2) * y_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 
-	if ((uv_pixel_x < uv_width) && (ticks >= (sync_porch_drate_ticks + y_drate_ticks + seperator_drate_ticks + porch_drate_ticks)))
+	if ((uv_pixel_x < uv_width) && (ticks >= (sync_porch_len + y_len + seperator_len + porch_len)))
 		uv_pixel[uv_pixel_x++ + odd * uv_width] = fclampf(255.0 * (dat_freq - 1500.0) / 800.0, 0.0, 255.0);
 	return 0;
 }
