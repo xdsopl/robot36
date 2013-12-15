@@ -7,11 +7,34 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 
 
 #include "yuv.h"
+#include <math.h>
 
 uint8_t yuv_clamp(float x)
 {
 	float tmp = x < 0.0 ? 0.0 : x;
 	return tmp > 255.0 ? 255.0 : tmp;
+}
+
+uint8_t linear_srgb(float linear)
+{
+	float v = fminf(fmaxf(linear, 0.0f), 1.0f);
+	float K0 = 0.03928f;
+	float a = 0.055f;
+	float phi = 12.92f;
+	float gamma = 2.4f;
+	float srgb = v <= K0 / phi ? v * phi : (1.0f + a) * powf(v, 1.0f / gamma) - a;
+	return 255.0f * srgb;
+}
+
+float srgb_linear(uint8_t srgb)
+{
+	float v = srgb / 255.0f;
+	float K0 = 0.03928f;
+	float a = 0.055f;
+	float phi = 12.92f;
+	float gamma = 2.4f;
+	float linear = v <= K0 ? v / phi : powf((v + a) / (1.0f + a), gamma);
+	return linear;
 }
 
 uint8_t R_YUV(uint8_t Y, uint8_t U, uint8_t V)
