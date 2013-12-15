@@ -107,20 +107,16 @@ void v_scan(int y)
 		int evn1 = 3 * y * img->width + 6 * x1;
 		int odd0 = 3 * (y + 1) * img->width + 6 * x0;
 		int odd1 = 3 * (y + 1) * img->width + 6 * x1;
-		uint8_t V0 = (
-			V_RGB(img->pixel[evn0 + 0], img->pixel[evn0 + 1], img->pixel[evn0 + 2]) +
-			V_RGB(img->pixel[odd0 + 0], img->pixel[odd0 + 1], img->pixel[odd0 + 2]) +
-			V_RGB(img->pixel[evn0 + 3], img->pixel[evn0 + 4], img->pixel[evn0 + 5]) +
-			V_RGB(img->pixel[odd0 + 3], img->pixel[odd0 + 4], img->pixel[odd0 + 5])
-		) / 4;
-		uint8_t V1 = (
-			V_RGB(img->pixel[evn1 + 0], img->pixel[evn1 + 1], img->pixel[evn1 + 2]) +
-			V_RGB(img->pixel[odd1 + 0], img->pixel[odd1 + 1], img->pixel[odd1 + 2]) +
-			V_RGB(img->pixel[evn1 + 3], img->pixel[evn1 + 4], img->pixel[evn1 + 5]) +
-			V_RGB(img->pixel[odd1 + 3], img->pixel[odd1 + 4], img->pixel[odd1 + 5])
-		) / 4;
-		uint8_t V = flerpf(V0, V1, xf - (float)x0);
-		add_freq(1500.0 + 800.0 * V / 255.0);
+		uint8_t R0 = (img->pixel[evn0 + 0] + img->pixel[odd0 + 0] + img->pixel[evn0 + 3] + img->pixel[odd0 + 3]) / 4;
+		uint8_t G0 = (img->pixel[evn0 + 1] + img->pixel[odd0 + 1] + img->pixel[evn0 + 4] + img->pixel[odd0 + 4]) / 4;
+		uint8_t B0 = (img->pixel[evn0 + 2] + img->pixel[odd0 + 2] + img->pixel[evn0 + 5] + img->pixel[odd0 + 5]) / 4;
+		uint8_t R1 = (img->pixel[evn1 + 0] + img->pixel[odd1 + 0] + img->pixel[evn1 + 3] + img->pixel[odd1 + 3]) / 4;
+		uint8_t G1 = (img->pixel[evn1 + 1] + img->pixel[odd1 + 1] + img->pixel[evn1 + 4] + img->pixel[odd1 + 4]) / 4;
+		uint8_t B1 = (img->pixel[evn1 + 2] + img->pixel[odd1 + 2] + img->pixel[evn1 + 5] + img->pixel[odd1 + 5]) / 4;
+		uint8_t R = flerpf(R0, R1, xf - (float)x0);
+		uint8_t G = flerpf(G0, G1, xf - (float)x0);
+		uint8_t B = flerpf(B0, B1, xf - (float)x0);
+		add_freq(1500.0 + 800.0 * V_RGB(R, G, B) / 255.0);
 	}
 }
 void u_scan(int y)
@@ -133,20 +129,16 @@ void u_scan(int y)
 		int evn1 = 3 * (y - 1) * img->width + 6 * x1;
 		int odd0 = 3 * y * img->width + 6 * x0;
 		int odd1 = 3 * y * img->width + 6 * x1;
-		uint8_t U0 = (
-			U_RGB(img->pixel[evn0 + 0], img->pixel[evn0 + 1], img->pixel[evn0 + 2]) +
-			U_RGB(img->pixel[odd0 + 0], img->pixel[odd0 + 1], img->pixel[odd0 + 2]) +
-			U_RGB(img->pixel[evn0 + 3], img->pixel[evn0 + 4], img->pixel[evn0 + 5]) +
-			U_RGB(img->pixel[odd0 + 3], img->pixel[odd0 + 4], img->pixel[odd0 + 5])
-		) / 4;
-		uint8_t U1 = (
-			U_RGB(img->pixel[evn1 + 0], img->pixel[evn1 + 1], img->pixel[evn1 + 2]) +
-			U_RGB(img->pixel[odd1 + 0], img->pixel[odd1 + 1], img->pixel[odd1 + 2]) +
-			U_RGB(img->pixel[evn1 + 3], img->pixel[evn1 + 4], img->pixel[evn1 + 5]) +
-			U_RGB(img->pixel[odd1 + 3], img->pixel[odd1 + 4], img->pixel[odd1 + 5])
-		) / 4;
-		uint8_t U = flerpf(U0, U1, xf - (float)x0);
-		add_freq(1500.0 + 800.0 * U / 255.0);
+		uint8_t R0 = (img->pixel[evn0 + 0] + img->pixel[odd0 + 0] + img->pixel[evn0 + 3] + img->pixel[odd0 + 3]) / 4;
+		uint8_t G0 = (img->pixel[evn0 + 1] + img->pixel[odd0 + 1] + img->pixel[evn0 + 4] + img->pixel[odd0 + 4]) / 4;
+		uint8_t B0 = (img->pixel[evn0 + 2] + img->pixel[odd0 + 2] + img->pixel[evn0 + 5] + img->pixel[odd0 + 5]) / 4;
+		uint8_t R1 = (img->pixel[evn1 + 0] + img->pixel[odd1 + 0] + img->pixel[evn1 + 3] + img->pixel[odd1 + 3]) / 4;
+		uint8_t G1 = (img->pixel[evn1 + 1] + img->pixel[odd1 + 1] + img->pixel[evn1 + 4] + img->pixel[odd1 + 4]) / 4;
+		uint8_t B1 = (img->pixel[evn1 + 2] + img->pixel[odd1 + 2] + img->pixel[evn1 + 5] + img->pixel[odd1 + 5]) / 4;
+		uint8_t R = flerpf(R0, R1, xf - (float)x0);
+		uint8_t G = flerpf(G0, G1, xf - (float)x0);
+		uint8_t B = flerpf(B0, B1, xf - (float)x0);
+		add_freq(1500.0 + 800.0 * U_RGB(R, G, B) / 255.0);
 	}
 }
 
