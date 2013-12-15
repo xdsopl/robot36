@@ -155,8 +155,6 @@ int main(int argc, char **argv)
 	struct img *img = 0;
 
 	int hor_ticks = 0;
-	int y_pixel_x = 0;
-	int uv_pixel_x = 0;
 	int y_width = y_len;
 	int uv_width = uv_len;
 	uint8_t *y_pixel = malloc(y_width * 2);
@@ -296,8 +294,6 @@ int main(int argc, char **argv)
 		if (first_hor_sync && hor_sync) {
 			first_hor_sync = 0;
 			hor_ticks = 0;
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
 			y = 0;
 			odd = 0;
 			if (img) {
@@ -334,8 +330,6 @@ int main(int argc, char **argv)
 				p[2] = 255;
 			}
 			hor_ticks = 0;
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
 		}
 
 		// we always sync if sync pulse is where it should be.
@@ -357,8 +351,6 @@ int main(int argc, char **argv)
 			}
 			odd ^= 1;
 			hor_ticks = 0;
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
 		}
 
 		// if horizontal sync is missing, we extrapolate from last sync
@@ -383,8 +375,6 @@ int main(int argc, char **argv)
 			missing_sync++;
 			hor_ticks -= hor_len;
 			// we are not at the pixels yet, so no correction here
-			y_pixel_x = 0;
-			uv_pixel_x = 0;
 		}
 
 		static int sep_count = 0;
