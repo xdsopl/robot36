@@ -84,15 +84,15 @@ void y_scan(int y)
 		int x1 = fclampf(x0 + 1, 0.0, 319.0);
 		int off0 = 3 * y * img->width + 3 * x0;
 		int off1 = 3 * y * img->width + 3 * x1;
-		float R0 = srgb_linear(img->pixel[off0 + 0]);
-		float G0 = srgb_linear(img->pixel[off0 + 1]);
-		float B0 = srgb_linear(img->pixel[off0 + 2]);
-		float R1 = srgb_linear(img->pixel[off1 + 0]);
-		float G1 = srgb_linear(img->pixel[off1 + 1]);
-		float B1 = srgb_linear(img->pixel[off1 + 2]);
-		uint8_t R = linear_srgb(flerpf(R0, R1, xf - (float)x0));
-		uint8_t G = linear_srgb(flerpf(G0, G1, xf - (float)x0));
-		uint8_t B = linear_srgb(flerpf(B0, B1, xf - (float)x0));
+		float R0 = linear(img->pixel[off0 + 0]);
+		float G0 = linear(img->pixel[off0 + 1]);
+		float B0 = linear(img->pixel[off0 + 2]);
+		float R1 = linear(img->pixel[off1 + 0]);
+		float G1 = linear(img->pixel[off1 + 1]);
+		float B1 = linear(img->pixel[off1 + 2]);
+		uint8_t R = srgb(flerpf(R0, R1, xf - (float)x0));
+		uint8_t G = srgb(flerpf(G0, G1, xf - (float)x0));
+		uint8_t B = srgb(flerpf(B0, B1, xf - (float)x0));
 		add_freq(1500.0 + 800.0 * Y_RGB(R, G, B) / 255.0);
 	}
 }
@@ -107,15 +107,15 @@ void v_scan(int y)
 		int evn1 = 3 * y * img->width + 6 * x1;
 		int odd0 = 3 * (y + 1) * img->width + 6 * x0;
 		int odd1 = 3 * (y + 1) * img->width + 6 * x1;
-		float R0 = (srgb_linear(img->pixel[evn0 + 0]) + srgb_linear(img->pixel[odd0 + 0]) + srgb_linear(img->pixel[evn0 + 3]) + srgb_linear(img->pixel[odd0 + 3])) / 4;
-		float G0 = (srgb_linear(img->pixel[evn0 + 1]) + srgb_linear(img->pixel[odd0 + 1]) + srgb_linear(img->pixel[evn0 + 4]) + srgb_linear(img->pixel[odd0 + 4])) / 4;
-		float B0 = (srgb_linear(img->pixel[evn0 + 2]) + srgb_linear(img->pixel[odd0 + 2]) + srgb_linear(img->pixel[evn0 + 5]) + srgb_linear(img->pixel[odd0 + 5])) / 4;
-		float R1 = (srgb_linear(img->pixel[evn1 + 0]) + srgb_linear(img->pixel[odd1 + 0]) + srgb_linear(img->pixel[evn1 + 3]) + srgb_linear(img->pixel[odd1 + 3])) / 4;
-		float G1 = (srgb_linear(img->pixel[evn1 + 1]) + srgb_linear(img->pixel[odd1 + 1]) + srgb_linear(img->pixel[evn1 + 4]) + srgb_linear(img->pixel[odd1 + 4])) / 4;
-		float B1 = (srgb_linear(img->pixel[evn1 + 2]) + srgb_linear(img->pixel[odd1 + 2]) + srgb_linear(img->pixel[evn1 + 5]) + srgb_linear(img->pixel[odd1 + 5])) / 4;
-		uint8_t R = linear_srgb(flerpf(R0, R1, xf - (float)x0));
-		uint8_t G = linear_srgb(flerpf(G0, G1, xf - (float)x0));
-		uint8_t B = linear_srgb(flerpf(B0, B1, xf - (float)x0));
+		float R0 = (linear(img->pixel[evn0 + 0]) + linear(img->pixel[odd0 + 0]) + linear(img->pixel[evn0 + 3]) + linear(img->pixel[odd0 + 3])) / 4;
+		float G0 = (linear(img->pixel[evn0 + 1]) + linear(img->pixel[odd0 + 1]) + linear(img->pixel[evn0 + 4]) + linear(img->pixel[odd0 + 4])) / 4;
+		float B0 = (linear(img->pixel[evn0 + 2]) + linear(img->pixel[odd0 + 2]) + linear(img->pixel[evn0 + 5]) + linear(img->pixel[odd0 + 5])) / 4;
+		float R1 = (linear(img->pixel[evn1 + 0]) + linear(img->pixel[odd1 + 0]) + linear(img->pixel[evn1 + 3]) + linear(img->pixel[odd1 + 3])) / 4;
+		float G1 = (linear(img->pixel[evn1 + 1]) + linear(img->pixel[odd1 + 1]) + linear(img->pixel[evn1 + 4]) + linear(img->pixel[odd1 + 4])) / 4;
+		float B1 = (linear(img->pixel[evn1 + 2]) + linear(img->pixel[odd1 + 2]) + linear(img->pixel[evn1 + 5]) + linear(img->pixel[odd1 + 5])) / 4;
+		uint8_t R = srgb(flerpf(R0, R1, xf - (float)x0));
+		uint8_t G = srgb(flerpf(G0, G1, xf - (float)x0));
+		uint8_t B = srgb(flerpf(B0, B1, xf - (float)x0));
 		add_freq(1500.0 + 800.0 * V_RGB(R, G, B) / 255.0);
 	}
 }
@@ -129,15 +129,15 @@ void u_scan(int y)
 		int evn1 = 3 * (y - 1) * img->width + 6 * x1;
 		int odd0 = 3 * y * img->width + 6 * x0;
 		int odd1 = 3 * y * img->width + 6 * x1;
-		float R0 = (srgb_linear(img->pixel[evn0 + 0]) + srgb_linear(img->pixel[odd0 + 0]) + srgb_linear(img->pixel[evn0 + 3]) + srgb_linear(img->pixel[odd0 + 3])) / 4;
-		float G0 = (srgb_linear(img->pixel[evn0 + 1]) + srgb_linear(img->pixel[odd0 + 1]) + srgb_linear(img->pixel[evn0 + 4]) + srgb_linear(img->pixel[odd0 + 4])) / 4;
-		float B0 = (srgb_linear(img->pixel[evn0 + 2]) + srgb_linear(img->pixel[odd0 + 2]) + srgb_linear(img->pixel[evn0 + 5]) + srgb_linear(img->pixel[odd0 + 5])) / 4;
-		float R1 = (srgb_linear(img->pixel[evn1 + 0]) + srgb_linear(img->pixel[odd1 + 0]) + srgb_linear(img->pixel[evn1 + 3]) + srgb_linear(img->pixel[odd1 + 3])) / 4;
-		float G1 = (srgb_linear(img->pixel[evn1 + 1]) + srgb_linear(img->pixel[odd1 + 1]) + srgb_linear(img->pixel[evn1 + 4]) + srgb_linear(img->pixel[odd1 + 4])) / 4;
-		float B1 = (srgb_linear(img->pixel[evn1 + 2]) + srgb_linear(img->pixel[odd1 + 2]) + srgb_linear(img->pixel[evn1 + 5]) + srgb_linear(img->pixel[odd1 + 5])) / 4;
-		uint8_t R = linear_srgb(flerpf(R0, R1, xf - (float)x0));
-		uint8_t G = linear_srgb(flerpf(G0, G1, xf - (float)x0));
-		uint8_t B = linear_srgb(flerpf(B0, B1, xf - (float)x0));
+		float R0 = (linear(img->pixel[evn0 + 0]) + linear(img->pixel[odd0 + 0]) + linear(img->pixel[evn0 + 3]) + linear(img->pixel[odd0 + 3])) / 4;
+		float G0 = (linear(img->pixel[evn0 + 1]) + linear(img->pixel[odd0 + 1]) + linear(img->pixel[evn0 + 4]) + linear(img->pixel[odd0 + 4])) / 4;
+		float B0 = (linear(img->pixel[evn0 + 2]) + linear(img->pixel[odd0 + 2]) + linear(img->pixel[evn0 + 5]) + linear(img->pixel[odd0 + 5])) / 4;
+		float R1 = (linear(img->pixel[evn1 + 0]) + linear(img->pixel[odd1 + 0]) + linear(img->pixel[evn1 + 3]) + linear(img->pixel[odd1 + 3])) / 4;
+		float G1 = (linear(img->pixel[evn1 + 1]) + linear(img->pixel[odd1 + 1]) + linear(img->pixel[evn1 + 4]) + linear(img->pixel[odd1 + 4])) / 4;
+		float B1 = (linear(img->pixel[evn1 + 2]) + linear(img->pixel[odd1 + 2]) + linear(img->pixel[evn1 + 5]) + linear(img->pixel[odd1 + 5])) / 4;
+		uint8_t R = srgb(flerpf(R0, R1, xf - (float)x0));
+		uint8_t G = srgb(flerpf(G0, G1, xf - (float)x0));
+		uint8_t B = srgb(flerpf(B0, B1, xf - (float)x0));
 		add_freq(1500.0 + 800.0 * U_RGB(R, G, B) / 255.0);
 	}
 }

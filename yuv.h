@@ -10,8 +10,8 @@ You should have received a copy of the CC0 Public Domain Dedication along with t
 #define YUV_H
 #include <stdint.h>
 
-uint8_t linear_srgb(float linear);
-float srgb_linear(uint8_t srgb);
+uint8_t srgb(float linear);
+float linear(uint8_t srgb);
 uint8_t R_YUV(uint8_t, uint8_t, uint8_t);
 uint8_t G_YUV(uint8_t, uint8_t, uint8_t);
 uint8_t B_YUV(uint8_t, uint8_t, uint8_t);

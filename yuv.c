@@ -15,7 +15,7 @@ uint8_t yuv_clamp(float x)
 	return tmp > 255.0 ? 255.0 : tmp;
 }
 
-uint8_t linear_srgb(float linear)
+uint8_t srgb(float linear)
 {
 	float v = fminf(fmaxf(linear, 0.0f), 1.0f);
 	float K0 = 0.03928f;
@@ -26,7 +26,7 @@ uint8_t linear_srgb(float linear)
 	return 255.0f * srgb;
 }
 
-float srgb_linear(uint8_t srgb)
+float linear(uint8_t srgb)
 {
 	float v = srgb / 255.0f;
 	float K0 = 0.03928f;
