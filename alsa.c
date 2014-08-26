@@ -125,6 +125,15 @@ int open_alsa_read(struct pcm **p, char *name)
 		return 0;
 	}
 
+	unsigned rate_min = 8000;
+	int dir_min = 1;
+	if (snd_pcm_hw_params_set_rate_min(pcm, params, &rate_min, &dir_min) < 0 || rate_min < 8000) {
+		fprintf(stderr, "Error setting min rate.\n");
+		snd_pcm_close(alsa->pcm);
+		free(alsa);
+		return 0;
+	}
+
 	if (snd_pcm_hw_params(pcm, params) < 0) {
 		fprintf(stderr, "Error setting HW params.\n");
 		snd_pcm_close(alsa->pcm);
