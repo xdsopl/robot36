@@ -36,7 +36,7 @@ void process_line(uint8_t *pixel, uint8_t *y_pixel, uint8_t *uv_pixel, int y_wid
 			int uv_x0 = uv_xf;
 			int y_x1 = fclampf(0, y_width, y_xf + 1);
 			int uv_x1 = fclampf(0, uv_width, uv_xf + 1);
-			uint8_t Y = flerpf(y_pixel[y_x0 + l*y_width], y_pixel[y_x1 + l*y_width], y_xf - (float)y_x0);
+			uint8_t Y = srgb(flerpf(linear(y_pixel[y_x0 + l*y_width]), linear(y_pixel[y_x1 + l*y_width]), y_xf - (float)y_x0));
 			uint8_t U = flerpf(uv_pixel[uv_x0 + uv_width], uv_pixel[uv_x1 + uv_width], uv_xf - (float)uv_x0);
 			uint8_t V = flerpf(uv_pixel[uv_x0], uv_pixel[uv_x1], uv_xf - (float)uv_x0);
 #endif
