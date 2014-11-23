@@ -17,17 +17,12 @@ limitations under the License.
 Always wanted to write an Android version of Robot36 the moment i got an Android device.
 This way i would be able to show off to my friends on the go :)
 Finally took the time to write this prototype in 2 weekends worth of time.
-I intentionally wrote this (painfully) in Android Studio (not really an IDE using guy)
-so that others (that means YOU) can start developing using this and eventually contribute.
-Also wanted to try something new, so instead of using an complex FIR filter i used an complex
-cascaded exponential moving average filter after mixing.
+I intentionally wrote this (painfully) in Android Studio (not really an IDE using guy) so that others (that means YOU) can start developing using this and eventually contribute.
+Also wanted to try something new, so instead of using an complex FIR filter i used an complex cascaded exponential moving average filter after mixing.
 
 And again, i would like to thank JL Barber (N7CXI) for the specifications in his "Dayton Paper".
-I also would like to thank the Renderscript Developers, as their work made the implementation of
-Robot36's decoder almost effortless.
-
-I like to keep the name Robot36 even since Robot36 is able to decode more than just Robot36 as
-a great respect for the Robot engineers who developed the awesome Robot36 mode.
+I also would like to thank the RenderScript developers, as their work made the implementation of Robot36's decoder almost effortless.
+I would like to keep the name Robot36 even since Robot36 is able to decode more than just Robot36 as a great respect for the Robot engineers who developed the awesome Robot36 mode.
 
 Currently the following modes are supported:
 
