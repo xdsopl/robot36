@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
+    <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_martin1_mode" android:title="@string/action_martin1_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_martin2_mode" android:title="@string/action_martin2_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_scottie1_mode" android:title="@string/action_scottie1_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_scottie2_mode" android:title="@string/action_scottie2_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_scottieDX_mode" android:title="@string/action_scottieDX_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_debug_sync" android:title="@string/action_debug_sync"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_debug_image" android:title="@string/action_debug_image"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_debug_both" android:title="@string/action_debug_both"
+        android:orderInCategory="100" android:showAsAction="never" />
+</menu>

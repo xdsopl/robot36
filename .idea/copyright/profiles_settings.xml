@@ -1,0 +1,10 @@
+<component name="CopyrightManager">
+  <settings default="Apache License, Version 2.0">
+    <module2copyright>
+      <element module="Project Files" copyright="Apache License, Version 2.0" />
+    </module2copyright>
+    <LanguageOptions name="__TEMPLATE__">
+      <option name="prefixLines" value="false" />
+    </LanguageOptions>
+  </settings>
+</component>

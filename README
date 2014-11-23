@@ -1,0 +1,38 @@
+Copyright 2014 Ahmet Inan <xdsopl@googlemail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+--
+
+Always wanted to write an Android version of Robot36 the moment i got an Android device.
+This way i would be able to show off to my friends on the go :)
+Finally took the time to write this prototype in 2 weekends worth of time.
+I intentionally wrote this (painfully) in Android Studio (not really an IDE using guy)
+so that others (that means YOU) can start developing using this and eventually contribute.
+Also wanted to try something new, so instead of using an complex FIR filter i used an complex
+cascaded exponential moving average filter after mixing.
+
+And again, i would like to thank JL Barber (N7CXI) for the specifications in his "Dayton Paper".
+I also would like to thank the Renderscript Developers, as their work made the implementation of
+Robot36's decoder almost effortless.
+
+I like to keep the name Robot36 even since Robot36 is able to decode more than just Robot36 as
+a great respect for the Robot engineers who developed the awesome Robot36 mode.
+
+Currently the following modes are supported:
+
+Robot Modes: 36 & 72
+Martin Modes: 1 & 2
+Scottie Modes: 1, 2 & DX
+
+Watching of old B/W or unsupported transmission modes works even in the raw "Debug Image" mode.
