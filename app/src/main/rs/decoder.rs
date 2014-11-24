@@ -443,7 +443,7 @@ void decode(int samples) {
         int leader_level = dat_active && dat_quantized == 0;
         int leader_pulse = !leader_level && leader_counter >= leader_length;
         leader_counter = leader_level ? leader_counter + 1 : 0;
-        calibration_progress = leader_pulse && calibration_progress != 1 ? (calibration_progress == 2 ? 1 : 3) : calibration_progress;
+        calibration_progress = leader_pulse && calibration_progress != 1 ? (calibration_progress == 2 ? 3 : 1) : calibration_progress;
         calibration_timeout = leader_pulse && calibration_progress == 1 ? calibration_length : calibration_timeout;
 
         int break_level = cnt_active && cnt_quantized == 0;
