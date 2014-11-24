@@ -118,6 +118,9 @@ static float dat_fmd(float2 baseband)
 }
 
 static int sample_rate, mode, even_hpos;
+static int calibration_length, calibration_timeout;
+static int calibration_progress, leader_counter, leader_length;
+static int break_length, break_counter, vis_counter, vis_length;
 static int buffer_length, bitmap_width, bitmap_height;
 static int sync_length, sync_counter, vpos, hpos;
 static int save_cnt, save_dat, seperator_counter;
@@ -323,6 +326,22 @@ void initialize(float rate, int length, int width, int height)
     sync_counter = 0;
     seperator_counter = 0;
 
+    const float leader_tolerance = 0.7f;
+    const float break_tolerance = 0.7f;
+    const float timeout_tolerance = 1.1f;
+    const float leader_len = 0.3f;
+    const float break_len = 0.01f;
+    const float vis_len = 0.3f;
+    calibration_progress = 0;
+    calibration_timeout = 0;
+    leader_counter = 0;
+    break_counter = 0;
+    vis_counter = 0;
+    leader_length = leader_tolerance * leader_len * sample_rate;
+    break_length = break_tolerance * break_len * sample_rate;
+    vis_length = vis_len * sample_rate;
+    calibration_length = timeout_tolerance * (break_len + leader_len + vis_len) * sample_rate;
+
     const float dat_carrier = 1900.0f;
     const float cnt_carrier = 1200.0f;
     const float dat_bandwidth = 800.0f;
@@ -410,12 +429,42 @@ void decode(int samples) {
         float dat_value = dat_fmd(dat_baseband);
 
         int cnt_active = cabs(dat_baseband) < cabs(cnt_baseband);
+        int dat_active = !cnt_active;
         uchar cnt_level = save_cnt ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = save_dat ? 127.5f + 127.5f * dat_value : 0.0f;
         value_buffer[hpos] = cnt_active ? cnt_level : dat_level;
 
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
+
+        calibration_progress = calibration_timeout ? calibration_progress : 0;
+        calibration_timeout -= !!calibration_timeout;
+
+        int leader_level = dat_active && dat_quantized == 0;
+        int leader_pulse = !leader_level && leader_counter >= leader_length;
+        leader_counter = leader_level ? leader_counter + 1 : 0;
+        calibration_progress = leader_pulse && calibration_progress != 1 ? (calibration_progress == 2 ? 1 : 3) : calibration_progress;
+        calibration_timeout = leader_pulse && calibration_progress == 1 ? calibration_length : calibration_timeout;
+
+        int break_level = cnt_active && cnt_quantized == 0;
+        int break_pulse = !break_level && break_counter >= break_length;
+        break_counter = break_level ? break_counter + 1 : 0;
+        calibration_progress = break_pulse && calibration_progress != 3 ? (calibration_progress == 1 ? 2 : 0) : calibration_progress;
+
+        if (calibration_progress > 2) {
+            vpos = 0;
+            hpos = 0;
+            even_hpos = 0;
+            seperator_counter = 0;
+            sync_counter = sync_length;
+            if (++vis_counter >= vis_length) {
+                calibration_progress = 0;
+                calibration_timeout = 0;
+                vis_counter = 0;
+                for (int i = 0; i < bitmap_width * bitmap_height; ++i)
+                    pixel_buffer[i] = rgb(0, 0, 0);
+            }
+        }
 
         int sync_level = cnt_active && cnt_quantized == 0;
         int sync_pulse = !sync_level && sync_counter >= sync_length;
