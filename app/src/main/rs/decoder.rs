@@ -52,6 +52,13 @@ static float avg_power(float input)
     return output = ema_power_a * input + (1.0f - ema_power_a) * output;
 }
 
+static float ema_leader_a;
+static float leader_lowpass(float input)
+{
+    static float output;
+    return output = ema_leader_a * input + (1.0f - ema_leader_a) * output;
+}
+
 static const int filter_order = 11;
 static float ema_cnt_a;
 static float2 cnt_lowpass(float2 input)
@@ -326,7 +333,7 @@ void initialize(float rate, int length, int width, int height)
     sync_counter = 0;
     seperator_counter = 0;
 
-    const float leader_tolerance = 0.7f;
+    const float leader_tolerance = 0.3f;
     const float break_tolerance = 0.7f;
     const float timeout_tolerance = 1.1f;
     const float leader_len = 0.3f;
@@ -348,6 +355,7 @@ void initialize(float rate, int length, int width, int height)
     const float cnt_bandwidth = 200.0f;
 
     ema_power_a = ema_a(10.0f, sample_rate, 1);
+    ema_leader_a = ema_a(100.0f, sample_rate, 1);
     ema_cnt_a = ema_a(cnt_bandwidth, sample_rate, filter_order);
     ema_dat_a = ema_a(dat_bandwidth, sample_rate, filter_order);
 
@@ -440,7 +448,8 @@ void decode(int samples) {
         calibration_progress = calibration_timeout ? calibration_progress : 0;
         calibration_timeout -= !!calibration_timeout;
 
-        int leader_level = dat_active && dat_quantized == 0;
+        int leader_quantized = round(leader_lowpass(dat_value));
+        int leader_level = dat_active && leader_quantized == 0;
         int leader_pulse = !leader_level && leader_counter >= leader_length;
         leader_counter = leader_level ? leader_counter + 1 : 0;
         calibration_progress = leader_pulse && calibration_progress != 1 ? (calibration_progress == 2 ? 3 : 1) : calibration_progress;
