@@ -125,7 +125,8 @@ static float dat_fmd(float2 baseband)
 }
 
 static int sample_rate, mode, even_hpos;
-static int calibration_length, calibration_timeout;
+static int calibration_length, calibration_countdown;
+static int leader_timeout, break_timeout, vis_timeout;
 static int calibration_progress, leader_counter, leader_length;
 static int break_length, break_counter, vis_counter, vis_length;
 static int buffer_length, bitmap_width, bitmap_height;
@@ -340,14 +341,16 @@ void initialize(float rate, int length, int width, int height)
     const float break_len = 0.01f;
     const float vis_len = 0.3f;
     calibration_progress = 0;
-    calibration_timeout = 0;
+    calibration_countdown = 0;
     leader_counter = 0;
     break_counter = 0;
     vis_counter = 0;
     leader_length = leader_tolerance * leader_len * sample_rate;
     break_length = break_tolerance * break_len * sample_rate;
     vis_length = vis_len * sample_rate;
-    calibration_length = timeout_tolerance * (break_len + leader_len + vis_len) * sample_rate;
+    leader_timeout = timeout_tolerance * leader_len * sample_rate;
+    break_timeout = timeout_tolerance * break_len * sample_rate;
+    vis_timeout = timeout_tolerance * vis_len * sample_rate;
 
     const float dat_carrier = 1900.0f;
     const float cnt_carrier = 1200.0f;
@@ -445,20 +448,22 @@ void decode(int samples) {
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
 
-        calibration_progress = calibration_timeout ? calibration_progress : 0;
-        calibration_timeout -= !!calibration_timeout;
+        calibration_progress = calibration_countdown ? calibration_progress : 0;
+        calibration_countdown -= !!calibration_countdown;
 
         int leader_quantized = round(leader_lowpass(dat_value));
         int leader_level = dat_active && leader_quantized == 0;
         int leader_pulse = !leader_level && leader_counter >= leader_length;
         leader_counter = leader_level ? leader_counter + 1 : 0;
         calibration_progress = leader_pulse && calibration_progress != 1 ? (calibration_progress == 2 ? 3 : 1) : calibration_progress;
-        calibration_timeout = leader_pulse && calibration_progress == 1 ? calibration_length : calibration_timeout;
+        calibration_countdown = leader_pulse && calibration_progress == 1 ? break_timeout : calibration_countdown;
+        calibration_countdown = leader_pulse && calibration_progress == 3 ? vis_timeout : calibration_countdown;
 
         int break_level = cnt_active && cnt_quantized == 0;
         int break_pulse = !break_level && break_counter >= break_length;
         break_counter = break_level ? break_counter + 1 : 0;
         calibration_progress = break_pulse && calibration_progress != 3 ? (calibration_progress == 1 ? 2 : 0) : calibration_progress;
+        calibration_countdown = break_pulse && calibration_progress == 2 ? leader_timeout : calibration_countdown;
 
         if (calibration_progress > 2) {
             vpos = 0;
@@ -468,7 +473,7 @@ void decode(int samples) {
             sync_counter = sync_length;
             if (++vis_counter >= vis_length) {
                 calibration_progress = 0;
-                calibration_timeout = 0;
+                calibration_countdown = 0;
                 vis_counter = 0;
                 for (int i = 0; i < bitmap_width * bitmap_height; ++i)
                     pixel_buffer[i] = rgb(0, 0, 0);
