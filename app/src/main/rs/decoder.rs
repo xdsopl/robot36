@@ -426,6 +426,41 @@ static void raw_decoder()
     even_hpos = hpos = 0;
 }
 
+static int calibration_detected(float dat_value, int cnt_active, int cnt_quantized)
+{
+    int dat_active = !cnt_active;
+    calibration_progress = calibration_countdown ? calibration_progress : 0;
+    calibration_countdown -= !!calibration_countdown;
+
+    int leader_quantized = round(leader_lowpass(dat_value));
+    int leader_level = dat_active && leader_quantized == 0;
+    int leader_pulse = !leader_level && leader_counter >= leader_length;
+    leader_counter = leader_level ? leader_counter + 1 : 0;
+    if (leader_pulse) {
+        if (calibration_progress == 2) {
+            calibration_progress = 3;
+            calibration_countdown = vis_timeout;
+        } else {
+            calibration_progress = 1;
+            calibration_countdown = break_timeout;
+        }
+    }
+
+    int break_level = cnt_active && cnt_quantized == 0;
+    int break_pulse = !break_level && break_counter >= break_length;
+    break_counter = break_level ? break_counter + 1 : 0;
+    if (break_pulse) {
+        if (calibration_progress == 1) {
+            calibration_progress = 2;
+            calibration_countdown = leader_timeout;
+        } else if (calibration_progress != 3) {
+            calibration_progress = 0;
+        }
+    }
+
+    return calibration_progress > 2;
+}
+
 void decode(int samples) {
     for (int sample = 0; sample < samples; ++sample) {
         float amp = audio_buffer[sample] / 32768.0f;
@@ -440,7 +475,6 @@ void decode(int samples) {
         float dat_value = dat_fmd(dat_baseband);
 
         int cnt_active = cabs(dat_baseband) < cabs(cnt_baseband);
-        int dat_active = !cnt_active;
         uchar cnt_level = save_cnt ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = save_dat ? 127.5f + 127.5f * dat_value : 0.0f;
         value_buffer[hpos] = cnt_active ? cnt_level : dat_level;
@@ -448,36 +482,7 @@ void decode(int samples) {
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
 
-        calibration_progress = calibration_countdown ? calibration_progress : 0;
-        calibration_countdown -= !!calibration_countdown;
-
-        int leader_quantized = round(leader_lowpass(dat_value));
-        int leader_level = dat_active && leader_quantized == 0;
-        int leader_pulse = !leader_level && leader_counter >= leader_length;
-        leader_counter = leader_level ? leader_counter + 1 : 0;
-        if (leader_pulse) {
-            if (calibration_progress == 2) {
-                calibration_progress = 3;
-                calibration_countdown = vis_timeout;
-            } else {
-                calibration_progress = 1;
-                calibration_countdown = break_timeout;
-            }
-        }
-
-        int break_level = cnt_active && cnt_quantized == 0;
-        int break_pulse = !break_level && break_counter >= break_length;
-        break_counter = break_level ? break_counter + 1 : 0;
-        if (break_pulse) {
-            if (calibration_progress == 1) {
-                calibration_progress = 2;
-                calibration_countdown = leader_timeout;
-            } else if (calibration_progress != 3) {
-                calibration_progress = 0;
-            }
-        }
-
-        if (calibration_progress > 2) {
+        if (calibration_detected(dat_value, cnt_active, cnt_quantized)) {
             vpos = 0;
             hpos = 0;
             even_hpos = 0;
