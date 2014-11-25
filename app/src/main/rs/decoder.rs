@@ -415,9 +415,11 @@ void initialize(float rate, int length, int width, int height)
 
 static void robot36_decoder()
 {
-    if (2 * abs(seperator_counter) > seperator_length)
+    static prev_timeout;
+    if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
         vpos = ~1 & vpos | seperator_counter > 0;
-    if (vpos&1) {
+    if (vpos&1 || hpos >= maximum_length) {
+        vpos |= 1;
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
             uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
@@ -426,17 +428,16 @@ static void robot36_decoder()
             pixel_buffer[bitmap_width * (vpos-1) + i] = rsYuvToRGBA_uchar4(even_y, u, v);
             pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(odd_y, u, v);
         }
-        if (hpos >= maximum_length)
-            even_hpos = (hpos -= scanline_length);
+        prev_timeout = hpos >= maximum_length;
+        if (prev_timeout)
+            hpos -= scanline_length;
         else
-            even_hpos = hpos = 0;
+            hpos = 0;
+        even_hpos = 0;
     } else {
         for (int i = 0; i < bitmap_width; ++i)
             pixel_buffer[bitmap_width * vpos + i] = rgb(0, 0, 0);
-        if (hpos < maximum_length)
-            even_hpos = hpos;
-        else
-            even_hpos = hpos = 0;
+        even_hpos = hpos;
     }
 }
 static void yuv_decoder()
@@ -557,6 +558,7 @@ void decode(int samples) {
             if (hpos < minimum_length) {
                 hpos = 0;
                 even_hpos = 0;
+                seperator_counter = 0;
                 continue;
             }
             switch (mode) {
