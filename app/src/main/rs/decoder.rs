@@ -124,7 +124,7 @@ static float dat_fmd(float2 baseband)
     return clamp(dat_fmd_scale * phase, -1.0f, 1.0f);
 }
 
-static int sample_rate, mode, even_hpos;
+static int sample_rate, mode, even_hpos, minimum_length;
 static int calibration_length, calibration_countdown;
 static int leader_timeout, break_timeout, vis_timeout;
 static int calibration_progress, leader_counter, leader_length;
@@ -333,6 +333,7 @@ void initialize(float rate, int length, int width, int height)
     even_hpos = 0;
     sync_counter = 0;
     seperator_counter = 0;
+    minimum_length = 0.05f * sample_rate;
 
     const float leader_tolerance = 0.3f;
     const float break_tolerance = 0.7f;
@@ -506,6 +507,10 @@ void decode(int samples) {
         seperator_counter += (u_sep || v_sep) ? dat_quantized : 0;
 
         if (++hpos >= buffer_length || sync_pulse) {
+            if (hpos < minimum_length) {
+                hpos = 0;
+                continue;
+            }
             switch (mode) {
                 case mode_robot36:
                     robot36_decoder();
