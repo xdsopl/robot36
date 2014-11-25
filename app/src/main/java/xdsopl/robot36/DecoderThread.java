@@ -46,9 +46,9 @@ public class DecoderThread extends Thread {
     final short[] audioBuffer;
     final int[] pixelBuffer;
 
-    RenderScript rs;
-    Allocation rsDecoderAudioBuffer, rsDecoderPixelBuffer, rsDecoderValueBuffer;
-    ScriptC_decoder rsDecoder;
+    final RenderScript rs;
+    final Allocation rsDecoderAudioBuffer, rsDecoderPixelBuffer, rsDecoderValueBuffer;
+    final ScriptC_decoder rsDecoder;
 
     public DecoderThread(Context context, SurfaceHolder holder) {
         this.holder = holder;
