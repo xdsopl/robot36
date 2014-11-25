@@ -488,13 +488,13 @@ void decode(int samples) {
             even_hpos = 0;
             seperator_counter = 0;
             sync_counter = sync_length;
-            if (++vis_counter >= vis_length) {
-                calibration_progress = 0;
-                calibration_countdown = 0;
-                vis_counter = 0;
-                for (int i = 0; i < bitmap_width * bitmap_height; ++i)
-                    pixel_buffer[i] = rgb(0, 0, 0);
-            }
+            if (++vis_counter < vis_length)
+                continue;
+            calibration_progress = 0;
+            calibration_countdown = 0;
+            vis_counter = 0;
+            for (int i = 0; i < bitmap_width * bitmap_height; ++i)
+                pixel_buffer[i] = rgb(0, 0, 0);
         }
 
         int sync_level = cnt_active && cnt_quantized == 0;
