@@ -449,9 +449,10 @@ static void yuv_decoder()
         pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(y, u, v);
     }
     if (hpos >= maximum_length)
-        even_hpos = (hpos -= scanline_length);
+        hpos -= scanline_length;
     else
-        even_hpos = hpos = 0;
+        hpos = 0;
+    even_hpos = 0;
 }
 static void rgb_decoder()
 {
@@ -462,9 +463,10 @@ static void rgb_decoder()
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
     if (hpos >= maximum_length)
-        even_hpos = (hpos -= scanline_length);
+        hpos -= scanline_length;
     else
-        even_hpos = hpos = 0;
+        hpos = 0;
+    even_hpos = 0;
 }
 static void raw_decoder()
 {
