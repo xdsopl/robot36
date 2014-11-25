@@ -455,15 +455,27 @@ void decode(int samples) {
         int leader_level = dat_active && leader_quantized == 0;
         int leader_pulse = !leader_level && leader_counter >= leader_length;
         leader_counter = leader_level ? leader_counter + 1 : 0;
-        calibration_progress = leader_pulse && calibration_progress != 1 ? (calibration_progress == 2 ? 3 : 1) : calibration_progress;
-        calibration_countdown = leader_pulse && calibration_progress == 1 ? break_timeout : calibration_countdown;
-        calibration_countdown = leader_pulse && calibration_progress == 3 ? vis_timeout : calibration_countdown;
+        if (leader_pulse) {
+            if (calibration_progress == 2) {
+                calibration_progress = 3;
+                calibration_countdown = vis_timeout;
+            } else {
+                calibration_progress = 1;
+                calibration_countdown = break_timeout;
+            }
+        }
 
         int break_level = cnt_active && cnt_quantized == 0;
         int break_pulse = !break_level && break_counter >= break_length;
         break_counter = break_level ? break_counter + 1 : 0;
-        calibration_progress = break_pulse && calibration_progress != 3 ? (calibration_progress == 1 ? 2 : 0) : calibration_progress;
-        calibration_countdown = break_pulse && calibration_progress == 2 ? leader_timeout : calibration_countdown;
+        if (break_pulse) {
+            if (calibration_progress == 1) {
+                calibration_progress = 2;
+                calibration_countdown = leader_timeout;
+            } else if (calibration_progress != 3) {
+                calibration_progress = 0;
+            }
+        }
 
         if (calibration_progress > 2) {
             vpos = 0;
