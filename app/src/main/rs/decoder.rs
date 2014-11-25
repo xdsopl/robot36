@@ -124,14 +124,15 @@ static float dat_fmd(float2 baseband)
     return clamp(dat_fmd_scale * phase, -1.0f, 1.0f);
 }
 
-static int sample_rate, mode, even_hpos, minimum_length;
+static int sample_rate, mode, even_hpos;
+static int scanline_length, minimum_length, maximum_length;
 static int calibration_length, calibration_countdown;
 static int leader_timeout, break_timeout, vis_timeout;
 static int calibration_progress, leader_counter, leader_length;
 static int break_length, break_counter, vis_counter, vis_length;
 static int buffer_length, bitmap_width, bitmap_height;
 static int sync_length, sync_counter, vpos, hpos;
-static int save_cnt, save_dat, seperator_counter;
+static int save_cnt, save_dat, seperator_counter, seperator_length;
 static int u_sep_begin, u_sep_end, v_sep_begin, v_sep_end;
 static int y_begin, y_end, u_begin, u_end, v_begin, v_end;
 static int r_begin, r_end, b_begin, b_end, g_begin, g_end;
@@ -148,6 +149,8 @@ void debug_sync()
     mode = mode_raw;
     const float sync_len_min = 0.002f;
     sync_length = sync_len_min * sample_rate;
+    maximum_length = buffer_length;
+    scanline_length = maximum_length;
 }
 void debug_image()
 {
@@ -156,6 +159,8 @@ void debug_image()
     mode = mode_raw;
     const float sync_len_min = 0.002f;
     sync_length = sync_len_min * sample_rate;
+    maximum_length = buffer_length;
+    scanline_length = maximum_length;
 }
 void debug_both()
 {
@@ -164,6 +169,8 @@ void debug_both()
     mode = mode_raw;
     const float sync_len_min = 0.002f;
     sync_length = sync_len_min * sample_rate;
+    maximum_length = buffer_length;
+    scanline_length = maximum_length;
 }
 void robot36_mode()
 {
@@ -179,6 +186,7 @@ void robot36_mode()
     const float u_scan_len = 0.044f;
     const float v_scan_len = 0.044f;
     const float seperator_len = 0.0045f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     y_begin = (sync_porch_len - settling_time) * sample_rate;
     y_end = y_begin + y_scan_len * sample_rate;
@@ -190,6 +198,11 @@ void robot36_mode()
     v_sep_end = u_sep_end;
     v_begin = v_sep_end + sep_porch_len * sample_rate;
     v_end = v_begin + v_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + y_scan_len
+        + seperator_len + sep_porch_len + u_scan_len
+        + sync_len + sync_porch_len + y_scan_len
+        + seperator_len + sep_porch_len + v_scan_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void robot72_mode()
 {
@@ -205,6 +218,7 @@ void robot72_mode()
     const float u_scan_len = 0.069f;
     const float v_scan_len = 0.069f;
     const float seperator_len = 0.0045f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     y_begin = (sync_porch_len - settling_time) * sample_rate;
     y_end = y_begin + y_scan_len * sample_rate;
@@ -216,6 +230,10 @@ void robot72_mode()
     v_sep_end = v_sep_begin + seperator_len * sample_rate;
     v_begin = v_sep_end + sep_porch_len * sample_rate;
     v_end = v_begin + v_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + y_scan_len
+        + seperator_len + sep_porch_len + u_scan_len
+        + seperator_len + sep_porch_len + v_scan_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void martin1_mode()
 {
@@ -229,6 +247,7 @@ void martin1_mode()
     const float g_scan_len = 0.146432f;
     const float b_scan_len = 0.146432f;
     const float seperator_len = 0.000572f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     g_begin = 0;
     g_end = g_begin + g_scan_len * sample_rate;
@@ -236,6 +255,9 @@ void martin1_mode()
     b_end = b_begin + b_scan_len * sample_rate;
     r_begin = b_end + seperator_len * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
+        + b_scan_len + seperator_len + r_scan_len + seperator_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void martin2_mode()
 {
@@ -249,6 +271,7 @@ void martin2_mode()
     const float g_scan_len = 0.073216f;
     const float b_scan_len = 0.073216f;
     const float seperator_len = 0.000572f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     g_begin = 0;
     g_end = g_begin + g_scan_len * sample_rate;
@@ -256,6 +279,9 @@ void martin2_mode()
     b_end = b_begin + b_scan_len * sample_rate;
     r_begin = b_end + seperator_len * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
+            + b_scan_len + seperator_len + r_scan_len + seperator_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void scottie1_mode()
 {
@@ -270,6 +296,7 @@ void scottie1_mode()
     const float g_scan_len = 0.138240f;
     const float b_scan_len = 0.138240f;
     const float seperator_len = 0.0015f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     r_begin = (sync_porch_len - settling_time) * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
@@ -277,6 +304,9 @@ void scottie1_mode()
     g_end = g_begin + g_scan_len * sample_rate;
     b_begin = g_end + seperator_len * sample_rate;
     b_end = b_begin + b_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
+            + b_scan_len + seperator_len + r_scan_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void scottie2_mode()
 {
@@ -291,6 +321,7 @@ void scottie2_mode()
     const float g_scan_len = 0.088064f;
     const float b_scan_len = 0.088064f;
     const float seperator_len = 0.0015f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     r_begin = (sync_porch_len - settling_time) * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
@@ -298,6 +329,9 @@ void scottie2_mode()
     g_end = g_begin + g_scan_len * sample_rate;
     b_begin = g_end + seperator_len * sample_rate;
     b_end = b_begin + b_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
+                + b_scan_len + seperator_len + r_scan_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void scottieDX_mode()
 {
@@ -312,6 +346,7 @@ void scottieDX_mode()
     const float g_scan_len = 0.3456f;
     const float b_scan_len = 0.3456f;
     const float seperator_len = 0.0015f;
+    seperator_length = seperator_len * sample_rate;
     sync_length = tolerance * sync_len * sample_rate;
     r_begin = (sync_porch_len - settling_time) * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
@@ -319,6 +354,9 @@ void scottieDX_mode()
     g_end = g_begin + g_scan_len * sample_rate;
     b_begin = g_end + seperator_len * sample_rate;
     b_end = b_begin + b_scan_len * sample_rate;
+    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
+                + b_scan_len + seperator_len + r_scan_len) * sample_rate;
+    maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 
 void initialize(float rate, int length, int width, int height)
@@ -377,9 +415,9 @@ void initialize(float rate, int length, int width, int height)
 
 static void robot36_decoder()
 {
-    if (seperator_counter > 0) {
-        if (vpos < 1)
-            vpos = 1;
+    if (2 * abs(seperator_counter) > seperator_length)
+        vpos = ~1 & vpos | seperator_counter > 0;
+    if (vpos&1) {
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
             uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
@@ -388,11 +426,14 @@ static void robot36_decoder()
             pixel_buffer[bitmap_width * (vpos-1) + i] = rsYuvToRGBA_uchar4(even_y, u, v);
             pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(odd_y, u, v);
         }
-        even_hpos = hpos = 0;
+        if (hpos >= maximum_length)
+            even_hpos = (hpos -= scanline_length);
+        else
+            even_hpos = hpos = 0;
     } else {
         for (int i = 0; i < bitmap_width; ++i)
             pixel_buffer[bitmap_width * vpos + i] = rgb(0, 0, 0);
-        if (hpos < buffer_length)
+        if (hpos < maximum_length)
             even_hpos = hpos;
         else
             even_hpos = hpos = 0;
@@ -400,23 +441,29 @@ static void robot36_decoder()
 }
 static void yuv_decoder()
 {
-   for (int i = 0; i < bitmap_width; ++i) {
+    for (int i = 0; i < bitmap_width; ++i) {
         uchar y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
         uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
         uchar v = value_buffer[i * (v_end-v_begin) / bitmap_width + v_begin];
         pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(y, u, v);
     }
-    even_hpos = hpos = 0;
+    if (hpos >= maximum_length)
+        even_hpos = (hpos -= scanline_length);
+    else
+        even_hpos = hpos = 0;
 }
 static void rgb_decoder()
 {
-   for (int i = 0; i < bitmap_width; ++i) {
+    for (int i = 0; i < bitmap_width; ++i) {
         uchar r = value_buffer[i * (r_end-r_begin) / bitmap_width + r_begin];
         uchar g = value_buffer[i * (g_end-g_begin) / bitmap_width + g_begin];
         uchar b = value_buffer[i * (b_end-b_begin) / bitmap_width + b_begin];
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
-    even_hpos = hpos = 0;
+    if (hpos >= maximum_length)
+        even_hpos = (hpos -= scanline_length);
+    else
+        even_hpos = hpos = 0;
 }
 static void raw_decoder()
 {
@@ -506,9 +553,10 @@ void decode(int samples) {
         int v_sep = v_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) <= v_sep_end;
         seperator_counter += (u_sep || v_sep) ? dat_quantized : 0;
 
-        if (++hpos >= buffer_length || sync_pulse) {
+        if (++hpos >= maximum_length || sync_pulse) {
             if (hpos < minimum_length) {
                 hpos = 0;
+                even_hpos = 0;
                 continue;
             }
             switch (mode) {
