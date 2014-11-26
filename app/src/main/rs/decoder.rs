@@ -129,6 +129,7 @@ static int scanline_length, minimum_length, maximum_length;
 static int calibration_length, calibration_countdown;
 static int leader_timeout, break_timeout, vis_timeout;
 static int calibration_progress, leader_counter, leader_length;
+static int first_leader_length, second_leader_length;
 static int break_length, break_counter, vis_counter, vis_length;
 static int buffer_length, bitmap_width, bitmap_height;
 static int sync_length, sync_counter, vpos, hpos;
@@ -373,9 +374,12 @@ void initialize(float rate, int length, int width, int height)
     seperator_counter = 0;
     minimum_length = 0.05f * sample_rate;
 
-    const float leader_tolerance = 0.3f;
+    const float first_leader_tolerance = 0.3f;
+    const float second_leader_tolerance = 0.9f;
     const float break_tolerance = 0.7f;
-    const float timeout_tolerance = 1.1f;
+    const float leader_timeout_tolerance = 1.1f;
+    const float break_timeout_tolerance = 1.8f;
+    const float vis_timeout_tolerance = 1.1f;
     const float leader_len = 0.3f;
     const float break_len = 0.01f;
     const float vis_len = 0.3f;
@@ -384,12 +388,14 @@ void initialize(float rate, int length, int width, int height)
     leader_counter = 0;
     break_counter = 0;
     vis_counter = 0;
-    leader_length = leader_tolerance * leader_len * sample_rate;
+    first_leader_length = first_leader_tolerance * leader_len * sample_rate;
+    second_leader_length = second_leader_tolerance * leader_len * sample_rate;
+    leader_length = first_leader_length;
     break_length = break_tolerance * break_len * sample_rate;
     vis_length = vis_len * sample_rate;
-    leader_timeout = timeout_tolerance * leader_len * sample_rate;
-    break_timeout = timeout_tolerance * break_len * sample_rate;
-    vis_timeout = timeout_tolerance * vis_len * sample_rate;
+    leader_timeout = leader_timeout_tolerance * leader_len * sample_rate;
+    break_timeout = break_timeout_tolerance * break_len * sample_rate;
+    vis_timeout = vis_timeout_tolerance * vis_len * sample_rate;
 
     const float dat_carrier = 1900.0f;
     const float cnt_carrier = 1200.0f;
@@ -491,9 +497,11 @@ static int calibration_detected(float dat_value, int cnt_active, int cnt_quantiz
         if (calibration_progress == 2) {
             calibration_progress = 3;
             calibration_countdown = vis_timeout;
+            leader_length = first_leader_length;
         } else {
             calibration_progress = 1;
             calibration_countdown = break_timeout;
+            leader_length = second_leader_length;
         }
     }
 
@@ -506,6 +514,7 @@ static int calibration_detected(float dat_value, int cnt_active, int cnt_quantiz
             calibration_countdown = leader_timeout;
         } else if (calibration_progress != 3) {
             calibration_progress = 0;
+            leader_length = first_leader_length;
         }
     }
 
