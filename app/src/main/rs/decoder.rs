@@ -441,8 +441,6 @@ static void robot36_decoder()
             hpos = 0;
         even_hpos = 0;
     } else {
-        for (int i = 0; i < bitmap_width; ++i)
-            pixel_buffer[bitmap_width * vpos + i] = rgb(0, 0, 0);
         even_hpos = hpos;
     }
 }
