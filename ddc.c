@@ -28,7 +28,7 @@ void do_ddc(struct ddc *ddc, float *input, complex float *output)
 
 		output[k] = ddc->osc * sum;
 		ddc->osc *= ddc->d;
-		// ddc->osc /= cabsf(ddc->osc); // not really needed
+		ddc->osc /= cabsf(ddc->osc);
 	}
 }
 struct ddc *alloc_ddc(int L, int M, float carrier, float bw, float rate, int taps, float (*window)(float, float, float), float a)
