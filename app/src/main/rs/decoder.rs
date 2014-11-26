@@ -561,8 +561,8 @@ void decode(int samples) {
         int sync_pulse = !sync_level && sync_counter >= sync_length;
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
-        int u_sep = u_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) <= u_sep_end;
-        int v_sep = v_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) <= v_sep_end;
+        int u_sep = u_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) < u_sep_end;
+        int v_sep = v_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) < v_sep_end;
         seperator_counter += (u_sep || v_sep) ? dat_quantized : 0;
 
         if (++hpos >= maximum_length || sync_pulse) {
