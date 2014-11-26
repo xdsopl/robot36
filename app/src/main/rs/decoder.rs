@@ -200,9 +200,7 @@ void robot36_mode()
     v_begin = v_sep_end + sep_porch_len * sample_rate;
     v_end = v_begin + v_scan_len * sample_rate;
     scanline_length = (sync_len + sync_porch_len + y_scan_len
-        + seperator_len + sep_porch_len + u_scan_len
-        + sync_len + sync_porch_len + y_scan_len
-        + seperator_len + sep_porch_len + v_scan_len) * sample_rate;
+        + seperator_len + sep_porch_len + u_scan_len) * sample_rate;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void robot72_mode()
@@ -424,8 +422,8 @@ static void robot36_decoder()
     static prev_timeout;
     if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
         vpos = ~1 & vpos | seperator_counter > 0;
-    if (vpos&1 || hpos >= maximum_length) {
-        vpos |= 1;
+    prev_timeout = hpos >= maximum_length;
+    if (vpos & 1) {
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
             uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
@@ -434,14 +432,19 @@ static void robot36_decoder()
             pixel_buffer[bitmap_width * (vpos-1) + i] = rsYuvToRGBA_uchar4(even_y, u, v);
             pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(odd_y, u, v);
         }
-        prev_timeout = hpos >= maximum_length;
         if (prev_timeout)
             hpos -= scanline_length;
         else
             hpos = 0;
         even_hpos = 0;
     } else {
-        even_hpos = hpos;
+        if (prev_timeout) {
+            even_hpos = scanline_length;
+            hpos -= scanline_length;
+        } else {
+            even_hpos = hpos;
+            hpos = 0;
+        }
     }
 }
 static void yuv_decoder()
@@ -535,7 +538,7 @@ void decode(int samples) {
         int cnt_active = cabs(dat_baseband) < cabs(cnt_baseband);
         uchar cnt_level = save_cnt ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = save_dat ? 127.5f + 127.5f * dat_value : 0.0f;
-        value_buffer[hpos] = cnt_active ? cnt_level : dat_level;
+        value_buffer[hpos + even_hpos] = cnt_active ? cnt_level : dat_level;
 
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
@@ -559,8 +562,8 @@ void decode(int samples) {
         int sync_pulse = !sync_level && sync_counter >= sync_length;
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
-        int u_sep = u_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) < u_sep_end;
-        int v_sep = v_sep_begin <= (hpos-even_hpos) && (hpos-even_hpos) < v_sep_end;
+        int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;
+        int v_sep = v_sep_begin <= hpos && hpos < v_sep_end;
         seperator_counter += (u_sep || v_sep) ? dat_quantized : 0;
 
         if (++hpos >= maximum_length || sync_pulse) {
