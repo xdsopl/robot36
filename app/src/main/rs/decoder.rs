@@ -421,7 +421,7 @@ static void robot36_decoder()
 {
     static prev_timeout;
     if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
-        vpos = ~1 & vpos | seperator_counter > 0;
+        vpos = (~1 & vpos) | (seperator_counter > 0);
     prev_timeout = hpos >= maximum_length;
     if (vpos & 1) {
         for (int i = 0; i < bitmap_width; ++i) {
