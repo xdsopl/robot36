@@ -126,11 +126,10 @@ static float dat_fmd(float2 baseband)
 
 static int sample_rate, mode, even_hpos;
 static int scanline_length, minimum_length, maximum_length;
-static int calibration_length, calibration_countdown;
-static int leader_timeout, break_timeout, vis_timeout;
-static int calibration_progress, leader_counter, leader_length;
+static int vis_timeout, vis_length, bit_length;
+static int break_timeout, break_length;
+static int leader_timeout, leader_length;
 static int first_leader_length, second_leader_length;
-static int break_length, break_counter, vis_counter, vis_length;
 static int buffer_length, bitmap_width, bitmap_height;
 static int sync_length, sync_counter, vpos, hpos;
 static int save_cnt, save_dat, seperator_counter, seperator_length;
@@ -377,20 +376,17 @@ void initialize(float rate, int length, int width, int height)
     const float break_tolerance = 0.7f;
     const float leader_timeout_tolerance = 1.1f;
     const float break_timeout_tolerance = 1.8f;
-    const float vis_timeout_tolerance = 1.1f;
+    const float vis_timeout_tolerance = 1.01f;
     const float leader_len = 0.3f;
     const float break_len = 0.01f;
     const float vis_len = 0.3f;
-    calibration_progress = 0;
-    calibration_countdown = 0;
-    leader_counter = 0;
-    break_counter = 0;
-    vis_counter = 0;
+    const float bit_len = 0.03f;
     first_leader_length = first_leader_tolerance * leader_len * sample_rate;
     second_leader_length = second_leader_tolerance * leader_len * sample_rate;
     leader_length = first_leader_length;
     break_length = break_tolerance * break_len * sample_rate;
     vis_length = vis_len * sample_rate;
+    bit_length = bit_len * sample_rate;
     leader_timeout = leader_timeout_tolerance * leader_len * sample_rate;
     break_timeout = break_timeout_tolerance * break_len * sample_rate;
     vis_timeout = vis_timeout_tolerance * vis_len * sample_rate;
@@ -484,24 +480,38 @@ static void raw_decoder()
     even_hpos = hpos = 0;
 }
 
+static void reset()
+{
+    vpos = 0;
+    hpos = 0;
+    even_hpos = 0;
+    seperator_counter = 0;
+    sync_counter = sync_length;
+    for (int i = 0; i < bitmap_width * bitmap_height; ++i)
+        pixel_buffer[i] = rgb(0, 0, 0);
+}
+
 static int calibration_detected(float dat_value, int cnt_active, int cnt_quantized)
 {
+    static int progress, countdown;
+    static int leader_counter, break_counter;
+
     int dat_active = !cnt_active;
-    calibration_progress = calibration_countdown ? calibration_progress : 0;
-    calibration_countdown -= !!calibration_countdown;
+    progress = countdown ? progress : 0;
+    countdown -= !!countdown;
 
     int leader_quantized = round(leader_lowpass(dat_value));
     int leader_level = dat_active && leader_quantized == 0;
     int leader_pulse = !leader_level && leader_counter >= leader_length;
     leader_counter = leader_level ? leader_counter + 1 : 0;
     if (leader_pulse) {
-        if (calibration_progress == 2) {
-            calibration_progress = 3;
-            calibration_countdown = vis_timeout;
+        if (progress == 2) {
+            progress = 3;
+            countdown = vis_timeout;
             leader_length = first_leader_length;
         } else {
-            calibration_progress = 1;
-            calibration_countdown = break_timeout;
+            progress = 1;
+            countdown = break_timeout;
             leader_length = second_leader_length;
         }
     }
@@ -510,16 +520,57 @@ static int calibration_detected(float dat_value, int cnt_active, int cnt_quantiz
     int break_pulse = !break_level && break_counter >= break_length;
     break_counter = break_level ? break_counter + 1 : 0;
     if (break_pulse) {
-        if (calibration_progress == 1) {
-            calibration_progress = 2;
-            calibration_countdown = leader_timeout;
-        } else if (calibration_progress != 3) {
-            calibration_progress = 0;
+        if (progress == 1) {
+            progress = 2;
+            countdown = leader_timeout;
+        } else if (progress < 3) {
+            progress = 0;
             leader_length = first_leader_length;
         }
     }
 
-    return calibration_progress > 2;
+    if (progress == 3) {
+        static int bit_pos, vis_code;
+        static int vis_counter, bit_counter;
+        if (++vis_counter < (bit_pos + 1) * bit_length) {
+            bit_counter += cnt_quantized;
+        } else {
+            if (bit_pos == 0 && 2 * abs(bit_counter) < bit_length) {
+                vis_code = 0;
+                ++bit_pos;
+            } else if (0 < bit_pos && bit_pos < 9 && 2 * abs(bit_counter) > bit_length) {
+                int bit_val = bit_counter < 0 ? 1 : 0;
+                vis_code |= bit_val << (bit_pos - 1);
+                // sometimes stop bit is missing, finish up here.
+                if (bit_pos == 8) {
+                    bit_pos = 0;
+                    progress = 0;
+                    countdown = 0;
+                    bit_counter = 0;
+                    vis_counter = 0;
+                    return vis_code;
+                }
+                ++bit_pos;
+            } else if (bit_pos == 9 && 2 * abs(bit_counter) < bit_length) {
+                bit_pos = 0;
+                progress = 0;
+                countdown = 0;
+                bit_counter = 0;
+                vis_counter = 0;
+                return vis_code;
+            } else {
+                bit_pos = 0;
+                progress = 0;
+                countdown = 0;
+                bit_counter = 0;
+                vis_counter = 0;
+                return -1;
+            }
+            bit_counter = cnt_quantized;
+        }
+    }
+
+    return -1;
 }
 
 void decode(int samples) {
@@ -543,19 +594,35 @@ void decode(int samples) {
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
 
-        if (calibration_detected(dat_value, cnt_active, cnt_quantized)) {
-            vpos = 0;
-            hpos = 0;
-            even_hpos = 0;
-            seperator_counter = 0;
-            sync_counter = sync_length;
-            if (++vis_counter < vis_length)
-                continue;
-            calibration_progress = 0;
-            calibration_countdown = 0;
-            vis_counter = 0;
-            for (int i = 0; i < bitmap_width * bitmap_height; ++i)
-                pixel_buffer[i] = rgb(0, 0, 0);
+        switch (calibration_detected(dat_value, cnt_active, cnt_quantized)) {
+            case 0x88:
+                robot36_mode();
+                reset();
+                break;
+            case 0x0c:
+                robot72_mode();
+                reset();
+                break;
+            case 0xac:
+                martin1_mode();
+                reset();
+                break;
+            case 0x28:
+                martin2_mode();
+                reset();
+                break;
+            case 0x3c:
+                scottie1_mode();
+                reset();
+                break;
+            case 0xb8:
+                scottie2_mode();
+                reset();
+                break;
+            case 0xcc:
+                scottieDX_mode();
+                reset();
+                break;
         }
 
         int sync_level = cnt_active && cnt_quantized == 0;
