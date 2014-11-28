@@ -107,20 +107,20 @@ static float2 dat_ddc(float amp)
 }
 
 static float cnt_fmd_scale;
-static float2 cnt_fmd_prev;
 static float cnt_fmd(float2 baseband)
 {
-    float phase = carg(cdiv(baseband, cnt_fmd_prev));
-    cnt_fmd_prev = baseband;
+    static float2 prev;
+    float phase = carg(cdiv(baseband, prev));
+    prev = baseband;
     return clamp(cnt_fmd_scale * phase, -1.0f, 1.0f);
 }
 
 static float dat_fmd_scale;
-static float2 dat_fmd_prev;
 static float dat_fmd(float2 baseband)
 {
-    float phase = carg(cdiv(baseband, dat_fmd_prev));
-    dat_fmd_prev = baseband;
+    static float2 prev;
+    float phase = carg(cdiv(baseband, prev));
+    prev = baseband;
     return clamp(dat_fmd_scale * phase, -1.0f, 1.0f);
 }
 
