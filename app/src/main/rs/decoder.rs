@@ -530,43 +530,40 @@ static int calibration_detected(float dat_value, int cnt_active, int cnt_quantiz
     }
 
     if (progress == 3) {
-        static int bit_pos, vis_code;
+        static int bit_pos, vis_pos, vis_code;
         static int vis_counter, bit_counter;
-        if (++vis_counter < (bit_pos + 1) * bit_length) {
+        if (leader_pulse) {
+            bit_pos = 0;
+            vis_pos = bit_length;
+            bit_counter = 0;
+            vis_counter = 0;
+        }
+        if (++vis_counter < vis_pos) {
             bit_counter += cnt_quantized;
         } else {
             if (bit_pos == 0 && 2 * abs(bit_counter) < bit_length) {
                 vis_code = 0;
-                ++bit_pos;
             } else if (0 < bit_pos && bit_pos < 9 && 2 * abs(bit_counter) > bit_length) {
                 int bit_val = bit_counter < 0 ? 1 : 0;
                 vis_code |= bit_val << (bit_pos - 1);
                 // sometimes stop bit is missing, finish up here.
                 if (bit_pos == 8) {
-                    bit_pos = 0;
                     progress = 0;
                     countdown = 0;
-                    bit_counter = 0;
-                    vis_counter = 0;
                     return vis_code;
                 }
-                ++bit_pos;
             } else if (bit_pos == 9 && 2 * abs(bit_counter) < bit_length) {
-                bit_pos = 0;
                 progress = 0;
                 countdown = 0;
-                bit_counter = 0;
-                vis_counter = 0;
                 return vis_code;
             } else {
-                bit_pos = 0;
                 progress = 0;
                 countdown = 0;
-                bit_counter = 0;
-                vis_counter = 0;
                 return -1;
             }
+            ++bit_pos;
             bit_counter = cnt_quantized;
+            vis_pos += bit_length;
         }
     }
 
