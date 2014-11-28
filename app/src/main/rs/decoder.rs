@@ -45,6 +45,57 @@ static float ema_a(float cutoff, float rate, int order)
     return dt / (RC + dt);
 }
 
+static const float ema_estimator_a = 0.7f;
+static int robot36_scanline_length;
+static float robot36_estimator(int length)
+{
+    static float variance;
+    float deviation = robot36_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+static int robot72_scanline_length;
+static float robot72_estimator(int length)
+{
+    static float variance;
+    float deviation = robot72_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+static int martin1_scanline_length;
+static float martin1_estimator(int length)
+{
+    static float variance;
+    float deviation = martin1_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+static int martin2_scanline_length;
+static float martin2_estimator(int length)
+{
+    static float variance;
+    float deviation = martin2_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+static int scottie1_scanline_length;
+static float scottie1_estimator(int length)
+{
+    static float variance;
+    float deviation = scottie1_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+static int scottie2_scanline_length;
+static float scottie2_estimator(int length)
+{
+    static float variance;
+    float deviation = scottie2_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+static int scottieDX_scanline_length;
+static float scottieDX_estimator(int length)
+{
+    static float variance;
+    float deviation = scottieDX_scanline_length - length;
+    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+}
+
 static float ema_power_a;
 static float avg_power(float input)
 {
@@ -125,6 +176,7 @@ static float dat_fmd(float2 baseband)
 }
 
 static int sample_rate, mode, even_hpos;
+static int maximum_variance, minimum_sync_length;
 static int scanline_length, minimum_length, maximum_length;
 static int vis_timeout, vis_length, bit_length;
 static int break_timeout, break_length;
@@ -139,16 +191,27 @@ static int r_begin, r_end, b_begin, b_end, g_begin, g_end;
 
 static const int mode_raw = 0;
 static const int mode_robot36 = 1;
-static const int mode_yuv = 2;
-static const int mode_rgb = 3;
+static const int mode_robot72 = 2;
+static const int mode_martin1 = 3;
+static const int mode_martin2 = 4;
+static const int mode_scottie1 = 5;
+static const int mode_scottie2 = 6;
+static const int mode_scottieDX = 7;
+
+static const float robot36_scanline_seconds = 0.15f;
+static const float robot72_scanline_seconds = 0.3f;
+static const float martin1_scanline_seconds = 0.446446f;
+static const float martin2_scanline_seconds = 0.226798f;
+static const float scottie1_scanline_seconds = 0.42822f;
+static const float scottie2_scanline_seconds = 0.277692f;
+static const float scottieDX_scanline_seconds = 1.0503f;
 
 void debug_sync()
 {
     save_cnt = 1;
     save_dat = 0;
     mode = mode_raw;
-    const float sync_len_min = 0.002f;
-    sync_length = sync_len_min * sample_rate;
+    sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
 }
@@ -157,8 +220,7 @@ void debug_image()
     save_dat = 1;
     save_cnt = 0;
     mode = mode_raw;
-    const float sync_len_min = 0.002f;
-    sync_length = sync_len_min * sample_rate;
+    sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
 }
@@ -167,8 +229,7 @@ void debug_both()
     save_cnt = 1;
     save_dat = 1;
     mode = mode_raw;
-    const float sync_len_min = 0.002f;
-    sync_length = sync_len_min * sample_rate;
+    sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
 }
@@ -198,15 +259,14 @@ void robot36_mode()
     v_sep_end = u_sep_end;
     v_begin = v_sep_end + sep_porch_len * sample_rate;
     v_end = v_begin + v_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + y_scan_len
-        + seperator_len + sep_porch_len + u_scan_len) * sample_rate;
+    scanline_length = robot36_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void robot72_mode()
 {
     save_dat = 1;
     save_cnt = 0;
-    mode = mode_yuv;
+    mode = mode_robot72;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -228,16 +288,14 @@ void robot72_mode()
     v_sep_end = v_sep_begin + seperator_len * sample_rate;
     v_begin = v_sep_end + sep_porch_len * sample_rate;
     v_end = v_begin + v_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + y_scan_len
-        + seperator_len + sep_porch_len + u_scan_len
-        + seperator_len + sep_porch_len + v_scan_len) * sample_rate;
+    scanline_length = robot72_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void martin1_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_rgb;
+    mode = mode_martin1;
     const float tolerance = 0.5f;
     const float sync_len = 0.004862f;
     const float sync_porch_len = 0.000572f;
@@ -253,15 +311,14 @@ void martin1_mode()
     b_end = b_begin + b_scan_len * sample_rate;
     r_begin = b_end + seperator_len * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
-        + b_scan_len + seperator_len + r_scan_len + seperator_len) * sample_rate;
+    scanline_length = martin1_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void martin2_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_rgb;
+    mode = mode_martin2;
     const float tolerance = 0.5f;
     const float sync_len = 0.004862f;
     const float sync_porch_len = 0.000572f;
@@ -277,15 +334,14 @@ void martin2_mode()
     b_end = b_begin + b_scan_len * sample_rate;
     r_begin = b_end + seperator_len * sample_rate;
     r_end = r_begin + r_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
-            + b_scan_len + seperator_len + r_scan_len + seperator_len) * sample_rate;
+    scanline_length = martin2_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void scottie1_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_rgb;
+    mode = mode_scottie1;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -302,15 +358,14 @@ void scottie1_mode()
     g_end = g_begin + g_scan_len * sample_rate;
     b_begin = g_end + seperator_len * sample_rate;
     b_end = b_begin + b_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
-            + b_scan_len + seperator_len + r_scan_len) * sample_rate;
+    scanline_length = scottie1_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void scottie2_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_rgb;
+    mode = mode_scottie2;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -327,15 +382,14 @@ void scottie2_mode()
     g_end = g_begin + g_scan_len * sample_rate;
     b_begin = g_end + seperator_len * sample_rate;
     b_end = b_begin + b_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
-                + b_scan_len + seperator_len + r_scan_len) * sample_rate;
+    scanline_length = scottie2_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 void scottieDX_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_rgb;
+    mode = mode_scottieDX;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -352,8 +406,7 @@ void scottieDX_mode()
     g_end = g_begin + g_scan_len * sample_rate;
     b_begin = g_end + seperator_len * sample_rate;
     b_end = b_begin + b_scan_len * sample_rate;
-    scanline_length = (sync_len + sync_porch_len + g_scan_len + seperator_len
-                + b_scan_len + seperator_len + r_scan_len) * sample_rate;
+    scanline_length = scottieDX_scanline_length;
     maximum_length = scanline_length + sync_porch_len * sample_rate;
 }
 
@@ -370,6 +423,19 @@ void initialize(float rate, int length, int width, int height)
     sync_counter = 0;
     seperator_counter = 0;
     minimum_length = 0.05f * sample_rate;
+    minimum_sync_length = 0.002f * sample_rate;
+
+    robot36_scanline_length = robot36_scanline_seconds * sample_rate;
+    robot72_scanline_length = robot72_scanline_seconds * sample_rate;
+    martin1_scanline_length = martin1_scanline_seconds * sample_rate;
+    martin2_scanline_length = martin2_scanline_seconds * sample_rate;
+    scottie1_scanline_length = scottie1_scanline_seconds * sample_rate;
+    scottie2_scanline_length = scottie2_scanline_seconds * sample_rate;
+    scottieDX_scanline_length = scottieDX_scanline_seconds * sample_rate;
+
+    const float pairwise_minimum_of_scanline_time_distances = 0.018226f;
+    float deviation = pairwise_minimum_of_scanline_time_distances * sample_rate;
+    maximum_variance = deviation * deviation;
 
     const float first_leader_tolerance = 0.3f;
     const float second_leader_tolerance = 0.9f;
@@ -489,6 +555,80 @@ static void reset()
     sync_counter = sync_length;
     for (int i = 0; i < bitmap_width * bitmap_height; ++i)
         pixel_buffer[i] = rgb(0, 0, 0);
+}
+
+static void scanline_estimator(int sync_level)
+{
+    static scanline_counter, sync_counter;
+
+    int sync_pulse = !sync_level && sync_counter >= minimum_sync_length;
+    sync_counter = sync_level ? sync_counter + 1 : 0;
+
+    if (!sync_pulse) {
+        ++scanline_counter;
+        return;
+    }
+
+    float robot36_var = robot36_estimator(scanline_counter);
+    float robot72_var = robot72_estimator(scanline_counter);
+    float martin1_var = martin1_estimator(scanline_counter);
+    float martin2_var = martin2_estimator(scanline_counter);
+    float scottie1_var = scottie1_estimator(scanline_counter);
+    float scottie2_var = scottie2_estimator(scanline_counter);
+    float scottieDX_var = scottieDX_estimator(scanline_counter);
+    scanline_counter = 0;
+
+    float min_var = min(min(min(robot36_var, robot72_var),
+        min(martin1_var, martin2_var)),
+        min(min(scottie1_var, scottie2_var), scottieDX_var));
+
+    int mode_estimated = 0;
+    if (min_var > maximum_variance)
+        return;
+    else if (min_var == robot36_var)
+        mode_estimated = mode_robot36;
+    else if (min_var == robot72_var)
+        mode_estimated = mode_robot72;
+    else if (min_var == martin1_var)
+        mode_estimated = mode_martin1;
+    else if (min_var == martin2_var)
+        mode_estimated = mode_martin2;
+    else if (min_var == scottie1_var)
+        mode_estimated = mode_scottie1;
+    else if (min_var == scottie2_var)
+        mode_estimated = mode_scottie2;
+    else if (min_var == scottieDX_var)
+        mode_estimated = mode_scottieDX;
+    else
+        return;
+
+    if (mode_estimated == mode)
+        return;
+
+    switch (mode_estimated) {
+        case mode_robot36:
+            robot36_mode();
+            break;
+        case mode_robot72:
+            robot72_mode();
+            break;
+        case mode_martin1:
+            martin1_mode();
+            break;
+        case mode_martin2:
+            martin2_mode();
+            break;
+        case mode_scottie1:
+            scottie1_mode();
+            break;
+        case mode_scottie2:
+            scottie2_mode();
+            break;
+        case mode_scottieDX:
+            scottieDX_mode();
+            break;
+    }
+    reset();
 }
 
 static int calibration_detected(float dat_value, int cnt_active, int cnt_quantized)
@@ -626,6 +766,8 @@ void decode(int samples) {
         int sync_pulse = !sync_level && sync_counter >= sync_length;
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
+        scanline_estimator(sync_level);
+
         int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;
         int v_sep = v_sep_begin <= hpos && hpos < v_sep_end;
         seperator_counter += (u_sep || v_sep) ? dat_quantized : 0;
@@ -641,10 +783,14 @@ void decode(int samples) {
                 case mode_robot36:
                     robot36_decoder();
                     break;
-                case mode_yuv:
+                case mode_robot72:
                     yuv_decoder();
                     break;
-                case mode_rgb:
+                case mode_martin1:
+                case mode_martin2:
+                case mode_scottie1:
+                case mode_scottie2:
+                case mode_scottieDX:
                     rgb_decoder();
                     break;
                 default:
