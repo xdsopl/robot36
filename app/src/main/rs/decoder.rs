@@ -710,6 +710,36 @@ static int calibration_detected(float dat_value, int cnt_active, int cnt_quantiz
     return -1;
 }
 
+static void calibration_detector(float dat_value, int cnt_active, int cnt_quantized)
+{
+    switch (calibration_detected(dat_value, cnt_active, cnt_quantized)) {
+        case 0x88:
+            robot36_mode();
+            break;
+        case 0x0c:
+            robot72_mode();
+            break;
+        case 0xac:
+            martin1_mode();
+            break;
+        case 0x28:
+            martin2_mode();
+            break;
+        case 0x3c:
+            scottie1_mode();
+            break;
+        case 0xb8:
+            scottie2_mode();
+            break;
+        case 0xcc:
+            scottieDX_mode();
+            break;
+        default:
+            return;
+    }
+    reset();
+}
+
 void decode(int samples) {
     for (int sample = 0; sample < samples; ++sample) {
         float amp = audio_buffer[sample] / 32768.0f;
@@ -731,42 +761,14 @@ void decode(int samples) {
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
 
-        switch (calibration_detected(dat_value, cnt_active, cnt_quantized)) {
-            case 0x88:
-                robot36_mode();
-                reset();
-                break;
-            case 0x0c:
-                robot72_mode();
-                reset();
-                break;
-            case 0xac:
-                martin1_mode();
-                reset();
-                break;
-            case 0x28:
-                martin2_mode();
-                reset();
-                break;
-            case 0x3c:
-                scottie1_mode();
-                reset();
-                break;
-            case 0xb8:
-                scottie2_mode();
-                reset();
-                break;
-            case 0xcc:
-                scottieDX_mode();
-                reset();
-                break;
-        }
-
         int sync_level = cnt_active && cnt_quantized == 0;
         int sync_pulse = !sync_level && sync_counter >= sync_length;
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
-        scanline_estimator(sync_level);
+        if (mode != mode_raw) {
+            calibration_detector(dat_value, cnt_active, cnt_quantized);
+            scanline_estimator(sync_level);
+        }
 
         int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;
         int v_sep = v_sep_begin <= hpos && hpos < v_sep_end;
