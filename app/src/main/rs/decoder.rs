@@ -18,6 +18,7 @@ limitations under the License.
 #pragma rs java_package_name(xdsopl.robot36)
 
 #include "complex.rsh"
+#include "ema.rsh"
 
 short *audio_buffer;
 uchar *value_buffer;
@@ -25,77 +26,69 @@ uchar4 *pixel_buffer;
 
 static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
 
-static float ema_a(float cutoff, float rate, int order)
-{
-    float fc = cutoff / sqrt(rootn(2.0f, order) - 1.0f);
-    float RC = 1.0f / (2.0f * M_PI * fc);
-    float dt = 1.0f / rate;
-    return dt / (RC + dt);
-}
-
 static const float ema_estimator_a = 0.7f;
 static int robot36_scanline_length;
 static float robot36_estimator(int length)
 {
     static float variance;
     float deviation = robot36_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 static int robot72_scanline_length;
 static float robot72_estimator(int length)
 {
     static float variance;
     float deviation = robot72_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 static int martin1_scanline_length;
 static float martin1_estimator(int length)
 {
     static float variance;
     float deviation = martin1_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 static int martin2_scanline_length;
 static float martin2_estimator(int length)
 {
     static float variance;
     float deviation = martin2_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 static int scottie1_scanline_length;
 static float scottie1_estimator(int length)
 {
     static float variance;
     float deviation = scottie1_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 static int scottie2_scanline_length;
 static float scottie2_estimator(int length)
 {
     static float variance;
     float deviation = scottie2_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 static int scottieDX_scanline_length;
 static float scottieDX_estimator(int length)
 {
     static float variance;
     float deviation = scottieDX_scanline_length - length;
-    return variance = ema_estimator_a * deviation * deviation + (1.0f - ema_estimator_a) * variance;
+    return ema(&variance, deviation * deviation, ema_estimator_a);
 }
 
 static float ema_power_a;
 static float avg_power(float input)
 {
     static float output;
-    return output = ema_power_a * input + (1.0f - ema_power_a) * output;
+    return ema(&output, input, ema_power_a);
 }
 
 static float ema_leader_a;
 static float leader_lowpass(float input)
 {
     static float output;
-    return output = ema_leader_a * input + (1.0f - ema_leader_a) * output;
+    return ema(&output, input, ema_leader_a);
 }
 
 static const int filter_order = 11;
@@ -103,18 +96,14 @@ static float ema_cnt_a;
 static complex_t cnt_lowpass(complex_t input)
 {
     static complex_t output[filter_order];
-    for (int i = 0; i < filter_order; ++i)
-        output[i] = input = ema_cnt_a * input + (1.0f - ema_cnt_a) * output[i];
-    return input;
+    return cema_cascade(output, input, ema_cnt_a, filter_order);
 }
 
 static float ema_dat_a;
 static complex_t dat_lowpass(complex_t input)
 {
     static complex_t output[filter_order];
-    for (int i = 0; i < filter_order; ++i)
-        output[i] = input = ema_dat_a * input + (1.0f - ema_dat_a) * output[i];
-    return input;
+    return cema_cascade(output, input, ema_dat_a, filter_order);
 }
 
 static complex_t cnt_phasor, cnt_phasor_delta;
@@ -450,10 +439,10 @@ void initialize(float rate, int length, int width, int height)
     const float dat_bandwidth = 800.0f;
     const float cnt_bandwidth = 200.0f;
 
-    ema_power_a = ema_a(10.0f, sample_rate, 1);
-    ema_leader_a = ema_a(100.0f, sample_rate, 1);
-    ema_cnt_a = ema_a(cnt_bandwidth, sample_rate, filter_order);
-    ema_dat_a = ema_a(dat_bandwidth, sample_rate, filter_order);
+    ema_power_a = ema_a(10.0f, sample_rate);
+    ema_leader_a = ema_a(100.0f, sample_rate);
+    ema_cnt_a = ema_cascade_a(cnt_bandwidth, sample_rate, filter_order);
+    ema_dat_a = ema_cascade_a(dat_bandwidth, sample_rate, filter_order);
 
     cnt_phasor = complex(0.0f, 1.0f);
     cnt_phasor_delta = cexp(complex(0.0f, -2.0f * M_PI * cnt_carrier / sample_rate));
