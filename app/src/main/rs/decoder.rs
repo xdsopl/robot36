@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "complex.rsh"
 #include "ema.rsh"
+#include "phasor.rsh"
 
 short *audio_buffer;
 uchar *value_buffer;
@@ -106,32 +107,16 @@ static complex_t dat_lowpass(complex_t input)
     return cema_cascade(output, input, ema_dat_a, filter_order);
 }
 
-static complex_t cnt_phasor, cnt_phasor_delta;
-static complex_t cnt_phasor_rotate()
-{
-    complex_t prev = cnt_phasor;
-    cnt_phasor = cmul(cnt_phasor, cnt_phasor_delta);
-    cnt_phasor = normalize(cnt_phasor);
-    return prev;
-}
-
-static complex_t dat_phasor, dat_phasor_delta;
-static complex_t dat_phasor_rotate()
-{
-    complex_t prev = dat_phasor;
-    dat_phasor = cmul(dat_phasor, dat_phasor_delta);
-    dat_phasor = normalize(dat_phasor);
-    return prev;
-}
-
+static phasor_t cnt_phasor;
 static complex_t cnt_ddc(float amp)
 {
-    return cnt_lowpass(amp * cnt_phasor_rotate());
+    return cnt_lowpass(amp * rotate(&cnt_phasor));
 }
 
+static phasor_t dat_phasor;
 static complex_t dat_ddc(float amp)
 {
-    return dat_lowpass(amp * dat_phasor_rotate());
+    return dat_lowpass(amp * rotate(&dat_phasor));
 }
 
 static float cnt_fmd_scale;
@@ -444,11 +429,8 @@ void initialize(float rate, int length, int width, int height)
     ema_cnt_a = ema_cascade_a(cnt_bandwidth, sample_rate, filter_order);
     ema_dat_a = ema_cascade_a(dat_bandwidth, sample_rate, filter_order);
 
-    cnt_phasor = complex(0.0f, 1.0f);
-    cnt_phasor_delta = cexp(complex(0.0f, -2.0f * M_PI * cnt_carrier / sample_rate));
-
-    dat_phasor = complex(0.0f, 1.0f);
-    dat_phasor_delta = cexp(complex(0.0f, -2.0f * M_PI * dat_carrier / sample_rate));
+    cnt_phasor = phasor(-cnt_carrier, sample_rate);
+    dat_phasor = phasor(-dat_carrier, sample_rate);
 
     cnt_fmd_scale = sample_rate / (M_PI * cnt_bandwidth);
     dat_fmd_scale = sample_rate / (M_PI * dat_bandwidth);
