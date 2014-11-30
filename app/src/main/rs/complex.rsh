@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
+#ifndef COMPLEX_RSH
+#define COMPLEX_RSH
+
 typedef float2 complex_t;
 static inline complex_t complex(float a, float b) { return (complex_t){ a, b }; }
 static inline float cabs(complex_t z) { return length(z); }
@@ -28,3 +31,5 @@ static inline complex_t cmul(complex_t a, complex_t b)
 }
 static inline complex_t conj(complex_t z) { return complex(z[0], -z[1]); }
 static inline complex_t cdiv(complex_t a, complex_t b) { return cmul(a, conj(b)) / dot(b, b); }
+
+#endif
