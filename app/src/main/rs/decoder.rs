@@ -20,6 +20,7 @@ limitations under the License.
 #include "complex.rsh"
 #include "ema.rsh"
 #include "ddc.rsh"
+#include "fmd.rsh"
 
 short *audio_buffer;
 uchar *value_buffer;
@@ -78,26 +79,9 @@ static float scottieDX_estimator(int length)
     return filter(&variance, deviation * deviation);
 }
 
-static float cnt_fmd_scale;
-static float cnt_fmd(complex_t baseband)
-{
-    static complex_t prev;
-    float phase = carg(cdiv(baseband, prev));
-    prev = baseband;
-    return clamp(cnt_fmd_scale * phase, -1.0f, 1.0f);
-}
-
-static float dat_fmd_scale;
-static float dat_fmd(complex_t baseband)
-{
-    static complex_t prev;
-    float phase = carg(cdiv(baseband, prev));
-    prev = baseband;
-    return clamp(dat_fmd_scale * phase, -1.0f, 1.0f);
-}
-
 static ema_t avg_power, leader_lowpass;
 static ddc_t cnt_ddc, dat_ddc;
+static fmd_t cnt_fmd, dat_fmd;
 static int sample_rate, mode, even_hpos;
 static int maximum_variance, minimum_sync_length;
 static int scanline_length, minimum_length, maximum_length;
@@ -391,8 +375,8 @@ void initialize(float rate, int length, int width, int height)
     cnt_ddc = ddc(cnt_carrier, cnt_bandwidth, sample_rate);
     dat_ddc = ddc(dat_carrier, dat_bandwidth, sample_rate);
 
-    cnt_fmd_scale = sample_rate / (M_PI * cnt_bandwidth);
-    dat_fmd_scale = sample_rate / (M_PI * dat_bandwidth);
+    cnt_fmd = fmd(cnt_bandwidth, sample_rate);
+    dat_fmd = fmd(dat_bandwidth, sample_rate);
 
     robot36_mode();
 }
@@ -668,8 +652,8 @@ void decode(int samples) {
         complex_t cnt_baseband = convert(&cnt_ddc, amp);
         complex_t dat_baseband = convert(&dat_ddc, amp);
 
-        float cnt_value = cnt_fmd(cnt_baseband);
-        float dat_value = dat_fmd(dat_baseband);
+        float cnt_value = demodulate(&cnt_fmd, cnt_baseband);
+        float dat_value = demodulate(&dat_fmd, dat_baseband);
 
         int cnt_active = cabs(dat_baseband) < cabs(cnt_baseband);
         uchar cnt_level = save_cnt ? 127.5f - 127.5f * cnt_value : 0.0f;
