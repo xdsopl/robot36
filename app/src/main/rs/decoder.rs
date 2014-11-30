@@ -140,13 +140,13 @@ void decode(int samples) {
         int sync_pulse = !sync_level && sync_counter >= sync_length;
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
-        if (mode != mode_raw) {
+        if (current_mode != mode_raw) {
             int detected_mode = calibration_detector(dat_value, cnt_active, cnt_quantized);
             if (detected_mode >= 0)
                 reset();
             switch_mode(detected_mode);
             int estimated_mode = scanline_estimator(sync_level);
-            if (estimated_mode >= 0 && estimated_mode != mode)
+            if (estimated_mode >= 0 && estimated_mode != current_mode)
                 reset();
             switch_mode(estimated_mode);
         }
@@ -162,7 +162,7 @@ void decode(int samples) {
                 seperator_counter = 0;
                 continue;
             }
-            switch (mode) {
+            switch (current_mode) {
                 case mode_robot36:
                     robot36_decoder();
                     break;

@@ -24,7 +24,7 @@ void debug_sync()
 {
     save_cnt = 1;
     save_dat = 0;
-    mode = mode_raw;
+    current_mode = mode_raw;
     sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -33,7 +33,7 @@ void debug_image()
 {
     save_dat = 1;
     save_cnt = 0;
-    mode = mode_raw;
+    current_mode = mode_raw;
     sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -42,7 +42,7 @@ void debug_both()
 {
     save_cnt = 1;
     save_dat = 1;
-    mode = mode_raw;
+    current_mode = mode_raw;
     sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -51,7 +51,7 @@ void robot36_mode()
 {
     save_dat = 1;
     save_cnt = 0;
-    mode = mode_robot36;
+    current_mode = mode_robot36;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -80,7 +80,7 @@ void robot72_mode()
 {
     save_dat = 1;
     save_cnt = 0;
-    mode = mode_robot72;
+    current_mode = mode_robot72;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -109,7 +109,7 @@ void martin1_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_martin1;
+    current_mode = mode_martin1;
     const float tolerance = 0.5f;
     const float sync_len = 0.004862f;
     const float sync_porch_len = 0.000572f;
@@ -132,7 +132,7 @@ void martin2_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_martin2;
+    current_mode = mode_martin2;
     const float tolerance = 0.5f;
     const float sync_len = 0.004862f;
     const float sync_porch_len = 0.000572f;
@@ -155,7 +155,7 @@ void scottie1_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_scottie1;
+    current_mode = mode_scottie1;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -179,7 +179,7 @@ void scottie2_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_scottie2;
+    current_mode = mode_scottie2;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -203,7 +203,7 @@ void scottieDX_mode()
 {
     save_cnt = 0;
     save_dat = 1;
-    mode = mode_scottieDX;
+    current_mode = mode_scottieDX;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_len = 0.009f;
@@ -226,7 +226,7 @@ void scottieDX_mode()
 
 static void switch_mode(int new_mode)
 {
-    if (new_mode == mode)
+    if (new_mode == current_mode)
         return;
     switch (new_mode) {
         case mode_robot36:
