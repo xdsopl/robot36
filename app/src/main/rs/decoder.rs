@@ -31,92 +31,65 @@ static const float ema_estimator_a = 0.7f;
 static int robot36_scanline_length;
 static float robot36_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = robot36_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
+    return filter(&variance, deviation * deviation);
 }
 static int robot72_scanline_length;
 static float robot72_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = robot72_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
+    return filter(&variance, deviation * deviation);
 }
 static int martin1_scanline_length;
 static float martin1_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = martin1_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
+    return filter(&variance, deviation * deviation);
 }
 static int martin2_scanline_length;
 static float martin2_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = martin2_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
+    return filter(&variance, deviation * deviation);
 }
 static int scottie1_scanline_length;
 static float scottie1_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = scottie1_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
+    return filter(&variance, deviation * deviation);
 }
 static int scottie2_scanline_length;
 static float scottie2_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = scottie2_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
+    return filter(&variance, deviation * deviation);
 }
 static int scottieDX_scanline_length;
 static float scottieDX_estimator(int length)
 {
-    static float variance;
+    static ema_t variance = { 0.0f, ema_estimator_a };
     float deviation = scottieDX_scanline_length - length;
-    return ema(&variance, deviation * deviation, ema_estimator_a);
-}
-
-static float ema_power_a;
-static float avg_power(float input)
-{
-    static float output;
-    return ema(&output, input, ema_power_a);
-}
-
-static float ema_leader_a;
-static float leader_lowpass(float input)
-{
-    static float output;
-    return ema(&output, input, ema_leader_a);
-}
-
-static const int filter_order = 11;
-static float ema_cnt_a;
-static complex_t cnt_lowpass(complex_t input)
-{
-    static complex_t output[filter_order];
-    return cema_cascade(output, input, ema_cnt_a, filter_order);
-}
-
-static float ema_dat_a;
-static complex_t dat_lowpass(complex_t input)
-{
-    static complex_t output[filter_order];
-    return cema_cascade(output, input, ema_dat_a, filter_order);
+    return filter(&variance, deviation * deviation);
 }
 
 static phasor_t cnt_phasor;
+static cema_cascade_t cnt_lowpass;
 static complex_t cnt_ddc(float amp)
 {
-    return cnt_lowpass(amp * rotate(&cnt_phasor));
+    return cfilter(&cnt_lowpass, amp * rotate(&cnt_phasor));
 }
 
 static phasor_t dat_phasor;
+static cema_cascade_t dat_lowpass;
 static complex_t dat_ddc(float amp)
 {
-    return dat_lowpass(amp * rotate(&dat_phasor));
+    return cfilter(&dat_lowpass, amp * rotate(&dat_phasor));
 }
 
 static float cnt_fmd_scale;
@@ -137,6 +110,7 @@ static float dat_fmd(complex_t baseband)
     return clamp(dat_fmd_scale * phase, -1.0f, 1.0f);
 }
 
+static ema_t avg_power, leader_lowpass;
 static int sample_rate, mode, even_hpos;
 static int maximum_variance, minimum_sync_length;
 static int scanline_length, minimum_length, maximum_length;
@@ -424,10 +398,13 @@ void initialize(float rate, int length, int width, int height)
     const float dat_bandwidth = 800.0f;
     const float cnt_bandwidth = 200.0f;
 
-    ema_power_a = ema_a(10.0f, sample_rate);
-    ema_leader_a = ema_a(100.0f, sample_rate);
-    ema_cnt_a = ema_cascade_a(cnt_bandwidth, sample_rate, filter_order);
-    ema_dat_a = ema_cascade_a(dat_bandwidth, sample_rate, filter_order);
+    avg_power = ema_cutoff(10.0f, sample_rate);
+    leader_lowpass = ema_cutoff(100.0f, sample_rate);
+
+    static const int filter_order = 11;
+    static cema_t cnt_ema_cascade[filter_order], dat_ema_cascade[filter_order];
+    cnt_lowpass = cema_cutoff_cascade(cnt_ema_cascade, cnt_bandwidth, sample_rate, filter_order);
+    dat_lowpass = cema_cutoff_cascade(dat_ema_cascade, dat_bandwidth, sample_rate, filter_order);
 
     cnt_phasor = phasor(-cnt_carrier, sample_rate);
     dat_phasor = phasor(-dat_carrier, sample_rate);
@@ -599,7 +576,7 @@ static int calibration_detected(float dat_value, int cnt_active, int cnt_quantiz
     progress = countdown ? progress : 0;
     countdown -= !!countdown;
 
-    int leader_quantized = round(leader_lowpass(dat_value));
+    int leader_quantized = round(filter(&leader_lowpass, dat_value));
     int leader_level = dat_active && leader_quantized == 0;
     int leader_pulse = !leader_level && leader_counter >= leader_length;
     leader_counter = leader_level ? leader_counter + 1 : 0;
@@ -703,7 +680,7 @@ void decode(int samples) {
     for (int sample = 0; sample < samples; ++sample) {
         float amp = audio_buffer[sample] / 32768.0f;
         float power = amp * amp;
-        if (avg_power(power) < 0.0000001f)
+        if (filter(&avg_power, power) < 0.0000001f)
             continue;
 
         complex_t cnt_baseband = cnt_ddc(amp);

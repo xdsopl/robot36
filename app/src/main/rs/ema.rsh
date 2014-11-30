@@ -19,32 +19,68 @@ limitations under the License.
 
 #include "complex.rsh"
 
-static float ema_a(float cutoff, float rate)
+typedef struct {
+    float prev, a;
+} ema_t;
+
+typedef struct {
+    complex_t prev;
+    float a;
+} cema_t;
+
+typedef struct {
+    cema_t *ema;
+    int order;
+} cema_cascade_t;
+
+static float ema_cutoff_a(float cutoff, float rate)
 {
     float RC = 1.0f / (2.0f * M_PI * cutoff);
     float dt = 1.0f / rate;
     return dt / (RC + dt);
 }
 
-static float ema_cascade_a(float cutoff, float rate, int order)
+static inline ema_t ema(float a)
 {
-    return ema_a(cutoff / sqrt(rootn(2.0f, order) - 1.0f), rate);
+    return (ema_t){ 0.0f, a };
 }
 
-static inline float ema(float *output, float input, float a)
+static inline cema_t cema(float a)
 {
-    return *output = a * input + (1.0f - a) * *output;
+    return (cema_t){ complex(0.0f, 0.0f), a };
 }
 
-static inline complex_t cema(complex_t *output, complex_t input, float a)
+static ema_t ema_cutoff(float cutoff, float rate)
 {
-    return *output = a * input + (1.0f - a) * *output;
+    return ema(ema_cutoff_a(cutoff, rate));
 }
 
-static complex_t cema_cascade(complex_t *output, complex_t input, float a, int order)
+static cema_t cema_cutoff(float cutoff, float rate)
+{
+    return cema(ema_cutoff_a(cutoff, rate));
+}
+
+static cema_cascade_t cema_cutoff_cascade(cema_t *ema, float cutoff, float rate, int order)
 {
     for (int i = 0; i < order; ++i)
-        input = cema(output + i, input, a);
+        ema[i] = cema_cutoff(cutoff / sqrt(rootn(2.0f, order) - 1.0f), rate);
+    return (cema_cascade_t){ ema, order };
+}
+
+static inline float filter(ema_t *ema, float input)
+{
+    return ema->prev = ema->a * input + (1.0f - ema->a) * ema->prev;
+}
+
+static inline complex_t __attribute__((overloadable)) cfilter(cema_t *ema, complex_t input)
+{
+    return ema->prev = ema->a * input + (1.0f - ema->a) * ema->prev;
+}
+
+static complex_t __attribute__((overloadable)) cfilter(cema_cascade_t *cascade, complex_t input)
+{
+    for (int i = 0; i < cascade->order; ++i)
+        input = cfilter(cascade->ema + i, input);
     return input;
 }
 
