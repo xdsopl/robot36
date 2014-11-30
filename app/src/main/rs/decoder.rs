@@ -17,26 +17,13 @@ limitations under the License.
 #pragma version(1)
 #pragma rs java_package_name(xdsopl.robot36)
 
+#include "complex.rsh"
+
 short *audio_buffer;
 uchar *value_buffer;
 uchar4 *pixel_buffer;
 
 static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
-
-typedef float2 complex_t;
-static inline complex_t complex(float a, float b) { return (complex_t){ a, b }; }
-static inline float cabs(complex_t z) { return length(z); }
-static inline float carg(complex_t z) { return atan2(z[1], z[0]); }
-static inline complex_t cexp(complex_t z)
-{
-    return complex(exp(z[0]) * cos(z[1]), exp(z[0]) * sin(z[1]));
-}
-static inline complex_t cmul(complex_t a, complex_t b)
-{
-    return complex(a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]);
-}
-static inline complex_t conj(complex_t z) { return complex(z[0], -z[1]); }
-static inline complex_t cdiv(complex_t a, complex_t b) { return cmul(a, conj(b)) / dot(b, b); }
 
 static float ema_a(float cutoff, float rate, int order)
 {
