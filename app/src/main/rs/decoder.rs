@@ -23,19 +23,20 @@ uchar4 *pixel_buffer;
 
 static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
 
-static inline float2 complex(float a, float b) { return (float2){ a, b }; }
-static inline float cabs(float2 z) { return length(z); }
-static inline float carg(float2 z) { return atan2(z[1], z[0]); }
-static inline float2 cexp(float2 z)
+typedef float2 complex_t;
+static inline complex_t complex(float a, float b) { return (complex_t){ a, b }; }
+static inline float cabs(complex_t z) { return length(z); }
+static inline float carg(complex_t z) { return atan2(z[1], z[0]); }
+static inline complex_t cexp(complex_t z)
 {
     return complex(exp(z[0]) * cos(z[1]), exp(z[0]) * sin(z[1]));
 }
-static inline float2 cmul(float2 a, float2 b)
+static inline complex_t cmul(complex_t a, complex_t b)
 {
     return complex(a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]);
 }
-static inline float2 conj(float2 z) { return complex(z[0], -z[1]); }
-static inline float2 cdiv(float2 a, float2 b) { return cmul(a, conj(b)) / dot(b, b); }
+static inline complex_t conj(complex_t z) { return complex(z[0], -z[1]); }
+static inline complex_t cdiv(complex_t a, complex_t b) { return cmul(a, conj(b)) / dot(b, b); }
 
 static float ema_a(float cutoff, float rate, int order)
 {
@@ -112,64 +113,64 @@ static float leader_lowpass(float input)
 
 static const int filter_order = 11;
 static float ema_cnt_a;
-static float2 cnt_lowpass(float2 input)
+static complex_t cnt_lowpass(complex_t input)
 {
-    static float2 output[filter_order];
+    static complex_t output[filter_order];
     for (int i = 0; i < filter_order; ++i)
         output[i] = input = ema_cnt_a * input + (1.0f - ema_cnt_a) * output[i];
     return input;
 }
 
 static float ema_dat_a;
-static float2 dat_lowpass(float2 input)
+static complex_t dat_lowpass(complex_t input)
 {
-    static float2 output[filter_order];
+    static complex_t output[filter_order];
     for (int i = 0; i < filter_order; ++i)
         output[i] = input = ema_dat_a * input + (1.0f - ema_dat_a) * output[i];
     return input;
 }
 
-static float2 cnt_phasor, cnt_phasor_delta;
-static float2 cnt_phasor_rotate()
+static complex_t cnt_phasor, cnt_phasor_delta;
+static complex_t cnt_phasor_rotate()
 {
-    float2 prev = cnt_phasor;
+    complex_t prev = cnt_phasor;
     cnt_phasor = cmul(cnt_phasor, cnt_phasor_delta);
     cnt_phasor = normalize(cnt_phasor);
     return prev;
 }
 
-static float2 dat_phasor, dat_phasor_delta;
-static float2 dat_phasor_rotate()
+static complex_t dat_phasor, dat_phasor_delta;
+static complex_t dat_phasor_rotate()
 {
-    float2 prev = dat_phasor;
+    complex_t prev = dat_phasor;
     dat_phasor = cmul(dat_phasor, dat_phasor_delta);
     dat_phasor = normalize(dat_phasor);
     return prev;
 }
 
-static float2 cnt_ddc(float amp)
+static complex_t cnt_ddc(float amp)
 {
     return cnt_lowpass(amp * cnt_phasor_rotate());
 }
 
-static float2 dat_ddc(float amp)
+static complex_t dat_ddc(float amp)
 {
     return dat_lowpass(amp * dat_phasor_rotate());
 }
 
 static float cnt_fmd_scale;
-static float cnt_fmd(float2 baseband)
+static float cnt_fmd(complex_t baseband)
 {
-    static float2 prev;
+    static complex_t prev;
     float phase = carg(cdiv(baseband, prev));
     prev = baseband;
     return clamp(cnt_fmd_scale * phase, -1.0f, 1.0f);
 }
 
 static float dat_fmd_scale;
-static float dat_fmd(float2 baseband)
+static float dat_fmd(complex_t baseband)
 {
-    static float2 prev;
+    static complex_t prev;
     float phase = carg(cdiv(baseband, prev));
     prev = baseband;
     return clamp(dat_fmd_scale * phase, -1.0f, 1.0f);
@@ -747,8 +748,8 @@ void decode(int samples) {
         if (avg_power(power) < 0.0000001f)
             continue;
 
-        float2 cnt_baseband = cnt_ddc(amp);
-        float2 dat_baseband = dat_ddc(amp);
+        complex_t cnt_baseband = cnt_ddc(amp);
+        complex_t dat_baseband = dat_ddc(amp);
 
         float cnt_value = cnt_fmd(cnt_baseband);
         float dat_value = dat_fmd(dat_baseband);
