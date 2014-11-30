@@ -28,9 +28,9 @@ typedef struct {
     float a;
 } cema_t;
 
+static const int cema_cascade_order = 11;
 typedef struct {
-    cema_t *ema;
-    int order;
+    cema_t ema[cema_cascade_order];
 } cema_cascade_t;
 
 static float ema_cutoff_a(float cutoff, float rate)
@@ -60,11 +60,12 @@ static cema_t cema_cutoff(float cutoff, float rate)
     return cema(ema_cutoff_a(cutoff, rate));
 }
 
-static cema_cascade_t cema_cutoff_cascade(cema_t *ema, float cutoff, float rate, int order)
+static cema_cascade_t cema_cutoff_cascade(float cutoff, float rate)
 {
-    for (int i = 0; i < order; ++i)
-        ema[i] = cema_cutoff(cutoff / sqrt(rootn(2.0f, order) - 1.0f), rate);
-    return (cema_cascade_t){ ema, order };
+    cema_cascade_t cascade;
+    for (int i = 0; i < cema_cascade_order; ++i)
+        cascade.ema[i] = cema_cutoff(cutoff / sqrt(rootn(2.0f, cema_cascade_order) - 1.0f), rate);
+    return cascade;
 }
 
 static inline float filter(ema_t *ema, float input)
@@ -79,7 +80,7 @@ static inline complex_t __attribute__((overloadable)) cfilter(cema_t *ema, compl
 
 static complex_t __attribute__((overloadable)) cfilter(cema_cascade_t *cascade, complex_t input)
 {
-    for (int i = 0; i < cascade->order; ++i)
+    for (int i = 0; i < cema_cascade_order; ++i)
         input = cfilter(cascade->ema + i, input);
     return input;
 }

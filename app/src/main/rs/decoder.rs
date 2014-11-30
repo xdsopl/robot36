@@ -19,7 +19,7 @@ limitations under the License.
 
 #include "complex.rsh"
 #include "ema.rsh"
-#include "phasor.rsh"
+#include "ddc.rsh"
 
 short *audio_buffer;
 uchar *value_buffer;
@@ -78,20 +78,6 @@ static float scottieDX_estimator(int length)
     return filter(&variance, deviation * deviation);
 }
 
-static phasor_t cnt_phasor;
-static cema_cascade_t cnt_lowpass;
-static complex_t cnt_ddc(float amp)
-{
-    return cfilter(&cnt_lowpass, amp * rotate(&cnt_phasor));
-}
-
-static phasor_t dat_phasor;
-static cema_cascade_t dat_lowpass;
-static complex_t dat_ddc(float amp)
-{
-    return cfilter(&dat_lowpass, amp * rotate(&dat_phasor));
-}
-
 static float cnt_fmd_scale;
 static float cnt_fmd(complex_t baseband)
 {
@@ -111,6 +97,7 @@ static float dat_fmd(complex_t baseband)
 }
 
 static ema_t avg_power, leader_lowpass;
+static ddc_t cnt_ddc, dat_ddc;
 static int sample_rate, mode, even_hpos;
 static int maximum_variance, minimum_sync_length;
 static int scanline_length, minimum_length, maximum_length;
@@ -401,13 +388,8 @@ void initialize(float rate, int length, int width, int height)
     avg_power = ema_cutoff(10.0f, sample_rate);
     leader_lowpass = ema_cutoff(100.0f, sample_rate);
 
-    static const int filter_order = 11;
-    static cema_t cnt_ema_cascade[filter_order], dat_ema_cascade[filter_order];
-    cnt_lowpass = cema_cutoff_cascade(cnt_ema_cascade, cnt_bandwidth, sample_rate, filter_order);
-    dat_lowpass = cema_cutoff_cascade(dat_ema_cascade, dat_bandwidth, sample_rate, filter_order);
-
-    cnt_phasor = phasor(-cnt_carrier, sample_rate);
-    dat_phasor = phasor(-dat_carrier, sample_rate);
+    cnt_ddc = ddc(cnt_carrier, cnt_bandwidth, sample_rate);
+    dat_ddc = ddc(dat_carrier, dat_bandwidth, sample_rate);
 
     cnt_fmd_scale = sample_rate / (M_PI * cnt_bandwidth);
     dat_fmd_scale = sample_rate / (M_PI * dat_bandwidth);
@@ -683,8 +665,8 @@ void decode(int samples) {
         if (filter(&avg_power, power) < 0.0000001f)
             continue;
 
-        complex_t cnt_baseband = cnt_ddc(amp);
-        complex_t dat_baseband = dat_ddc(amp);
+        complex_t cnt_baseband = convert(&cnt_ddc, amp);
+        complex_t dat_baseband = convert(&dat_ddc, amp);
 
         float cnt_value = cnt_fmd(cnt_baseband);
         float dat_value = dat_fmd(dat_baseband);
