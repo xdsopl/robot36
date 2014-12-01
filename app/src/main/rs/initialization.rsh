@@ -45,7 +45,7 @@ void initialize(float rate, int length, int width, int height)
     scottieDX_scanline_length = scottieDX_scanline_seconds * sample_rate;
 
     const float pairwise_minimum_of_scanline_time_distances = 0.018226f;
-    float deviation = pairwise_minimum_of_scanline_time_distances * sample_rate;
+    float deviation = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;
     maximum_variance = deviation * deviation;
 
     const float first_leader_tolerance = 0.3f;
