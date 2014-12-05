@@ -33,6 +33,11 @@ uchar *value_buffer;
 uchar4 *pixel_buffer;
 
 static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
+static inline uchar4 yuv(uchar y, uchar u, uchar v)
+{
+    uchar4 bgra = rsYuvToRGBA_uchar4(y, u, v);
+    return rgb(bgra[0], bgra[1], bgra[2]);
+}
 
 static void reset()
 {
@@ -54,11 +59,11 @@ static void robot36_decoder()
     if (vpos & 1) {
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
-            uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
+            uchar v = value_buffer[i * (v_end-v_begin) / bitmap_width + v_begin];
             uchar odd_y = value_buffer[i * (y_end-y_begin) / bitmap_width + even_hpos + y_begin];
-            uchar v = value_buffer[i * (v_end-v_begin) / bitmap_width + even_hpos + v_begin];
-            pixel_buffer[bitmap_width * (vpos-1) + i] = rsYuvToRGBA_uchar4(even_y, u, v);
-            pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(odd_y, u, v);
+            uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + even_hpos + u_begin];
+            pixel_buffer[bitmap_width * (vpos-1) + i] = yuv(even_y, u, v);
+            pixel_buffer[bitmap_width * vpos + i] = yuv(odd_y, u, v);
         }
         if (prev_timeout)
             hpos -= scanline_length;
@@ -82,7 +87,7 @@ static void yuv_decoder()
         uchar y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
         uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
         uchar v = value_buffer[i * (v_end-v_begin) / bitmap_width + v_begin];
-        pixel_buffer[bitmap_width * vpos + i] = rsYuvToRGBA_uchar4(y, u, v);
+        pixel_buffer[bitmap_width * vpos + i] = yuv(y, u, v);
     }
     if (hpos >= maximum_length)
         hpos -= scanline_length;
