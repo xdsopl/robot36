@@ -71,7 +71,7 @@ static int scanline_estimator(int sync_level)
     int sync_pulse = !sync_level && sync_counter >= minimum_sync_length;
     sync_counter = sync_level ? sync_counter + 1 : 0;
 
-    if (!sync_pulse) {
+    if (!sync_pulse && scanline_counter < buffer_length) {
         ++scanline_counter;
         return -1;
     }
