@@ -24,43 +24,43 @@ static const float ema_estimator_a = 0.7f;
 static float robot36_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = robot36_scanline_length - length;
+    float deviation = length - robot36_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 static float robot72_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = robot72_scanline_length - length;
+    float deviation = length - robot72_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 static float martin1_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = martin1_scanline_length - length;
+    float deviation = length - martin1_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 static float martin2_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = martin2_scanline_length - length;
+    float deviation = length - martin2_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 static float scottie1_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = scottie1_scanline_length - length;
+    float deviation = length - scottie1_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 static float scottie2_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = scottie2_scanline_length - length;
+    float deviation = length - scottie2_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 static float scottieDX_estimator(int length)
 {
     static ema_t variance = { 0.0f, ema_estimator_a };
-    float deviation = scottieDX_scanline_length - length;
+    float deviation = length - scottieDX_scanline_length;
     return filter(&variance, deviation * deviation);
 }
 
