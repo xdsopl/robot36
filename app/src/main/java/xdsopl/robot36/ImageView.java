@@ -37,6 +37,8 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     boolean takeABreak = true, cantTouchThis = true;
     int imageWidth = 320;
     int imageHeight = 240;
+    MainActivity activity;
+    String title;
     final SurfaceHolder holder;
     final Bitmap bitmap;
     final Paint paint;
@@ -47,10 +49,21 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     final int sampleRate = 44100;
     final short[] audioBuffer;
     final int[] pixelBuffer;
+    final int[] currentMode;
 
     final RenderScript rs;
-    final Allocation rsDecoderAudioBuffer, rsDecoderPixelBuffer, rsDecoderValueBuffer;
+    final Allocation rsDecoderAudioBuffer, rsDecoderPixelBuffer;
+    final Allocation rsDecoderValueBuffer, rsDecoderCurrentMode;
     final ScriptC_decoder rsDecoder;
+
+    final int mode_raw = 0;
+    final int mode_robot36 = 1;
+    final int mode_robot72 = 2;
+    final int mode_martin1 = 3;
+    final int mode_martin2 = 4;
+    final int mode_scottie1 = 5;
+    final int mode_scottie2 = 6;
+    final int mode_scottieDX = 7;
 
     final Thread thread = new Thread() {
         @Override
@@ -92,93 +105,121 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         audioBuffer = new short[framesPerSecond * bufferSizeInSamples];
 
         int maxHorizontalLength = 2 * sampleRate;
+        currentMode = new int[1];
 
         rs = RenderScript.create(context);
         rsDecoderAudioBuffer = Allocation.createSized(rs, Element.I16(rs), audioBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderValueBuffer = Allocation.createSized(rs, Element.U8(rs), maxHorizontalLength, Allocation.USAGE_SCRIPT);
         rsDecoderPixelBuffer = Allocation.createSized(rs, Element.I32(rs), pixelBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoder = new ScriptC_decoder(rs);
         rsDecoder.bind_audio_buffer(rsDecoderAudioBuffer);
         rsDecoder.bind_value_buffer(rsDecoderValueBuffer);
         rsDecoder.bind_pixel_buffer(rsDecoderPixelBuffer);
+        rsDecoder.bind_current_mode(rsDecoderCurrentMode);
         rsDecoder.invoke_initialize(sampleRate, maxHorizontalLength, bitmap.getWidth(), bitmap.getHeight());
 
         thread.start();
     }
     void debug_sync() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = bitmap.getHeight();
             rsDecoder.invoke_debug_sync();
         }
     }
     void debug_image() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = bitmap.getHeight();
             rsDecoder.invoke_debug_image();
         }
     }
     void debug_both() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = bitmap.getHeight();
             rsDecoder.invoke_debug_both();
         }
     }
     void robot36_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 240;
             rsDecoder.invoke_robot36_mode();
         }
     }
     void robot72_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 240;
             rsDecoder.invoke_robot72_mode();
         }
     }
     void martin1_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 256;
             rsDecoder.invoke_martin1_mode();
         }
     }
     void martin2_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 256;
             rsDecoder.invoke_martin2_mode();
         }
     }
     void scottie1_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 256;
             rsDecoder.invoke_scottie1_mode();
         }
     }
     void scottie2_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 256;
             rsDecoder.invoke_scottie2_mode();
         }
     }
     void scottieDX_mode() {
         synchronized (thread) {
-            imageWidth = 320;
-            imageHeight = 256;
             rsDecoder.invoke_scottieDX_mode();
         }
     }
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    void updateTitle(int id) { activity.updateTitle(activity.getString(id)); }
+    void switch_mode(int mode)
+    {
         synchronized (thread) {
-            canvasWidth = width;
-            canvasHeight = height;
+            switch (mode) {
+                case mode_raw:
+                    imageWidth = 320;
+                    imageHeight = bitmap.getHeight();
+                    updateTitle(R.string.action_debug_mode);
+                    break;
+                case mode_robot36:
+                    imageWidth = 320;
+                    imageHeight = 240;
+                    updateTitle(R.string.action_robot36_mode);
+                    break;
+                case mode_robot72:
+                    imageWidth = 320;
+                    imageHeight = 240;
+                    updateTitle(R.string.action_robot72_mode);
+                    break;
+                case mode_martin1:
+                    imageWidth = 320;
+                    imageHeight = 256;
+                    updateTitle(R.string.action_martin1_mode);
+                    break;
+                case mode_martin2:
+                    imageWidth = 320;
+                    imageHeight = 256;
+                    updateTitle(R.string.action_martin2_mode);
+                    break;
+                case mode_scottie1:
+                    imageWidth = 320;
+                    imageHeight = 256;
+                    updateTitle(R.string.action_scottie1_mode);
+                    break;
+                case mode_scottie2:
+                    imageWidth = 320;
+                    imageHeight = 256;
+                    updateTitle(R.string.action_scottie2_mode);
+                    break;
+                case mode_scottieDX:
+                    imageWidth = 320;
+                    imageHeight = 256;
+                    updateTitle(R.string.action_scottieDX_mode);
+                    break;
+                default:
+                    break;
+            }
         }
     }
     void pause() {
@@ -199,6 +240,12 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
                 audio.startRecording();
             }
             thread.notify();
+        }
+    }
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        synchronized (thread) {
+            canvasWidth = width;
+            canvasHeight = height;
         }
     }
     public void surfaceCreated(SurfaceHolder holder) {
@@ -241,5 +288,8 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         rsDecoder.invoke_decode(samples);
         rsDecoderPixelBuffer.copyTo(pixelBuffer);
         bitmap.setPixels(pixelBuffer, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        rsDecoderCurrentMode.copyTo(currentMode);
+        switch_mode(currentMode[0]);
     }
 }

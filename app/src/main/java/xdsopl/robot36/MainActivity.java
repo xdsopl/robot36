@@ -24,11 +24,25 @@ import android.view.MenuItem;
 
 public class MainActivity extends Activity {
     ImageView view;
+
+    void updateTitle(final String newTitle)
+    {
+        if (getTitle() != newTitle) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setTitle(newTitle);
+                }
+            });
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         view = (ImageView)findViewById(R.id.image);
+        view.activity = this;
     }
 
     @Override

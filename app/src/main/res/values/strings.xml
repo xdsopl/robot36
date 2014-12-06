@@ -5,6 +5,7 @@
     <string name="action_debug_sync">Debug Sync</string>
     <string name="action_debug_image">Debug Image</string>
     <string name="action_debug_both">Debug Image and Sync</string>
+    <string name="action_debug_mode">Debug Mode</string>
     <string name="action_robot36_mode">Robot36 Mode</string>
     <string name="action_robot72_mode">Robot72 Mode</string>
     <string name="action_martin1_mode">Martin1 Mode</string>
