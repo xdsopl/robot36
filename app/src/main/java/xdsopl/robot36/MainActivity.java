@@ -23,7 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class MainActivity extends Activity {
-    ImageView view;
+    private ImageView view;
 
     void updateTitle(final String newTitle)
     {

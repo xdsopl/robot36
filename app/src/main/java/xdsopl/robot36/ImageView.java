@@ -33,47 +33,49 @@ import android.support.v8.renderscript.Element;
 import android.support.v8.renderscript.RenderScript;
 
 public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
-    int canvasWidth = -1, canvasHeight = -1;
-    boolean takeABreak = true, cantTouchThis = true;
-    int imageWidth = 320;
-    int imageHeight = 240;
+    private int canvasWidth = -1, canvasHeight = -1;
+    private boolean takeABreak = true, cantTouchThis = true;
+    private int imageWidth = 320;
+    private int imageHeight = 240;
     MainActivity activity;
-    String title;
-    final SurfaceHolder holder;
-    final Bitmap bitmap;
-    final Paint paint;
-    AudioRecord audio;
-    final int audioSource = MediaRecorder.AudioSource.MIC;
-    final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
-    final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
-    final int sampleRate = 44100;
-    final short[] audioBuffer;
-    final int[] pixelBuffer;
-    final int[] currentMode;
+    private final SurfaceHolder holder;
+    private final Bitmap bitmap;
+    private final Paint paint;
+    private AudioRecord audio;
+    private final int audioSource = MediaRecorder.AudioSource.MIC;
+    private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
+    private final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
+    private final int sampleRate = 44100;
+    private final short[] audioBuffer;
+    private final int[] pixelBuffer;
+    private final int[] currentMode;
 
-    final RenderScript rs;
-    final Allocation rsDecoderAudioBuffer, rsDecoderPixelBuffer;
-    final Allocation rsDecoderValueBuffer, rsDecoderCurrentMode;
-    final ScriptC_decoder rsDecoder;
+    private final RenderScript rs;
+    private final Allocation rsDecoderAudioBuffer;
+    private final Allocation rsDecoderPixelBuffer;
+    private final Allocation rsDecoderValueBuffer;
+    private final Allocation rsDecoderCurrentMode;
+    private final ScriptC_decoder rsDecoder;
 
-    final int mode_raw = 0;
-    final int mode_robot36 = 1;
-    final int mode_robot72 = 2;
-    final int mode_martin1 = 3;
-    final int mode_martin2 = 4;
-    final int mode_scottie1 = 5;
-    final int mode_scottie2 = 6;
-    final int mode_scottieDX = 7;
+    private final int mode_raw = 0;
+    private final int mode_robot36 = 1;
+    private final int mode_robot72 = 2;
+    private final int mode_martin1 = 3;
+    private final int mode_martin2 = 4;
+    private final int mode_scottie1 = 5;
+    private final int mode_scottie2 = 6;
+    private final int mode_scottieDX = 7;
 
-    final Thread thread = new Thread() {
+    private final Thread thread = new Thread() {
         @Override
         public void run() {
+            //noinspection InfiniteLoopStatement
             while (true) {
                 synchronized (this) {
                     while (cantTouchThis || takeABreak) {
                         try {
                             wait();
-                        } catch (InterruptedException e) {
+                        } catch (InterruptedException ignored) {
                         }
                     }
                     decode();
