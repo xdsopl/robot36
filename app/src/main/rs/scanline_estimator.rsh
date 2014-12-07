@@ -63,6 +63,12 @@ static float scottieDX_estimator(int length)
     float deviation = length - scottieDX_scanline_length;
     return filter(&variance, deviation * deviation);
 }
+static float wrasseSC2_180_estimator(int length)
+{
+    static ema_t variance = { 0.0f, ema_estimator_a };
+    float deviation = length - wrasseSC2_180_scanline_length;
+    return filter(&variance, deviation * deviation);
+}
 
 static int scanline_estimator(int sync_level)
 {
@@ -83,11 +89,18 @@ static int scanline_estimator(int sync_level)
     float scottie1_var = scottie1_estimator(scanline_counter);
     float scottie2_var = scottie2_estimator(scanline_counter);
     float scottieDX_var = scottieDX_estimator(scanline_counter);
+    float wrasseSC2_180_var = wrasseSC2_180_estimator(scanline_counter);
     scanline_counter = 0;
 
-    float min_var = min(min(min(robot36_var, robot72_var),
-        min(martin1_var, martin2_var)),
-        min(min(scottie1_var, scottie2_var), scottieDX_var));
+    float min_var = min(
+        min(
+            min(robot36_var, robot72_var),
+            min(martin1_var, martin2_var)
+        ), min(
+            min(scottie1_var, scottie2_var),
+            min(scottieDX_var, wrasseSC2_180_var)
+        )
+    );
 
     if (min_var > maximum_variance)
         return -1;
@@ -105,6 +118,8 @@ static int scanline_estimator(int sync_level)
         return mode_scottie2;
     else if (min_var == scottieDX_var)
         return mode_scottieDX;
+    else if (min_var == wrasseSC2_180_var)
+        return mode_wrasseSC2_180;
     return -1;
 }
 

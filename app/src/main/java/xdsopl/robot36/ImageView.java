@@ -65,6 +65,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private final int mode_scottie1 = 5;
     private final int mode_scottie2 = 6;
     private final int mode_scottieDX = 7;
+    private final int mode_wrasseSC2_180 = 8;
 
     private final Thread thread = new Thread() {
         @Override
@@ -173,6 +174,11 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
             rsDecoder.invoke_scottieDX_mode();
         }
     }
+    void wrasseSC2_180_mode() {
+        synchronized (thread) {
+            rsDecoder.invoke_wrasseSC2_180_mode();
+        }
+    }
 
     void updateTitle(int id) { activity.updateTitle(activity.getString(id)); }
     void switch_mode(int mode)
@@ -218,6 +224,11 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
                     imageWidth = 320;
                     imageHeight = 256;
                     updateTitle(R.string.action_scottieDX_mode);
+                    break;
+                case mode_wrasseSC2_180:
+                    imageWidth = 320;
+                    imageHeight = 256;
+                    updateTitle(R.string.action_wrasseSC2_180_mode);
                     break;
                 default:
                     break;

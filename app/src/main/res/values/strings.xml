@@ -13,5 +13,6 @@
     <string name="action_scottie1_mode">Scottie1 Mode</string>
     <string name="action_scottie2_mode">Scottie2 Mode</string>
     <string name="action_scottieDX_mode">ScottieDX Mode</string>
+    <string name="action_wrasseSC2_180_mode">WrasseSC2-180 Mode</string>
 
 </resources>

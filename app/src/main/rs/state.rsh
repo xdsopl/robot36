@@ -40,5 +40,6 @@ static int martin2_scanline_length;
 static int scottie1_scanline_length;
 static int scottie2_scanline_length;
 static int scottieDX_scanline_length;
+static int wrasseSC2_180_scanline_length;
 
 #endif

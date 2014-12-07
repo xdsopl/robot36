@@ -218,6 +218,25 @@ void scottieDX_mode()
     scanline_length = scottieDX_scanline_length;
     maximum_length = scanline_length + sync_porch_seconds * sample_rate;
 }
+void wrasseSC2_180_mode()
+{
+    save_cnt = 0;
+    save_dat = 1;
+    *current_mode = mode_wrasseSC2_180;
+    const float tolerance = 0.5f;
+    const float sync_seconds = 0.0055225f;
+    const float sync_porch_seconds = 0.0005f;
+    const float rgb_scan_seconds = 0.235f;
+    sync_length = tolerance * sync_seconds * sample_rate;
+    r_begin = 0;
+    r_end = r_begin + rgb_scan_seconds * sample_rate;
+    g_begin = r_end;
+    g_end = g_begin + rgb_scan_seconds * sample_rate;
+    b_begin = g_end;
+    b_end = b_begin + rgb_scan_seconds * sample_rate;
+    scanline_length = wrasseSC2_180_scanline_length;
+    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+}
 
 static void switch_mode(int new_mode)
 {
@@ -244,6 +263,9 @@ static void switch_mode(int new_mode)
             break;
         case mode_scottieDX:
             scottieDX_mode();
+            break;
+        case mode_wrasseSC2_180:
+            wrasseSC2_180_mode();
             break;
         default:
             return;

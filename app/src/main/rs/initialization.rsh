@@ -43,6 +43,7 @@ void initialize(float rate, int length, int width, int height)
     scottie1_scanline_length = scottie1_scanline_seconds * sample_rate;
     scottie2_scanline_length = scottie2_scanline_seconds * sample_rate;
     scottieDX_scanline_length = scottieDX_scanline_seconds * sample_rate;
+    wrasseSC2_180_scanline_length = wrasseSC2_180_scanline_seconds * sample_rate;
 
     const float pairwise_minimum_of_scanline_time_distances = 0.018226f;
     float deviation = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;

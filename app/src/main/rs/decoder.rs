@@ -177,6 +177,7 @@ void decode(int samples) {
                 case mode_scottie1:
                 case mode_scottie2:
                 case mode_scottieDX:
+                case mode_wrasseSC2_180:
                     rgb_decoder();
                     break;
                 default:

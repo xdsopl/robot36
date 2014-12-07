@@ -82,6 +82,9 @@ public class MainActivity extends Activity {
             case R.id.action_scottieDX_mode:
                 view.scottieDX_mode();
                 return true;
+            case R.id.action_wrasseSC2_180_mode:
+                view.wrasseSC2_180_mode();
+                return true;
             case R.id.action_debug_sync:
                 view.debug_sync();
                 return true;
