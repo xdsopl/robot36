@@ -130,10 +130,11 @@ void decode(int samples) {
         float cnt_value = demodulate(&cnt_fmd, cnt_baseband);
         float dat_value = demodulate(&dat_fmd, dat_baseband);
 
-        int cnt_active = cabs(dat_baseband) < cabs(cnt_baseband);
-        uchar cnt_level = save_cnt ? 127.5f - 127.5f * cnt_value : 0.0f;
-        uchar dat_level = save_dat ? 127.5f + 127.5f * dat_value : 0.0f;
-        value_buffer[hpos + even_hpos] = cnt_active ? cnt_level : dat_level;
+        int cnt_active = cabs(dat_baseband) < 4.0f * cabs(cnt_baseband);
+        int dat_active = cabs(cnt_baseband) < 4.0f * cabs(dat_baseband);
+        uchar cnt_level = save_cnt && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
+        uchar dat_level = save_dat && dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
+        value_buffer[hpos + even_hpos] = cnt_level | dat_level;
 
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
@@ -143,7 +144,7 @@ void decode(int samples) {
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
         if (*current_mode != mode_raw) {
-            int detected_mode = calibration_detector(dat_value, cnt_active, cnt_quantized);
+            int detected_mode = calibration_detector(dat_value, dat_active, cnt_active, cnt_quantized);
             if (detected_mode >= 0)
                 reset();
             switch_mode(detected_mode);
