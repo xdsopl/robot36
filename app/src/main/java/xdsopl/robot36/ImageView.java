@@ -78,7 +78,6 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
                         } catch (InterruptedException ignored) {
                         }
                     }
-                    decode();
                     Canvas canvas = null;
                     try {
                         canvas = holder.lockCanvas(null);
@@ -87,6 +86,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
                         if (canvas != null)
                             holder.unlockCanvasAndPost(canvas);
                     }
+                    decode();
                 }
             }
         }
