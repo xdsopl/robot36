@@ -143,7 +143,7 @@ void decode(int samples) {
         int sync_pulse = !sync_level && sync_counter >= sync_length;
         sync_counter = sync_level ? sync_counter + 1 : 0;
 
-        if (*current_mode != mode_raw) {
+        if (*current_mode != mode_debug) {
             int detected_mode = calibration_detector(dat_value, dat_active, cnt_active, cnt_quantized);
             if (detected_mode >= 0)
                 reset();
@@ -165,19 +165,14 @@ void decode(int samples) {
                 seperator_counter = 0;
                 continue;
             }
-            switch (*current_mode) {
-                case mode_robot36:
+            switch (current_decoder) {
+                case decoder_robot36:
                     robot36_decoder();
                     break;
-                case mode_robot72:
+                case decoder_yuv:
                     yuv_decoder();
                     break;
-                case mode_martin1:
-                case mode_martin2:
-                case mode_scottie1:
-                case mode_scottie2:
-                case mode_scottieDX:
-                case mode_wrasseSC2_180:
+                case decoder_rgb:
                     rgb_decoder();
                     break;
                 default:

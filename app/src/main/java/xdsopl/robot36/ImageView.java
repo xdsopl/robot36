@@ -57,7 +57,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private final Allocation rsDecoderCurrentMode;
     private final ScriptC_decoder rsDecoder;
 
-    private final int mode_raw = 0;
+    private final int mode_debug = 0;
     private final int mode_robot36 = 1;
     private final int mode_robot72 = 2;
     private final int mode_martin1 = 3;
@@ -185,7 +185,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     {
         synchronized (thread) {
             switch (mode) {
-                case mode_raw:
+                case mode_debug:
                     imageWidth = 320;
                     imageHeight = bitmap.getHeight();
                     updateTitle(R.string.action_debug_mode);
