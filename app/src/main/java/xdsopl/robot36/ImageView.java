@@ -99,7 +99,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         holder.addCallback(this);
 
         paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-        bitmap = Bitmap.createBitmap(2048, 512, Bitmap.Config.ARGB_8888);
+        bitmap = Bitmap.createBitmap(320, 512, Bitmap.Config.ARGB_8888);
         pixelBuffer = new int[bitmap.getWidth() * bitmap.getHeight()];
 
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);

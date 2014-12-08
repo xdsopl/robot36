@@ -25,6 +25,7 @@ void debug_sync()
 {
     save_cnt = 1;
     save_dat = 0;
+    blur_power = -1;
     *current_mode = mode_debug;
     current_decoder = decoder_raw;
     sync_length = minimum_sync_length;
@@ -35,6 +36,7 @@ void debug_image()
 {
     save_dat = 1;
     save_cnt = 0;
+    blur_power = -1;
     *current_mode = mode_debug;
     current_decoder = decoder_raw;
     sync_length = minimum_sync_length;
@@ -45,6 +47,7 @@ void debug_both()
 {
     save_cnt = 1;
     save_dat = 1;
+    blur_power = -1;
     *current_mode = mode_debug;
     current_decoder = decoder_raw;
     sync_length = minimum_sync_length;
@@ -55,6 +58,7 @@ void robot36_mode()
 {
     save_dat = 1;
     save_cnt = 0;
+    blur_power = 2;
     *current_mode = mode_robot36;
     current_decoder = decoder_robot36;
     const float tolerance = 0.8f;
@@ -80,6 +84,7 @@ void robot72_mode()
 {
     save_dat = 1;
     save_cnt = 0;
+    blur_power = 3;
     *current_mode = mode_robot72;
     current_decoder = decoder_yuv;
     const float tolerance = 0.8f;
@@ -109,6 +114,7 @@ void martin1_mode()
 {
     save_cnt = 0;
     save_dat = 1;
+    blur_power = 3;
     *current_mode = mode_martin1;
     current_decoder = decoder_rgb;
     const float tolerance = 0.5f;
@@ -133,6 +139,7 @@ void martin2_mode()
 {
     save_cnt = 0;
     save_dat = 1;
+    blur_power = 2;
     *current_mode = mode_martin2;
     current_decoder = decoder_rgb;
     const float tolerance = 0.5f;
@@ -157,6 +164,7 @@ void scottie1_mode()
 {
     save_cnt = 0;
     save_dat = 1;
+    blur_power = 3;
     *current_mode = mode_scottie1;
     current_decoder = decoder_rgb;
     const float tolerance = 0.8f;
@@ -182,6 +190,7 @@ void scottie2_mode()
 {
     save_cnt = 0;
     save_dat = 1;
+    blur_power = 2;
     *current_mode = mode_scottie2;
     current_decoder = decoder_rgb;
     const float tolerance = 0.8f;
@@ -207,6 +216,7 @@ void scottieDX_mode()
 {
     save_cnt = 0;
     save_dat = 1;
+    blur_power = 5;
     *current_mode = mode_scottieDX;
     current_decoder = decoder_rgb;
     const float tolerance = 0.8f;
@@ -232,6 +242,7 @@ void wrasseSC2_180_mode()
 {
     save_cnt = 0;
     save_dat = 1;
+    blur_power = 4;
     *current_mode = mode_wrasseSC2_180;
     current_decoder = decoder_rgb;
     const float tolerance = 0.5f;

@@ -28,6 +28,7 @@ limitations under the License.
 #include "constants.rsh"
 #include "state.rsh"
 #include "exports.rsh"
+#include "blur.rsh"
 
 static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
 static inline uchar4 yuv(uchar y, uchar u, uchar v)
@@ -55,10 +56,10 @@ static void robot36_decoder()
     prev_timeout = hpos >= maximum_length;
     if (vpos & 1) {
         for (int i = 0; i < bitmap_width; ++i) {
-            uchar even_y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
-            uchar v = value_buffer[i * (v_end-v_begin) / bitmap_width + v_begin];
-            uchar odd_y = value_buffer[i * (y_end-y_begin) / bitmap_width + even_hpos + y_begin];
-            uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + even_hpos + u_begin];
+            uchar even_y = value_blur(i * (y_end-y_begin) / bitmap_width + y_begin);
+            uchar v = value_blur(i * (v_end-v_begin) / bitmap_width + v_begin);
+            uchar odd_y = value_blur(i * (y_end-y_begin) / bitmap_width + even_hpos + y_begin);
+            uchar u = value_blur(i * (u_end-u_begin) / bitmap_width + even_hpos + u_begin);
             pixel_buffer[bitmap_width * (vpos-1) + i] = yuv(even_y, u, v);
             pixel_buffer[bitmap_width * vpos + i] = yuv(odd_y, u, v);
         }
@@ -81,9 +82,9 @@ static void robot36_decoder()
 static void yuv_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar y = value_buffer[i * (y_end-y_begin) / bitmap_width + y_begin];
-        uchar u = value_buffer[i * (u_end-u_begin) / bitmap_width + u_begin];
-        uchar v = value_buffer[i * (v_end-v_begin) / bitmap_width + v_begin];
+        uchar y = value_blur(i * (y_end-y_begin) / bitmap_width + y_begin);
+        uchar u = value_blur(i * (u_end-u_begin) / bitmap_width + u_begin);
+        uchar v = value_blur(i * (v_end-v_begin) / bitmap_width + v_begin);
         pixel_buffer[bitmap_width * vpos + i] = yuv(y, u, v);
     }
     if (hpos >= maximum_length)
@@ -96,9 +97,9 @@ static void yuv_decoder()
 static void rgb_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar r = value_buffer[i * (r_end-r_begin) / bitmap_width + r_begin];
-        uchar g = value_buffer[i * (g_end-g_begin) / bitmap_width + g_begin];
-        uchar b = value_buffer[i * (b_end-b_begin) / bitmap_width + b_begin];
+        uchar r = value_blur(i * (r_end-r_begin) / bitmap_width + r_begin);
+        uchar g = value_blur(i * (g_end-g_begin) / bitmap_width + g_begin);
+        uchar b = value_blur(i * (b_end-b_begin) / bitmap_width + b_begin);
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
     if (hpos >= maximum_length)
@@ -111,7 +112,7 @@ static void rgb_decoder()
 static void raw_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar value = value_buffer[i * hpos / bitmap_width];
+        uchar value = value_blur(i * hpos / bitmap_width);
         pixel_buffer[bitmap_width * vpos + i] = rgb(value, value, value);
     }
     even_hpos = hpos = 0;
