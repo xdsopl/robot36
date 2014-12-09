@@ -14,5 +14,7 @@
     <string name="action_scottie2_mode">Scottie2 Mode</string>
     <string name="action_scottieDX_mode">ScottieDX Mode</string>
     <string name="action_wrasseSC2_180_mode">WrasseSC2-180 Mode</string>
+    <string name="action_softer_image">Softer Image</string>
+    <string name="action_sharper_image">Sharper Image</string>
 
 </resources>

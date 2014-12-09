@@ -61,6 +61,12 @@ public class MainActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         switch (id) {
+            case R.id.action_softer_image:
+                view.softer_image();
+                return true;
+            case R.id.action_sharper_image:
+                view.sharper_image();
+                return true;
             case R.id.action_robot36_mode:
                 view.robot36_mode();
                 return true;

@@ -124,6 +124,16 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
 
         thread.start();
     }
+    void softer_image() {
+        synchronized (thread) {
+            rsDecoder.invoke_incr_blur();
+        }
+    }
+    void sharper_image() {
+        synchronized (thread) {
+            rsDecoder.invoke_decr_blur();
+        }
+    }
     void debug_sync() {
         synchronized (thread) {
             rsDecoder.invoke_debug_sync();

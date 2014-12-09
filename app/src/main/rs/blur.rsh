@@ -19,6 +19,16 @@ limitations under the License.
 
 #include "exports.rsh"
 
+void incr_blur()
+{
+    blur_power = blur_power < 6 ? blur_power + 1 : blur_power;
+}
+
+void decr_blur()
+{
+    blur_power = blur_power >= 0 ? blur_power - 1 : blur_power;
+}
+
 /* used the following code generator:
 #include <math.h>
 #include <stdio.h>

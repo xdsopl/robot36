@@ -1,5 +1,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
+
+    <item android:id="@+id/action_softer_image" android:title="@string/action_softer_image"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_sharper_image" android:title="@string/action_sharper_image"
+        android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode"
