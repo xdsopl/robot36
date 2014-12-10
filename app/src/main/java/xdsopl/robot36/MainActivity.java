@@ -18,12 +18,22 @@ limitations under the License.
 package xdsopl.robot36;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.Menu;
 import android.view.MenuItem;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends Activity {
     private ImageView view;
+    private Bitmap bitmap;
 
     void updateTitle(final String newTitle)
     {
@@ -35,6 +45,36 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    void storeBitmap(Bitmap image) {
+        bitmap = image;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                String name = new SimpleDateFormat("yyyyMMdd_HHmmss_").format(new Date());
+                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                if (!dir.exists())
+                    dir.mkdirs();
+                File file;
+                FileOutputStream stream;
+                try {
+                    file = File.createTempFile(name, ".png", dir);
+                    stream = new FileOutputStream(file);
+                } catch (IOException ignore) {
+                    return;
+                }
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                try {
+                    stream.close();
+                } catch (IOException ignore) {
+                    return;
+                }
+                Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                intent.setData(Uri.fromFile(file));
+                sendBroadcast(intent);
+            }
+        });
     }
 
     @Override

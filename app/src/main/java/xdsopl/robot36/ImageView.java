@@ -335,7 +335,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         if (savedHeight[0] > 0) {
             rsDecoderSavedWidth.copyTo(savedWidth);
             rsDecoderSavedBuffer.copyTo(savedBuffer);
-            Bitmap savedBitmap = Bitmap.createBitmap(savedBuffer, savedWidth[0], savedHeight[0], Bitmap.Config.ARGB_8888);
+            activity.storeBitmap(Bitmap.createBitmap(savedBuffer, savedWidth[0], savedHeight[0], Bitmap.Config.ARGB_8888));
         }
     }
 }
