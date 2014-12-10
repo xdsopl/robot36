@@ -49,12 +49,18 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private final short[] audioBuffer;
     private final int[] pixelBuffer;
     private final int[] currentMode;
+    private final int[] savedBuffer;
+    private final int[] savedWidth;
+    private final int[] savedHeight;
 
     private final RenderScript rs;
     private final Allocation rsDecoderAudioBuffer;
     private final Allocation rsDecoderPixelBuffer;
     private final Allocation rsDecoderValueBuffer;
     private final Allocation rsDecoderCurrentMode;
+    private final Allocation rsDecoderSavedBuffer;
+    private final Allocation rsDecoderSavedWidth;
+    private final Allocation rsDecoderSavedHeight;
     private final ScriptC_decoder rsDecoder;
 
     private final int mode_debug = 0;
@@ -110,16 +116,26 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         int maxHorizontalLength = 2 * sampleRate;
         currentMode = new int[1];
 
+        savedWidth = new int[1];
+        savedHeight = new int[1];
+        savedBuffer = new int[pixelBuffer.length];
+
         rs = RenderScript.create(context);
         rsDecoderAudioBuffer = Allocation.createSized(rs, Element.I16(rs), audioBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderValueBuffer = Allocation.createSized(rs, Element.U8(rs), maxHorizontalLength, Allocation.USAGE_SCRIPT);
         rsDecoderPixelBuffer = Allocation.createSized(rs, Element.I32(rs), pixelBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderSavedWidth = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderSavedHeight = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderSavedBuffer = Allocation.createSized(rs, Element.I32(rs), savedBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoder = new ScriptC_decoder(rs);
         rsDecoder.bind_audio_buffer(rsDecoderAudioBuffer);
         rsDecoder.bind_value_buffer(rsDecoderValueBuffer);
         rsDecoder.bind_pixel_buffer(rsDecoderPixelBuffer);
         rsDecoder.bind_current_mode(rsDecoderCurrentMode);
+        rsDecoder.bind_saved_width(rsDecoderSavedWidth);
+        rsDecoder.bind_saved_height(rsDecoderSavedHeight);
+        rsDecoder.bind_saved_buffer(rsDecoderSavedBuffer);
         rsDecoder.invoke_initialize(sampleRate, maxHorizontalLength, bitmap.getWidth(), bitmap.getHeight());
 
         thread.start();
@@ -314,5 +330,12 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
 
         rsDecoderCurrentMode.copyTo(currentMode);
         switch_mode(currentMode[0]);
+
+        rsDecoderSavedHeight.copyTo(savedHeight);
+        if (savedHeight[0] > 0) {
+            rsDecoderSavedWidth.copyTo(savedWidth);
+            rsDecoderSavedBuffer.copyTo(savedBuffer);
+            Bitmap savedBitmap = Bitmap.createBitmap(savedBuffer, savedWidth[0], savedHeight[0], Bitmap.Config.ARGB_8888);
+        }
     }
 }

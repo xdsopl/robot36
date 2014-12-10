@@ -37,15 +37,27 @@ static inline uchar4 yuv(uchar y, uchar u, uchar v)
     return rgb(bgra[0], bgra[1], bgra[2]);
 }
 
-static void reset()
+static void reset_buffer()
 {
     vpos = 0;
     hpos = 0;
     even_hpos = 0;
     seperator_counter = 0;
     sync_counter = sync_length;
-    for (int i = 0; i < bitmap_width * bitmap_height; ++i)
+    buffer_cleared = 1;
+    for (int i = 0; i < maximum_width * maximum_height; ++i)
         pixel_buffer[i] = rgb(0, 0, 0);
+}
+
+static void save_buffer()
+{
+    if (!buffer_cleared)
+        return;
+    buffer_cleared = 0;
+    *saved_height = bitmap_height;
+    *saved_width = bitmap_width;
+    for (int i = 0; i < bitmap_width * bitmap_height; ++i)
+        saved_buffer[i] = pixel_buffer[i];
 }
 
 static void robot36_decoder()
@@ -119,6 +131,8 @@ static void raw_decoder()
 }
 
 void decode(int samples) {
+    *saved_width = 0;
+    *saved_height = 0;
     for (int sample = 0; sample < samples; ++sample) {
         float amp = audio_buffer[sample] / 32768.0f;
         float power = amp * amp;
@@ -147,11 +161,11 @@ void decode(int samples) {
         if (*current_mode != mode_debug) {
             int detected_mode = calibration_detector(dat_value, dat_active, cnt_active, cnt_quantized);
             if (detected_mode >= 0)
-                reset();
+                reset_buffer();
             switch_mode(detected_mode);
             int estimated_mode = scanline_estimator(sync_level);
             if (estimated_mode >= 0 && estimated_mode != *current_mode)
-                reset();
+                reset_buffer();
             switch_mode(estimated_mode);
         }
 
@@ -179,7 +193,9 @@ void decode(int samples) {
                 default:
                     raw_decoder();
             }
-            if (++vpos >= bitmap_height)
+            if (++vpos == bitmap_height)
+                save_buffer();
+            if (vpos >= maximum_height)
                 vpos = 0;
             seperator_counter = 0;
         }

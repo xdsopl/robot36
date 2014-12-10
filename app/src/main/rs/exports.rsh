@@ -20,6 +20,9 @@ limitations under the License.
 short *audio_buffer;
 uchar *value_buffer;
 uchar4 *pixel_buffer;
+uchar4 *saved_buffer;
+int *saved_width;
+int *saved_height;
 int *current_mode;
 
 #endif

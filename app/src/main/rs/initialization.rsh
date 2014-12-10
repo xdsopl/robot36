@@ -25,14 +25,15 @@ void initialize(float rate, int length, int width, int height)
 {
     sample_rate = rate;
     buffer_length = length;
-    bitmap_width = width;
-    bitmap_height = height;
+    maximum_width = width;
+    maximum_height = height;
 
     vpos = 0;
     even_hpos = hpos = 0;
     even_hpos = 0;
     sync_counter = 0;
     seperator_counter = 0;
+    buffer_cleared = 0;
     minimum_length = 0.05f * sample_rate;
     minimum_sync_length = 0.002f * sample_rate;
 

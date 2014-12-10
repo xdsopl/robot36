@@ -28,6 +28,8 @@ void debug_sync()
     blur_power = -1;
     *current_mode = mode_debug;
     current_decoder = decoder_raw;
+    bitmap_width = maximum_width;
+    bitmap_height = maximum_height;
     sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -39,6 +41,8 @@ void debug_image()
     blur_power = -1;
     *current_mode = mode_debug;
     current_decoder = decoder_raw;
+    bitmap_width = maximum_width;
+    bitmap_height = maximum_height;
     sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -50,6 +54,8 @@ void debug_both()
     blur_power = -1;
     *current_mode = mode_debug;
     current_decoder = decoder_raw;
+    bitmap_width = maximum_width;
+    bitmap_height = maximum_height;
     sync_length = minimum_sync_length;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -61,6 +67,8 @@ void robot36_mode()
     blur_power = 2;
     *current_mode = mode_robot36;
     current_decoder = decoder_robot36;
+    bitmap_width = 320;
+    bitmap_height = 240;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
@@ -87,6 +95,8 @@ void robot72_mode()
     blur_power = 3;
     *current_mode = mode_robot72;
     current_decoder = decoder_yuv;
+    bitmap_width = 320;
+    bitmap_height = 240;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
@@ -117,6 +127,8 @@ void martin1_mode()
     blur_power = 3;
     *current_mode = mode_martin1;
     current_decoder = decoder_rgb;
+    bitmap_width = 320;
+    bitmap_height = 256;
     const float tolerance = 0.5f;
     const float sync_seconds = 0.004862f;
     const float sync_porch_seconds = 0.000572f;
@@ -142,6 +154,8 @@ void martin2_mode()
     blur_power = 2;
     *current_mode = mode_martin2;
     current_decoder = decoder_rgb;
+    bitmap_width = 320;
+    bitmap_height = 256;
     const float tolerance = 0.5f;
     const float sync_seconds = 0.004862f;
     const float sync_porch_seconds = 0.000572f;
@@ -167,6 +181,8 @@ void scottie1_mode()
     blur_power = 3;
     *current_mode = mode_scottie1;
     current_decoder = decoder_rgb;
+    bitmap_width = 320;
+    bitmap_height = 256;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
@@ -193,6 +209,8 @@ void scottie2_mode()
     blur_power = 2;
     *current_mode = mode_scottie2;
     current_decoder = decoder_rgb;
+    bitmap_width = 320;
+    bitmap_height = 256;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
@@ -219,6 +237,8 @@ void scottieDX_mode()
     blur_power = 5;
     *current_mode = mode_scottieDX;
     current_decoder = decoder_rgb;
+    bitmap_width = 320;
+    bitmap_height = 256;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
@@ -245,6 +265,8 @@ void wrasseSC2_180_mode()
     blur_power = 4;
     *current_mode = mode_wrasseSC2_180;
     current_decoder = decoder_rgb;
+    bitmap_width = 320;
+    bitmap_height = 256;
     const float tolerance = 0.5f;
     const float sync_seconds = 0.0055225f;
     const float sync_porch_seconds = 0.0005f;
