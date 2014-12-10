@@ -41,7 +41,7 @@ static void reset_buffer()
 {
     vpos = 0;
     hpos = 0;
-    even_hpos = 0;
+    prev_hpos = 0;
     seperator_counter = 0;
     sync_counter = sync_length;
     buffer_cleared = 1;
@@ -70,8 +70,8 @@ static void robot36_decoder()
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_blur(i * (y_end-y_begin) / bitmap_width + y_begin);
             uchar v = value_blur(i * (v_end-v_begin) / bitmap_width + v_begin);
-            uchar odd_y = value_blur(i * (y_end-y_begin) / bitmap_width + even_hpos + y_begin);
-            uchar u = value_blur(i * (u_end-u_begin) / bitmap_width + even_hpos + u_begin);
+            uchar odd_y = value_blur(i * (y_end-y_begin) / bitmap_width + prev_hpos + y_begin);
+            uchar u = value_blur(i * (u_end-u_begin) / bitmap_width + prev_hpos + u_begin);
             pixel_buffer[bitmap_width * (vpos-1) + i] = yuv(even_y, u, v);
             pixel_buffer[bitmap_width * vpos + i] = yuv(odd_y, u, v);
         }
@@ -79,13 +79,13 @@ static void robot36_decoder()
             hpos -= scanline_length;
         else
             hpos = 0;
-        even_hpos = 0;
+        prev_hpos = 0;
     } else {
         if (prev_timeout) {
-            even_hpos = scanline_length;
+            prev_hpos = scanline_length;
             hpos -= scanline_length;
         } else {
-            even_hpos = hpos;
+            prev_hpos = hpos;
             hpos = 0;
         }
     }
@@ -103,7 +103,7 @@ static void yuv_decoder()
         hpos -= scanline_length;
     else
         hpos = 0;
-    even_hpos = 0;
+    prev_hpos = 0;
 }
 
 static void rgb_decoder()
@@ -118,7 +118,7 @@ static void rgb_decoder()
         hpos -= scanline_length;
     else
         hpos = 0;
-    even_hpos = 0;
+    prev_hpos = 0;
 }
 
 static void raw_decoder()
@@ -127,7 +127,35 @@ static void raw_decoder()
         uchar value = value_blur(i * hpos / bitmap_width);
         pixel_buffer[bitmap_width * vpos + i] = rgb(value, value, value);
     }
-    even_hpos = hpos = 0;
+    prev_hpos = hpos = 0;
+}
+
+// don't you guys have anything better to do?
+static void scottie_decoder()
+{
+    if (!prev_hpos) {
+        for (int i = g_begin; i < g_end; ++i)
+            value_buffer[i + b_begin - g_begin] = value_buffer[i];
+        for (int i = r_begin; i < r_end; ++i)
+            value_buffer[i + g_begin - r_begin] = value_buffer[i];
+        prev_hpos = scanline_length;
+        hpos = 0;
+        // TODO: don't do this here ..
+        vpos = vpos < 0 ? vpos : vpos - 1;
+        return;
+    }
+    for (int i = 0; i < bitmap_width; ++i) {
+        uchar r = value_blur(i * (r_end-r_begin) / bitmap_width + prev_hpos + r_begin);
+        uchar g = value_blur(i * (g_end-g_begin) / bitmap_width + g_begin);
+        uchar b = value_blur(i * (b_end-b_begin) / bitmap_width + b_begin);
+        pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
+    }
+    for (int i = g_begin; i < g_end; ++i)
+        value_buffer[i] = value_buffer[i + prev_hpos];
+    for (int i = b_begin; i < b_end; ++i)
+        value_buffer[i] = value_buffer[i + prev_hpos];
+    prev_hpos = scanline_length;
+    hpos = 0;
 }
 
 void decode(int samples) {
@@ -149,7 +177,7 @@ void decode(int samples) {
         int dat_active = cabs(cnt_baseband) < 4.0f * cabs(dat_baseband);
         uchar cnt_level = save_cnt && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = save_dat && dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
-        value_buffer[hpos + even_hpos] = cnt_level | dat_level;
+        value_buffer[hpos + prev_hpos] = cnt_level | dat_level;
 
         int cnt_quantized = round(cnt_value);
         int dat_quantized = round(dat_value);
@@ -176,7 +204,7 @@ void decode(int samples) {
         if (++hpos >= maximum_length || sync_pulse) {
             if (hpos < minimum_length) {
                 hpos = 0;
-                even_hpos = 0;
+                prev_hpos = 0;
                 seperator_counter = 0;
                 continue;
             }
@@ -189,6 +217,9 @@ void decode(int samples) {
                     break;
                 case decoder_rgb:
                     rgb_decoder();
+                    break;
+                case decoder_scottie:
+                    scottie_decoder();
                     break;
                 default:
                     raw_decoder();

@@ -22,7 +22,7 @@ static ddc_t cnt_ddc, dat_ddc;
 static fmd_t cnt_fmd, dat_fmd;
 static int current_decoder;
 static int blur_power;
-static int sample_rate, even_hpos;
+static int sample_rate, prev_hpos;
 static int maximum_variance, minimum_sync_length;
 static int scanline_length, minimum_length, maximum_length;
 static int vis_timeout, vis_length, bit_length;

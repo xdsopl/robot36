@@ -113,7 +113,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         int framesPerSecond = Math.max(1, sampleRate / bufferSizeInSamples);
         audioBuffer = new short[framesPerSecond * bufferSizeInSamples];
 
-        int maxHorizontalLength = 2 * sampleRate;
+        int maxHorizontalLength = 3 * sampleRate;
         currentMode = new int[1];
 
         savedWidth = new int[1];

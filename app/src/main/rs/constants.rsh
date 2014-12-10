@@ -21,6 +21,7 @@ static const int decoder_raw = 0;
 static const int decoder_robot36 = 1;
 static const int decoder_yuv = 2;
 static const int decoder_rgb = 3;
+static const int decoder_scottie = 4;
 
 static const int mode_debug = 0;
 static const int mode_robot36 = 1;

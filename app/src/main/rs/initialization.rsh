@@ -29,8 +29,7 @@ void initialize(float rate, int length, int width, int height)
     maximum_height = height;
 
     vpos = 0;
-    even_hpos = hpos = 0;
-    even_hpos = 0;
+    prev_hpos = hpos = 0;
     sync_counter = 0;
     seperator_counter = 0;
     buffer_cleared = 0;
