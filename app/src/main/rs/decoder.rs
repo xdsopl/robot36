@@ -150,9 +150,7 @@ static void scottie_decoder()
         uchar b = value_blur(i * (b_end-b_begin) / bitmap_width + b_begin);
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
-    for (int i = g_begin; i < g_end; ++i)
-        value_buffer[i] = value_buffer[i + prev_hpos];
-    for (int i = b_begin; i < b_end; ++i)
+    for (int i = 0; i < scanline_length; ++i)
         value_buffer[i] = value_buffer[i + prev_hpos];
     prev_hpos = scanline_length;
     hpos = 0;
