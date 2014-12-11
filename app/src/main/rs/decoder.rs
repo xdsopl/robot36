@@ -90,6 +90,7 @@ static void robot36_decoder()
             hpos = 0;
         }
     }
+    ++vpos;
 }
 
 static void yuv_decoder()
@@ -105,6 +106,7 @@ static void yuv_decoder()
     else
         hpos = 0;
     prev_hpos = 0;
+    ++vpos;
 }
 
 static void rgb_decoder()
@@ -120,6 +122,7 @@ static void rgb_decoder()
     else
         hpos = 0;
     prev_hpos = 0;
+    ++vpos;
 }
 
 static void raw_decoder()
@@ -129,6 +132,7 @@ static void raw_decoder()
         pixel_buffer[bitmap_width * vpos + i] = rgb(value, value, value);
     }
     prev_hpos = hpos = 0;
+    ++vpos;
 }
 
 // don't you guys have anything better to do?
@@ -141,8 +145,6 @@ static void scottie_decoder()
             value_buffer[i + g_begin - r_begin] = value_buffer[i];
         prev_hpos = scanline_length;
         hpos = 0;
-        // TODO: don't do this here ..
-        vpos = vpos < 0 ? vpos : vpos - 1;
         return;
     }
     for (int i = 0; i < bitmap_width; ++i) {
@@ -155,6 +157,7 @@ static void scottie_decoder()
         value_buffer[i] = value_buffer[i + prev_hpos];
     prev_hpos = scanline_length;
     hpos = 0;
+    ++vpos;
 }
 
 void decode(int samples) {
@@ -227,7 +230,7 @@ void decode(int samples) {
                 default:
                     raw_decoder();
             }
-            if (++vpos == bitmap_height)
+            if (vpos == bitmap_height)
                 save_buffer();
             if (vpos >= maximum_height)
                 vpos = 0;
