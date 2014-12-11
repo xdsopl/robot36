@@ -63,7 +63,7 @@ static void save_buffer()
 static void robot36_decoder()
 {
     static prev_timeout;
-    if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
+    if (!buffer_cleared && !prev_timeout && 2 * abs(seperator_counter) > seperator_length)
         vpos = (~1 & vpos) | (seperator_counter > 0);
     prev_timeout = hpos >= maximum_length;
     if (vpos & 1) {
