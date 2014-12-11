@@ -63,9 +63,11 @@ static void save_buffer()
 
 static void robot36_decoder()
 {
-    static prev_timeout;
-    if (free_running && !prev_timeout && 2 * abs(seperator_counter) > seperator_length)
-        vpos = (~1 & vpos) | (seperator_counter > 0);
+    static int prev_timeout, mismatch_counter;
+    if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
+        mismatch_counter = (vpos & 1) ^ (seperator_counter > 0) ? mismatch_counter + 1 : 0;
+    if ((free_running && mismatch_counter > 1) || mismatch_counter > 5)
+        vpos ^= 1;
     prev_timeout = hpos >= maximum_length;
     if (vpos & 1) {
         for (int i = 0; i < bitmap_width; ++i) {
