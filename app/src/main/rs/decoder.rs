@@ -68,10 +68,10 @@ static void robot36_decoder()
     prev_timeout = hpos >= maximum_length;
     if (vpos & 1) {
         for (int i = 0; i < bitmap_width; ++i) {
-            uchar even_y = value_blur(i * (y_end-y_begin) / bitmap_width + y_begin);
-            uchar v = value_blur(i * (v_end-v_begin) / bitmap_width + v_begin);
-            uchar odd_y = value_blur(i * (y_end-y_begin) / bitmap_width + prev_hpos + y_begin);
-            uchar u = value_blur(i * (u_end-u_begin) / bitmap_width + prev_hpos + u_begin);
+            uchar even_y = value_blur(i, y_begin, y_end);
+            uchar v = value_blur(i, v_begin, v_end);
+            uchar odd_y = value_blur(i, prev_hpos + y_begin, prev_hpos + y_end);
+            uchar u = value_blur(i, prev_hpos + u_begin, prev_hpos + u_end);
             pixel_buffer[bitmap_width * (vpos-1) + i] = yuv(even_y, u, v);
             pixel_buffer[bitmap_width * vpos + i] = yuv(odd_y, u, v);
         }
@@ -94,9 +94,9 @@ static void robot36_decoder()
 static void yuv_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar y = value_blur(i * (y_end-y_begin) / bitmap_width + y_begin);
-        uchar u = value_blur(i * (u_end-u_begin) / bitmap_width + u_begin);
-        uchar v = value_blur(i * (v_end-v_begin) / bitmap_width + v_begin);
+        uchar y = value_blur(i, y_begin, y_end);
+        uchar u = value_blur(i, u_begin, u_end);
+        uchar v = value_blur(i, v_begin, v_end);
         pixel_buffer[bitmap_width * vpos + i] = yuv(y, u, v);
     }
     if (hpos >= maximum_length)
@@ -109,9 +109,9 @@ static void yuv_decoder()
 static void rgb_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar r = value_blur(i * (r_end-r_begin) / bitmap_width + r_begin);
-        uchar g = value_blur(i * (g_end-g_begin) / bitmap_width + g_begin);
-        uchar b = value_blur(i * (b_end-b_begin) / bitmap_width + b_begin);
+        uchar r = value_blur(i, r_begin, r_end);
+        uchar g = value_blur(i, g_begin, g_end);
+        uchar b = value_blur(i, b_begin, b_end);
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
     if (hpos >= maximum_length)
@@ -124,7 +124,7 @@ static void rgb_decoder()
 static void raw_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar value = value_blur(i * hpos / bitmap_width);
+        uchar value = value_blur(i, 0, hpos);
         pixel_buffer[bitmap_width * vpos + i] = rgb(value, value, value);
     }
     prev_hpos = hpos = 0;
@@ -145,9 +145,9 @@ static void scottie_decoder()
         return;
     }
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar r = value_blur(i * (r_end-r_begin) / bitmap_width + prev_hpos + r_begin);
-        uchar g = value_blur(i * (g_end-g_begin) / bitmap_width + g_begin);
-        uchar b = value_blur(i * (b_end-b_begin) / bitmap_width + b_begin);
+        uchar r = value_blur(i, prev_hpos + r_begin, prev_hpos + r_end);
+        uchar g = value_blur(i, g_begin, g_end);
+        uchar b = value_blur(i, b_begin, b_end);
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
     for (int i = 0; i < scanline_length; ++i)
