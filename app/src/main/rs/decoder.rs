@@ -51,6 +51,7 @@ static void reset_buffer()
 
 static void save_buffer()
 {
+    free_running = 1;
     if (!buffer_cleared)
         return;
     buffer_cleared = 0;
@@ -63,7 +64,7 @@ static void save_buffer()
 static void robot36_decoder()
 {
     static prev_timeout;
-    if (!buffer_cleared && !prev_timeout && 2 * abs(seperator_counter) > seperator_length)
+    if (free_running && !prev_timeout && 2 * abs(seperator_counter) > seperator_length)
         vpos = (~1 & vpos) | (seperator_counter > 0);
     prev_timeout = hpos >= maximum_length;
     if (vpos & 1) {
@@ -186,13 +187,17 @@ void decode(int samples) {
 
         if (*current_mode != mode_debug) {
             int detected_mode = calibration_detector(dat_value, dat_active, cnt_active, cnt_quantized);
-            if (detected_mode >= 0)
+            if (detected_mode >= 0) {
+                free_running = 0;
                 reset_buffer();
-            switch_mode(detected_mode);
+                switch_mode(detected_mode);
+            }
             int estimated_mode = scanline_estimator(sync_level);
-            if (estimated_mode >= 0 && estimated_mode != *current_mode)
+            if (estimated_mode >= 0 && estimated_mode != *current_mode) {
+                free_running = 1;
                 reset_buffer();
-            switch_mode(estimated_mode);
+                switch_mode(estimated_mode);
+            }
         }
 
         int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;

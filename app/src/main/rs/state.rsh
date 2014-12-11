@@ -21,7 +21,7 @@ static ema_t avg_power, leader_lowpass;
 static ddc_t cnt_ddc, dat_ddc;
 static fmd_t cnt_fmd, dat_fmd;
 static int current_decoder;
-static int blur_power;
+static int blur_power, free_running;
 static int sample_rate, prev_hpos;
 static int maximum_variance, minimum_sync_length;
 static int scanline_length, minimum_length, maximum_length;

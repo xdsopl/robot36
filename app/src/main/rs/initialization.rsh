@@ -33,6 +33,7 @@ void initialize(float rate, int length, int width, int height)
     sync_counter = 0;
     seperator_counter = 0;
     buffer_cleared = 0;
+    free_running = 1;
     minimum_length = 0.05f * sample_rate;
     minimum_sync_length = 0.002f * sample_rate;
 
