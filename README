@@ -29,5 +29,6 @@ Currently the following modes are supported:
 Robot Modes: 36 & 72
 Martin Modes: 1 & 2
 Scottie Modes: 1, 2 & DX
+Wrasse Modes: SC2 180
 
 Watching of old B/W or unsupported transmission modes works even in the raw "Debug Image" mode.
