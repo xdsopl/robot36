@@ -28,6 +28,9 @@ void initialize(float rate, int length, int width, int height)
     maximum_width = width;
     maximum_height = height;
 
+    for (int i = 0; i < width * height; ++i)
+        pixel_buffer[i] = 0;
+
     vpos = 0;
     prev_hpos = hpos = 0;
     sync_counter = 0;

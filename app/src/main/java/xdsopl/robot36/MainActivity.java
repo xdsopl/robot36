@@ -86,6 +86,24 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onDestroy () {
+        view.destroy();
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onPause() {
+        view.pause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        view.resume();
+        super.onResume();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -143,17 +161,5 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onPause() {
-        view.pause();
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        view.resume();
-        super.onResume();
     }
 }

@@ -34,14 +34,14 @@ import android.support.v8.renderscript.RenderScript;
 
 public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private int canvasWidth = -1, canvasHeight = -1;
-    private boolean takeABreak = true, cantTouchThis = true;
+    private boolean takeABreak = true, cantTouchThis = true, quitThread = false;
     private int imageWidth = 320;
     private int imageHeight = 240;
     MainActivity activity;
     private final SurfaceHolder holder;
     private final Bitmap bitmap;
     private final Paint paint;
-    private AudioRecord audio;
+    private final AudioRecord audio;
     private final int audioSource = MediaRecorder.AudioSource.MIC;
     private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
     private final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
@@ -76,25 +76,22 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private final Thread thread = new Thread() {
         @Override
         public void run() {
-            //noinspection InfiniteLoopStatement
             while (true) {
                 synchronized (this) {
-                    while (cantTouchThis || takeABreak) {
+                    if (quitThread)
+                        return;
+                    if (!cantTouchThis && !takeABreak) {
+                        Canvas canvas = null;
                         try {
-                            wait();
-                        } catch (InterruptedException ignored) {
+                            canvas = holder.lockCanvas(null);
+                            drawBitmap(canvas);
+                        } finally {
+                            if (canvas != null)
+                                holder.unlockCanvasAndPost(canvas);
                         }
                     }
-                    Canvas canvas = null;
-                    try {
-                        canvas = holder.lockCanvas(null);
-                        drawBitmap(canvas);
-                    } finally {
-                        if (canvas != null)
-                            holder.unlockCanvasAndPost(canvas);
-                    }
-                    decode();
                 }
+                decode();
             }
         }
     };
@@ -112,6 +109,8 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         int bufferSizeInSamples = bufferSizeInBytes / 2;
         int framesPerSecond = Math.max(1, sampleRate / bufferSizeInSamples);
         audioBuffer = new short[framesPerSecond * bufferSizeInSamples];
+        audio = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, audioBuffer.length * 2);
+        audio.startRecording();
 
         int maxHorizontalLength = 3 * sampleRate;
         currentMode = new int[1];
@@ -140,146 +139,90 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
 
         thread.start();
     }
-    void softer_image() {
-        synchronized (thread) {
-            rsDecoder.invoke_incr_blur();
-        }
-    }
-    void sharper_image() {
-        synchronized (thread) {
-            rsDecoder.invoke_decr_blur();
-        }
-    }
-    void debug_sync() {
-        synchronized (thread) {
-            rsDecoder.invoke_debug_sync();
-        }
-    }
-    void debug_image() {
-        synchronized (thread) {
-            rsDecoder.invoke_debug_image();
-        }
-    }
-    void debug_both() {
-        synchronized (thread) {
-            rsDecoder.invoke_debug_both();
-        }
-    }
-    void robot36_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_robot36_mode();
-        }
-    }
-    void robot72_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_robot72_mode();
-        }
-    }
-    void martin1_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_martin1_mode();
-        }
-    }
-    void martin2_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_martin2_mode();
-        }
-    }
-    void scottie1_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_scottie1_mode();
-        }
-    }
-    void scottie2_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_scottie2_mode();
-        }
-    }
-    void scottieDX_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_scottieDX_mode();
-        }
-    }
-    void wrasseSC2_180_mode() {
-        synchronized (thread) {
-            rsDecoder.invoke_wrasseSC2_180_mode();
-        }
-    }
+
+    void softer_image() { rsDecoder.invoke_incr_blur(); }
+    void sharper_image() { rsDecoder.invoke_decr_blur(); }
+    void debug_sync() { rsDecoder.invoke_debug_sync(); }
+    void debug_image() { rsDecoder.invoke_debug_image(); }
+    void debug_both() { rsDecoder.invoke_debug_both(); }
+    void robot36_mode() { rsDecoder.invoke_robot36_mode(); }
+    void robot72_mode() { rsDecoder.invoke_robot72_mode(); }
+    void martin1_mode() { rsDecoder.invoke_martin1_mode(); }
+    void martin2_mode() { rsDecoder.invoke_martin2_mode(); }
+    void scottie1_mode() { rsDecoder.invoke_scottie1_mode(); }
+    void scottie2_mode() { rsDecoder.invoke_scottie2_mode(); }
+    void scottieDX_mode() { rsDecoder.invoke_scottieDX_mode(); }
+    void wrasseSC2_180_mode() { rsDecoder.invoke_wrasseSC2_180_mode(); }
 
     void updateTitle(int id) { activity.updateTitle(activity.getString(id)); }
     void switch_mode(int mode)
     {
-        synchronized (thread) {
-            switch (mode) {
-                case mode_debug:
-                    imageWidth = bitmap.getWidth();
-                    imageHeight = bitmap.getHeight();
-                    updateTitle(R.string.action_debug_mode);
-                    break;
-                case mode_robot36:
-                    imageWidth = 320;
-                    imageHeight = 240;
-                    updateTitle(R.string.action_robot36_mode);
-                    break;
-                case mode_robot72:
-                    imageWidth = 320;
-                    imageHeight = 240;
-                    updateTitle(R.string.action_robot72_mode);
-                    break;
-                case mode_martin1:
-                    imageWidth = 320;
-                    imageHeight = 256;
-                    updateTitle(R.string.action_martin1_mode);
-                    break;
-                case mode_martin2:
-                    imageWidth = 320;
-                    imageHeight = 256;
-                    updateTitle(R.string.action_martin2_mode);
-                    break;
-                case mode_scottie1:
-                    imageWidth = 320;
-                    imageHeight = 256;
-                    updateTitle(R.string.action_scottie1_mode);
-                    break;
-                case mode_scottie2:
-                    imageWidth = 320;
-                    imageHeight = 256;
-                    updateTitle(R.string.action_scottie2_mode);
-                    break;
-                case mode_scottieDX:
-                    imageWidth = 320;
-                    imageHeight = 256;
-                    updateTitle(R.string.action_scottieDX_mode);
-                    break;
-                case mode_wrasseSC2_180:
-                    imageWidth = 320;
-                    imageHeight = 256;
-                    updateTitle(R.string.action_wrasseSC2_180_mode);
-                    break;
-                default:
-                    break;
-            }
+        switch (mode) {
+            case mode_debug:
+                imageWidth = bitmap.getWidth();
+                imageHeight = bitmap.getHeight();
+                updateTitle(R.string.action_debug_mode);
+                break;
+            case mode_robot36:
+                imageWidth = 320;
+                imageHeight = 240;
+                updateTitle(R.string.action_robot36_mode);
+                break;
+            case mode_robot72:
+                imageWidth = 320;
+                imageHeight = 240;
+                updateTitle(R.string.action_robot72_mode);
+                break;
+            case mode_martin1:
+                imageWidth = 320;
+                imageHeight = 256;
+                updateTitle(R.string.action_martin1_mode);
+                break;
+            case mode_martin2:
+                imageWidth = 320;
+                imageHeight = 256;
+                updateTitle(R.string.action_martin2_mode);
+                break;
+            case mode_scottie1:
+                imageWidth = 320;
+                imageHeight = 256;
+                updateTitle(R.string.action_scottie1_mode);
+                break;
+            case mode_scottie2:
+                imageWidth = 320;
+                imageHeight = 256;
+                updateTitle(R.string.action_scottie2_mode);
+                break;
+            case mode_scottieDX:
+                imageWidth = 320;
+                imageHeight = 256;
+                updateTitle(R.string.action_scottieDX_mode);
+                break;
+            case mode_wrasseSC2_180:
+                imageWidth = 320;
+                imageHeight = 256;
+                updateTitle(R.string.action_wrasseSC2_180_mode);
+                break;
+            default:
+                break;
         }
     }
     void pause() {
         synchronized (thread) {
             takeABreak = true;
-            if (audio != null) {
-                audio.stop();
-                audio.release();
-                audio = null;
-            }
         }
     }
     void resume() {
         synchronized (thread) {
             takeABreak = false;
-            if (audio == null) {
-                audio = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, audioBuffer.length * 2);
-                audio.startRecording();
-            }
-            thread.notify();
         }
+    }
+    void destroy() {
+        synchronized (thread) {
+            quitThread = true;
+        }
+        audio.stop();
+        audio.release();
     }
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         synchronized (thread) {
@@ -291,13 +234,11 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         synchronized (thread) {
             cantTouchThis = false;
         }
-        resume();
     }
     public void surfaceDestroyed(SurfaceHolder holder) {
         synchronized (thread) {
             cantTouchThis = true;
         }
-        pause();
     }
     void drawBitmap(Canvas canvas) {
         float sx, sy, px, py;
