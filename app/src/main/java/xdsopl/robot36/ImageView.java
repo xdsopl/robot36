@@ -221,6 +221,10 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         synchronized (thread) {
             quitThread = true;
         }
+        try {
+            thread.join();
+        } catch (InterruptedException ignore) {
+        }
         audio.stop();
         audio.release();
     }
