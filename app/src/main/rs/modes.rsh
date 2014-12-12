@@ -71,7 +71,6 @@ void robot36_mode()
     bitmap_height = 240;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
-    const float front_porch_skimp_seconds = 0.000275f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.003f;
     const float sep_porch_seconds = 0.0015f;
@@ -83,11 +82,9 @@ void robot36_mode()
     y_begin = (sync_porch_seconds - settling_time) * sample_rate;
     y_end = y_begin + y_scan_seconds * sample_rate;
     u_sep_begin = v_sep_begin = y_end;
-    y_end -= 2.0f * front_porch_skimp_seconds * sample_rate;
     u_sep_end = v_sep_end = u_sep_begin + seperator_seconds * sample_rate;
     u_begin = v_begin = u_sep_end + sep_porch_seconds * sample_rate;
     u_end = v_end = u_begin + uv_scan_seconds * sample_rate;
-    u_end = v_end -= front_porch_skimp_seconds * sample_rate;
     scanline_length = robot36_scanline_length;
     maximum_length = scanline_length + sync_porch_seconds * sample_rate;
 }
@@ -102,8 +99,6 @@ void robot72_mode()
     bitmap_height = 240;
     const float tolerance = 0.8f;
     const float settling_time = 0.0011f;
-    const float front_porch_skimp_seconds = 0.0002156f;
-    const float back_porch_wrong_seconds = 0.0002156f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.003f;
     const float sep_porch_seconds = 0.0015f;
@@ -114,20 +109,14 @@ void robot72_mode()
     sync_length = tolerance * sync_seconds * sample_rate;
     y_begin = (sync_porch_seconds - settling_time) * sample_rate;
     y_end = y_begin + y_scan_seconds * sample_rate;
-    y_begin += 2.0f * back_porch_wrong_seconds * sample_rate;
     v_sep_begin = y_end;
-    y_end -= 2.0f * front_porch_skimp_seconds * sample_rate;
     v_sep_end = v_sep_begin + seperator_seconds * sample_rate;
     v_begin = v_sep_end + sep_porch_seconds * sample_rate;
     v_end = v_begin + uv_scan_seconds * sample_rate;
-    v_begin += back_porch_wrong_seconds * sample_rate;
     u_sep_begin = v_end;
-    v_end -= front_porch_skimp_seconds * sample_rate;
     u_sep_end = u_sep_begin + seperator_seconds * sample_rate;
     u_begin = u_sep_end + sep_porch_seconds * sample_rate;
     u_end = u_begin + uv_scan_seconds * sample_rate;
-    u_begin += back_porch_wrong_seconds * sample_rate;
-    u_end -= front_porch_skimp_seconds * sample_rate;
     scanline_length = robot72_scanline_length;
     maximum_length = scanline_length + sync_porch_seconds * sample_rate;
 }
