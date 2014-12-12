@@ -105,7 +105,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         holder.addCallback(this);
 
         paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-        bitmap = Bitmap.createBitmap(320, 512, Bitmap.Config.ARGB_8888);
+        bitmap = Bitmap.createBitmap(320, 384, Bitmap.Config.ARGB_8888);
         pixelBuffer = new int[bitmap.getWidth() * bitmap.getHeight()];
 
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
@@ -212,7 +212,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         synchronized (thread) {
             switch (mode) {
                 case mode_debug:
-                    imageWidth = 320;
+                    imageWidth = bitmap.getWidth();
                     imageHeight = bitmap.getHeight();
                     updateTitle(R.string.action_debug_mode);
                     break;
@@ -302,13 +302,13 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     void drawBitmap(Canvas canvas) {
         float sx, sy, px, py;
         if (imageWidth * canvasHeight < canvasWidth * bitmap.getHeight()) {
-            sx = (float)canvasHeight * imageWidth / (bitmap.getWidth() * bitmap.getHeight());
             sy = (float)canvasHeight / bitmap.getHeight();
+            sx = sy * imageWidth / bitmap.getWidth();
             px = (canvasWidth - sx * bitmap.getWidth()) / 2.0f;
             py = 0.0f;
         } else {
             sx = (float)canvasWidth / bitmap.getWidth();
-            sy = (float)canvasWidth * imageHeight / (bitmap.getHeight() * imageWidth);
+            sy = sx;
             px = 0.0f;
             py = (canvasHeight - sy * bitmap.getHeight()) / 2.0f;
         }
