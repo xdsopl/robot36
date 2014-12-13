@@ -20,13 +20,16 @@ limitations under the License.
 #include "constants.rsh"
 #include "state.rsh"
 
-static int calibration_detected(float dat_value, int dat_active, int cnt_active, int cnt_quantized)
+static int calibration_detected(float dat_value, float dat_amp, float cnt_amp, int cnt_quantized)
 {
     static int progress, countdown;
     static int leader_counter, break_counter;
 
     progress = countdown ? progress : 0;
     countdown -= !!countdown;
+
+    int cnt_active = dat_amp < cnt_amp;
+    int dat_active = !cnt_active;
 
     int leader_quantized = round(filter(&leader_lowpass, dat_value));
     int leader_level = dat_active && leader_quantized == 0;
@@ -98,9 +101,9 @@ static int calibration_detected(float dat_value, int dat_active, int cnt_active,
     return -1;
 }
 
-static int calibration_detector(float dat_value, int dat_active, int cnt_active, int cnt_quantized)
+static int calibration_detector(float dat_value, float dat_amp, float cnt_amp, int cnt_quantized)
 {
-    switch (calibration_detected(dat_value, dat_active, cnt_active, cnt_quantized)) {
+    switch (calibration_detected(dat_value, dat_amp, cnt_amp, cnt_quantized)) {
         case 0x88:
             return mode_robot36;
         case 0x0c:
