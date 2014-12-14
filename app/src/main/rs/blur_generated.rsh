@@ -1399,6 +1399,8 @@ static uchar value_blur(int pixel, int begin, int end)
 			3 * value_buffer[i+64] +
 			3 * value_buffer[i+65]) >> 14;
 	default:
+		if (i < begin || end <= i)
+			return 0;
 		return value_buffer[i];
 	}
 	return 0;

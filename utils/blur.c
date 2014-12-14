@@ -67,6 +67,6 @@ int main()
 		printf("\tcase %d:\n", i);
 		emit((1 << i) | 1);
 	}
-	printf("\tdefault:\n\t\treturn value_buffer[i];\n\t}\n\treturn 0;\n}\n");
+	printf("\tdefault:\n\t\tif (i < begin || end <= i)\n\t\t\treturn 0;\n\t\treturn value_buffer[i];\n\t}\n\treturn 0;\n}\n");
 	return 0;
 }
