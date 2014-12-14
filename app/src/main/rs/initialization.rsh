@@ -56,7 +56,7 @@ void initialize(float rate, int length, int width, int height)
     const float first_leader_tolerance = 0.3f;
     const float second_leader_tolerance = 0.9f;
     const float break_tolerance = 0.5f;
-    const float leader_timeout_tolerance = 1.1f;
+    const float leader_timeout_tolerance = 1.2f;
     const float break_timeout_tolerance = 1.8f;
     const float vis_timeout_tolerance = 1.01f;
     const float leader_seconds = 0.3f;
