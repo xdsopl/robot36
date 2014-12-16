@@ -238,15 +238,15 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     void drawCanvas() {
-        if (!cantTouchThis && !takeABreak) {
-            Canvas canvas = null;
-            try {
-                canvas = holder.lockCanvas(null);
-                drawBitmap(canvas);
-            } finally {
-                if (canvas != null)
-                    holder.unlockCanvasAndPost(canvas);
-            }
+        if (cantTouchThis || takeABreak)
+            return;
+        Canvas canvas = null;
+        try {
+            canvas = holder.lockCanvas(null);
+            drawBitmap(canvas);
+        } finally {
+            if (canvas != null)
+                holder.unlockCanvasAndPost(canvas);
         }
     }
 
