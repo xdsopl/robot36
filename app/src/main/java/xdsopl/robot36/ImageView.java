@@ -80,16 +80,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
                 synchronized (this) {
                     if (quitThread)
                         return;
-                    if (!cantTouchThis && !takeABreak) {
-                        Canvas canvas = null;
-                        try {
-                            canvas = holder.lockCanvas(null);
-                            drawBitmap(canvas);
-                        } finally {
-                            if (canvas != null)
-                                holder.unlockCanvasAndPost(canvas);
-                        }
-                    }
+                    drawCanvas();
                 }
                 decode();
             }
@@ -232,6 +223,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         synchronized (thread) {
             canvasWidth = width;
             canvasHeight = height;
+            drawCanvas();
         }
     }
     public void surfaceCreated(SurfaceHolder holder) {
@@ -244,6 +236,20 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
             cantTouchThis = true;
         }
     }
+
+    void drawCanvas() {
+        if (!cantTouchThis && !takeABreak) {
+            Canvas canvas = null;
+            try {
+                canvas = holder.lockCanvas(null);
+                drawBitmap(canvas);
+            } finally {
+                if (canvas != null)
+                    holder.unlockCanvasAndPost(canvas);
+            }
+        }
+    }
+
     void drawBitmap(Canvas canvas) {
         float sx, sy, px, py;
         if (imageWidth * canvasHeight < canvasWidth * bitmap.getHeight()) {
