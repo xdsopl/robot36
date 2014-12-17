@@ -180,8 +180,8 @@ void decode(int samples) {
         float cnt_amp = cabs(cnt_baseband);
         float dat_amp = cabs(dat_baseband);
 
-        int cnt_active = dat_amp < 4.0f * cnt_amp;
-        int dat_active = cnt_amp < 4.0f * dat_amp;
+        int cnt_active = dat_amp < 1.1f * cnt_amp;
+        int dat_active = cnt_amp < 2.0f * dat_amp;
         uchar cnt_level = save_cnt && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = save_dat && dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
         value_buffer[hpos + prev_hpos] = cnt_level | dat_level;
