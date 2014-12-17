@@ -18,11 +18,15 @@ limitations under the License.
 package xdsopl.robot36;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.NotificationCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import java.io.File;
@@ -34,6 +38,19 @@ import java.util.Date;
 public class MainActivity extends Activity {
     private ImageView view;
     private Bitmap bitmap;
+    private NotificationManager manager;
+    private int notifyID = 1;
+
+    private void showNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pending = PendingIntent.getActivity(this, 0, intent, 0);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.decoder_running))
+            .setContentIntent(pending);
+        manager.notify(notifyID, builder.build());
+    }
 
     void updateTitle(final String newTitle)
     {
@@ -83,23 +100,27 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         view = (ImageView)findViewById(R.id.image);
         view.activity = this;
+        manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
     @Override
     protected void onDestroy () {
         view.destroy();
+        manager.cancel(notifyID);
         super.onDestroy();
     }
 
     @Override
     protected void onPause() {
         view.pause();
+        showNotification();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         view.resume();
+        manager.cancel(notifyID);
         super.onResume();
     }
 
