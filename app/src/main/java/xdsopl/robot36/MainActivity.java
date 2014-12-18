@@ -50,7 +50,8 @@ public class MainActivity extends Activity {
             .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.decoder_running))
-            .setContentIntent(pending);
+            .setContentIntent(pending)
+            .setOngoing(true);
         manager.notify(notifyID, builder.build());
     }
 
