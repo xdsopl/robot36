@@ -104,6 +104,7 @@ public class MainActivity extends Activity {
         view = (ImageView)findViewById(R.id.image);
         view.activity = this;
         manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        showNotification();
     }
 
     @Override
@@ -116,14 +117,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         view.pause();
-        showNotification();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         view.resume();
-        manager.cancel(notifyID);
         super.onResume();
     }
 
