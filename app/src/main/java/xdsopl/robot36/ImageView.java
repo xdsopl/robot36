@@ -103,16 +103,19 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         audio = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, audioBuffer.length * 2);
         audio.startRecording();
 
-        int maxHorizontalLength = 3 * sampleRate;
-        currentMode = new int[1];
+        int minValueBufferLength = 3 * sampleRate;
+        int valueBufferLength = Integer.highestOneBit(minValueBufferLength);
+        if (minValueBufferLength > valueBufferLength)
+            valueBufferLength <<= 1;
 
+        currentMode = new int[1];
         savedWidth = new int[1];
         savedHeight = new int[1];
         savedBuffer = new int[pixelBuffer.length];
 
         rs = RenderScript.create(context);
         rsDecoderAudioBuffer = Allocation.createSized(rs, Element.I16(rs), audioBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
-        rsDecoderValueBuffer = Allocation.createSized(rs, Element.U8(rs), maxHorizontalLength, Allocation.USAGE_SCRIPT);
+        rsDecoderValueBuffer = Allocation.createSized(rs, Element.U8(rs), valueBufferLength, Allocation.USAGE_SCRIPT);
         rsDecoderPixelBuffer = Allocation.createSized(rs, Element.I32(rs), pixelBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedWidth = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
@@ -126,7 +129,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         rsDecoder.bind_saved_width(rsDecoderSavedWidth);
         rsDecoder.bind_saved_height(rsDecoderSavedHeight);
         rsDecoder.bind_saved_buffer(rsDecoderSavedBuffer);
-        rsDecoder.invoke_initialize(sampleRate, maxHorizontalLength, bitmap.getWidth(), bitmap.getHeight());
+        rsDecoder.invoke_initialize(sampleRate, valueBufferLength, bitmap.getWidth(), bitmap.getHeight());
 
         thread.start();
     }
