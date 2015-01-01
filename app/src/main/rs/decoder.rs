@@ -64,26 +64,33 @@ static void save_buffer()
 
 static void robot36_decoder()
 {
-    static int prev_timeout, mismatch_counter;
+    static int prev_timeout, mismatch_counter, parity, latch;
     if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
-        mismatch_counter = (vpos & 1) ^ (seperator_counter > 0) ? mismatch_counter + 1 : 0;
+        mismatch_counter = parity ^ (seperator_counter > 0) ? mismatch_counter + 1 : 0;
     if ((free_running && mismatch_counter > 1) || mismatch_counter > 5)
-        vpos ^= 1;
+        parity ^= 1;
+    if (!free_running && !vpos && !latch) {
+        parity = 0;
+        latch = 1;
+    }
     prev_timeout = hpos >= maximum_length;
     static int even_sync_pos, odd_sync_pos;
-    if (vpos & 1) {
+    if (parity) {
         odd_sync_pos = prev_sync_pos;
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_blur(i, even_sync_pos + y_begin, even_sync_pos + y_end);
             uchar v = value_blur(i, even_sync_pos + v_begin, even_sync_pos + v_end);
             uchar odd_y = value_blur(i, odd_sync_pos + y_begin, odd_sync_pos + y_end);
             uchar u = value_blur(i, odd_sync_pos + u_begin, odd_sync_pos + u_end);
-            pixel_buffer[bitmap_width * (vpos-1) + i] = yuv(even_y, u, v);
-            pixel_buffer[bitmap_width * vpos + i] = yuv(odd_y, u, v);
+            pixel_buffer[bitmap_width * vpos + i] = yuv(even_y, u, v);
+            pixel_buffer[bitmap_width * (vpos+1) + i] = yuv(odd_y, u, v);
         }
+        vpos += 2;
+        latch = 0;
     } else {
         even_sync_pos = prev_sync_pos;
     }
+    parity ^= 1;
 }
 
 static void yuv_decoder()
@@ -94,6 +101,7 @@ static void yuv_decoder()
         uchar v = value_blur(i, v_begin + prev_sync_pos, v_end + prev_sync_pos);
         pixel_buffer[bitmap_width * vpos + i] = yuv(y, u, v);
     }
+    ++vpos;
 }
 
 static void rgb_decoder()
@@ -104,6 +112,7 @@ static void rgb_decoder()
         uchar b = value_blur(i, b_begin + prev_sync_pos, b_end + prev_sync_pos);
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
+    ++vpos;
 }
 
 static void raw_decoder()
@@ -112,6 +121,7 @@ static void raw_decoder()
         uchar value = value_blur(i, prev_sync_pos, sync_pos);
         pixel_buffer[bitmap_width * vpos + i] = rgb(value, value, value);
     }
+    ++vpos;
 }
 
 // don't you guys have anything better to do?
@@ -209,8 +219,7 @@ void decode(int samples) {
                 default:
                     raw_decoder();
             }
-            ++vpos;
-            if (vpos == bitmap_height)
+            if (vpos >= bitmap_height)
                 save_buffer();
             if (vpos >= maximum_height)
                 vpos = 0;
