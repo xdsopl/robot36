@@ -70,7 +70,6 @@ void robot36_mode()
     bitmap_width = 320;
     bitmap_height = 240;
     const float tolerance = 0.8f;
-    const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.003f;
     const float sep_porch_seconds = 0.0015f;
@@ -79,7 +78,7 @@ void robot36_mode()
     const float seperator_seconds = 0.0045f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    y_begin = (sync_porch_seconds - settling_time) * sample_rate;
+    y_begin = sync_porch_seconds * sample_rate;
     y_end = y_begin + y_scan_seconds * sample_rate;
     u_sep_begin = v_sep_begin = y_end;
     u_sep_end = v_sep_end = u_sep_begin + seperator_seconds * sample_rate;
@@ -98,7 +97,6 @@ void robot72_mode()
     bitmap_width = 320;
     bitmap_height = 240;
     const float tolerance = 0.8f;
-    const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.003f;
     const float sep_porch_seconds = 0.0015f;
@@ -107,7 +105,7 @@ void robot72_mode()
     const float seperator_seconds = 0.0045f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    y_begin = (sync_porch_seconds - settling_time) * sample_rate;
+    y_begin = sync_porch_seconds * sample_rate;
     y_end = y_begin + y_scan_seconds * sample_rate;
     v_sep_begin = y_end;
     v_sep_end = v_sep_begin + seperator_seconds * sample_rate;
@@ -138,7 +136,7 @@ void martin1_mode()
     const float seperator_seconds = 0.000572f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    g_begin = 0;
+    g_begin = sync_porch_seconds * sample_rate;
     g_end = g_begin + g_scan_seconds * sample_rate;
     b_begin = g_end + seperator_seconds * sample_rate;
     b_end = b_begin + b_scan_seconds * sample_rate;
@@ -165,7 +163,7 @@ void martin2_mode()
     const float seperator_seconds = 0.000572f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    g_begin = 0;
+    g_begin = sync_porch_seconds * sample_rate;
     g_end = g_begin + g_scan_seconds * sample_rate;
     b_begin = g_end + seperator_seconds * sample_rate;
     b_end = b_begin + b_scan_seconds * sample_rate;
@@ -184,19 +182,18 @@ void scottie1_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.8f;
-    const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.0015f;
     const float rgb_scan_seconds = 0.138240f;
     const float seperator_seconds = 0.0015f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = (sync_porch_seconds - settling_time) * sample_rate;
+    r_begin = sync_porch_seconds * sample_rate;
     r_end = r_begin + rgb_scan_seconds * sample_rate;
-    g_begin = r_end + seperator_seconds * sample_rate;
-    g_end = g_begin + rgb_scan_seconds * sample_rate;
-    b_begin = g_end + seperator_seconds * sample_rate;
-    b_end = b_begin + rgb_scan_seconds * sample_rate;
+    b_end = - sync_seconds * sample_rate;
+    b_begin = b_end - rgb_scan_seconds * sample_rate;
+    g_end = b_begin - seperator_seconds * sample_rate;
+    g_begin = g_end - rgb_scan_seconds * sample_rate;
     scanline_length = scottie1_scanline_length;
     maximum_length = scanline_length + sync_porch_seconds * sample_rate;
 }
@@ -210,19 +207,18 @@ void scottie2_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.8f;
-    const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.0015f;
     const float rgb_scan_seconds = 0.088064f;
     const float seperator_seconds = 0.0015f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = (sync_porch_seconds - settling_time) * sample_rate;
+    r_begin = sync_porch_seconds * sample_rate;
     r_end = r_begin + rgb_scan_seconds * sample_rate;
-    g_begin = r_end + seperator_seconds * sample_rate;
-    g_end = g_begin + rgb_scan_seconds * sample_rate;
-    b_begin = g_end + seperator_seconds * sample_rate;
-    b_end = b_begin + rgb_scan_seconds * sample_rate;
+    b_end = - sync_seconds * sample_rate;
+    b_begin = b_end - rgb_scan_seconds * sample_rate;
+    g_end = b_begin - seperator_seconds * sample_rate;
+    g_begin = g_end - rgb_scan_seconds * sample_rate;
     scanline_length = scottie2_scanline_length;
     maximum_length = scanline_length + sync_porch_seconds * sample_rate;
 }
@@ -236,19 +232,18 @@ void scottieDX_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.8f;
-    const float settling_time = 0.0011f;
     const float sync_seconds = 0.009f;
     const float sync_porch_seconds = 0.0015f;
     const float rgb_scan_seconds = 0.3456f;
     const float seperator_seconds = 0.0015f;
     seperator_length = seperator_seconds * sample_rate;
     sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = (sync_porch_seconds - settling_time) * sample_rate;
+    r_begin = sync_porch_seconds * sample_rate;
     r_end = r_begin + rgb_scan_seconds * sample_rate;
-    g_begin = r_end + seperator_seconds * sample_rate;
-    g_end = g_begin + rgb_scan_seconds * sample_rate;
-    b_begin = g_end + seperator_seconds * sample_rate;
-    b_end = b_begin + rgb_scan_seconds * sample_rate;
+    b_end = - sync_seconds * sample_rate;
+    b_begin = b_end - rgb_scan_seconds * sample_rate;
+    g_end = b_begin - seperator_seconds * sample_rate;
+    g_begin = g_end - rgb_scan_seconds * sample_rate;
     scanline_length = scottieDX_scanline_length;
     maximum_length = scanline_length + sync_porch_seconds * sample_rate;
 }
@@ -266,7 +261,7 @@ void wrasseSC2_180_mode()
     const float sync_porch_seconds = 0.0005f;
     const float rgb_scan_seconds = 0.235f;
     sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = 0;
+    r_begin = sync_porch_seconds * sample_rate;
     r_end = r_begin + rgb_scan_seconds * sample_rate;
     g_begin = r_end;
     g_end = g_begin + rgb_scan_seconds * sample_rate;

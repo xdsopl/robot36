@@ -25,6 +25,7 @@ void initialize(float rate, int length, int width, int height)
 {
     sample_rate = rate;
     buffer_length = length;
+    buffer_mask = length - 1;
     maximum_width = width;
     maximum_height = height;
 
@@ -32,13 +33,16 @@ void initialize(float rate, int length, int width, int height)
         pixel_buffer[i] = 0;
 
     vpos = 0;
-    prev_hpos = hpos = 0;
+    hpos = 0;
+    prev_sync_pos = sync_pos = 0;
+    buffer_pos = 0;
     sync_counter = 0;
     seperator_counter = 0;
     buffer_cleared = 0;
     free_running = 1;
     minimum_length = 0.05f * sample_rate;
     minimum_sync_length = 0.002f * sample_rate;
+    sync_buildup_length = sync_buildup_seconds * sample_rate;
 
     robot36_scanline_length = robot36_scanline_seconds * sample_rate;
     robot72_scanline_length = robot72_scanline_seconds * sample_rate;

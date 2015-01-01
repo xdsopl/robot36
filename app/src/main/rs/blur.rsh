@@ -18,6 +18,7 @@ limitations under the License.
 #define BLUR_RSH
 
 #include "exports.rsh"
+#include "state.rsh"
 #include "blur_generated.rsh"
 
 void incr_blur()

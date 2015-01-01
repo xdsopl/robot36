@@ -33,6 +33,8 @@ static const int mode_scottie2 = 6;
 static const int mode_scottieDX = 7;
 static const int mode_wrasseSC2_180 = 8;
 
+
+static const float sync_buildup_seconds = 0.0011f;
 static const float robot36_scanline_seconds = 0.15f;
 static const float robot72_scanline_seconds = 0.3f;
 static const float martin1_scanline_seconds = 0.446446f;
