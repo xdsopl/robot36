@@ -186,6 +186,13 @@ void decode(int samples) {
                 seperator_counter = 0;
                 continue;
             }
+            if (hpos >= maximum_length) {
+                hpos -= scanline_length;
+                prev_sync_pos = sync_pos;
+                sync_pos += scanline_length;
+            } else {
+                hpos = buffer_pos - sync_pos;
+            }
             switch (current_decoder) {
                 case decoder_robot36:
                     robot36_decoder();
@@ -201,12 +208,6 @@ void decode(int samples) {
                     break;
                 default:
                     raw_decoder();
-            }
-            if (hpos >= maximum_length) {
-                hpos -= scanline_length;
-                sync_pos = prev_sync_pos + scanline_length;
-            } else {
-                hpos = buffer_pos - sync_pos;
             }
             ++vpos;
             if (vpos == bitmap_height)
