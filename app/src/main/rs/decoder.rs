@@ -145,13 +145,14 @@ void decode(int samples) {
     *saved_width = 0;
     *saved_height = 0;
     for (int sample = 0; sample < samples; ++sample, ++buffer_pos) {
-        float amp = audio_buffer[sample] / 32768.0f;
-        float power = amp * amp;
-        if (filter(&avg_power, power) < 0.0000001f)
+        int amp = audio_buffer[sample];
+        float avg_amp = filter(&avg_amplitude, abs(amp));
+        if (avg_amp < 16.0f)
             continue;
+        float norm_amp = amp / avg_amp;
 
-        complex_t cnt_baseband = convert(&cnt_ddc, amp);
-        complex_t dat_baseband = convert(&dat_ddc, amp);
+        complex_t cnt_baseband = convert(&cnt_ddc, norm_amp);
+        complex_t dat_baseband = convert(&dat_ddc, norm_amp);
 
         float cnt_value = demodulate(&cnt_fmd, cnt_baseband);
         float dat_value = demodulate(&dat_fmd, dat_baseband);

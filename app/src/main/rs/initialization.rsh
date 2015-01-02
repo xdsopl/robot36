@@ -82,7 +82,7 @@ void initialize(float rate, int length, int width, int height)
     const float dat_bandwidth = 800.0f;
     const float cnt_bandwidth = 200.0f;
 
-    avg_power = ema_cutoff(10.0f, sample_rate);
+    avg_amplitude = ema_cutoff(10.0f, sample_rate);
     leader_lowpass = ema_cutoff(100.0f, sample_rate);
 
     cnt_ddc = ddc(cnt_carrier, cnt_bandwidth, sample_rate);
