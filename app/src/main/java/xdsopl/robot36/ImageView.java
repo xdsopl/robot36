@@ -103,7 +103,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         audio = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, audioBuffer.length * 2);
         audio.startRecording();
 
-        int minValueBufferLength = 3 * sampleRate;
+        int minValueBufferLength = 2 * sampleRate;
         int valueBufferLength = Integer.highestOneBit(minValueBufferLength);
         if (minValueBufferLength > valueBufferLength)
             valueBufferLength <<= 1;
