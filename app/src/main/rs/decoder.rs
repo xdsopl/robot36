@@ -228,7 +228,7 @@ void decode(int samples) {
             if (vpos >= bitmap_height)
                 save_buffer();
             if (vpos >= maximum_height)
-                vpos = 0;
+                vpos -= maximum_height;
             seperator_counter = 0;
         }
     }
