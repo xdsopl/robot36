@@ -72,6 +72,7 @@ static void robot36_decoder(int sync_timeout)
     if (!free_running && !vpos && !latch) {
         parity = 0;
         latch = 1;
+        mismatch_counter = 0;
     }
     prev_timeout = sync_timeout;
     static int even_sync_pos, odd_sync_pos;
