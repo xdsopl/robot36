@@ -67,8 +67,10 @@ static void robot36_decoder(int sync_timeout)
     static int prev_timeout, mismatch_counter, parity, latch;
     if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
         mismatch_counter = parity ^ (seperator_counter > 0) ? mismatch_counter + 1 : 0;
-    if ((free_running && mismatch_counter > 1) || mismatch_counter > 5)
+    if ((free_running && mismatch_counter > 1) || mismatch_counter > 5) {
         parity ^= 1;
+        mismatch_counter = 0;
+    }
     if (!free_running && !vpos && !latch) {
         parity = 0;
         latch = 1;
