@@ -42,16 +42,16 @@ void initialize(float rate, int length, int width, int height)
     free_running = 1;
     minimum_length = 0.05f * sample_rate;
     minimum_sync_length = 0.002f * sample_rate;
-    sync_buildup_length = sync_buildup_seconds * sample_rate;
+    sync_buildup_length = round((sync_buildup_ms * sample_rate) / 1000.0f);
 
-    robot36_scanline_length = robot36_scanline_seconds * sample_rate;
-    robot72_scanline_length = robot72_scanline_seconds * sample_rate;
-    martin1_scanline_length = martin1_scanline_seconds * sample_rate;
-    martin2_scanline_length = martin2_scanline_seconds * sample_rate;
-    scottie1_scanline_length = scottie1_scanline_seconds * sample_rate;
-    scottie2_scanline_length = scottie2_scanline_seconds * sample_rate;
-    scottieDX_scanline_length = scottieDX_scanline_seconds * sample_rate;
-    wrasseSC2_180_scanline_length = wrasseSC2_180_scanline_seconds * sample_rate;
+    robot36_scanline_length = round((robot36_scanline_ms * sample_rate) / 1000.0f);
+    robot72_scanline_length = round((robot72_scanline_ms * sample_rate) / 1000.0f);
+    martin1_scanline_length = round((martin1_scanline_ms * sample_rate) / 1000.0f);
+    martin2_scanline_length = round((martin2_scanline_ms * sample_rate) / 1000.0f);
+    scottie1_scanline_length = round((scottie1_scanline_ms * sample_rate) / 1000.0f);
+    scottie2_scanline_length = round((scottie2_scanline_ms * sample_rate) / 1000.0f);
+    scottieDX_scanline_length = round((scottieDX_scanline_ms * sample_rate) / 1000.0f);
+    wrasseSC2_180_scanline_length = round((wrasseSC2_180_scanline_ms * sample_rate) / 1000.0f);
 
     const float pairwise_minimum_of_scanline_time_distances = 0.018226f;
     float deviation = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;

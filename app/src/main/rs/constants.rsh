@@ -34,14 +34,14 @@ static const int mode_scottieDX = 7;
 static const int mode_wrasseSC2_180 = 8;
 
 
-static const float sync_buildup_seconds = 0.0011f;
-static const float robot36_scanline_seconds = 0.15f;
-static const float robot72_scanline_seconds = 0.3f;
-static const float martin1_scanline_seconds = 0.446446f;
-static const float martin2_scanline_seconds = 0.226798f;
-static const float scottie1_scanline_seconds = 0.42822f;
-static const float scottie2_scanline_seconds = 0.277692f;
-static const float scottieDX_scanline_seconds = 1.0503f;
-static const float wrasseSC2_180_scanline_seconds = 0.7110225f;
+static const float sync_buildup_ms = 1.1f;
+static const float robot36_scanline_ms = 150.0f;
+static const float robot72_scanline_ms = 300.0f;
+static const float martin1_scanline_ms = 446.446f;
+static const float martin2_scanline_ms = 226.798f;
+static const float scottie1_scanline_ms = 428.22f;
+static const float scottie2_scanline_ms = 277.692f;
+static const float scottieDX_scanline_ms = 1050.3f;
+static const float wrasseSC2_180_scanline_ms = 711.0225f;
 
 #endif

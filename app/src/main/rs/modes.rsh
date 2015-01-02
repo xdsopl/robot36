@@ -70,22 +70,31 @@ void robot36_mode()
     bitmap_width = 320;
     bitmap_height = 240;
     const float tolerance = 0.8f;
-    const float sync_seconds = 0.009f;
-    const float sync_porch_seconds = 0.003f;
-    const float sep_porch_seconds = 0.0015f;
-    const float y_scan_seconds = 0.088f;
-    const float uv_scan_seconds = 0.044f;
-    const float seperator_seconds = 0.0045f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    y_begin = sync_porch_seconds * sample_rate;
-    y_end = y_begin + y_scan_seconds * sample_rate;
-    u_sep_begin = v_sep_begin = y_end;
-    u_sep_end = v_sep_end = u_sep_begin + seperator_seconds * sample_rate;
-    u_begin = v_begin = u_sep_end + sep_porch_seconds * sample_rate;
-    u_end = v_end = u_begin + uv_scan_seconds * sample_rate;
+    const float sync_ms = 9.0f;
+    const float sync_porch_ms = 3.0f;
+    const float sep_porch_ms = 1.5f;
+    const float y_scan_ms = 88.0f;
+    const float uv_scan_ms = 44.0f;
+    const float seperator_ms = 4.5f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float y_begin_ms = sync_porch_ms;
+    float y_end_ms = y_begin_ms + y_scan_ms;
+    float uv_sep_begin_ms = y_end_ms;
+    float uv_sep_end_ms = uv_sep_begin_ms + seperator_ms;
+    float uv_begin_ms = uv_sep_end_ms + sep_porch_ms;
+    float uv_end_ms = uv_begin_ms + uv_scan_ms;
+
+    y_begin = round((y_begin_ms * sample_rate) / 1000.0f);
+    y_end = round((y_end_ms * sample_rate) / 1000.0f);
+    u_sep_begin = v_sep_begin = round((uv_sep_begin_ms * sample_rate) / 1000.0f);
+    u_sep_end = v_sep_end = round((uv_sep_end_ms * sample_rate) / 1000.0f);
+    u_begin = v_begin = round((uv_begin_ms * sample_rate) / 1000.0f);
+    u_end = v_end = round((uv_end_ms * sample_rate) / 1000.0f);
+
     scanline_length = robot36_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void robot72_mode()
 {
@@ -97,26 +106,39 @@ void robot72_mode()
     bitmap_width = 320;
     bitmap_height = 240;
     const float tolerance = 0.8f;
-    const float sync_seconds = 0.009f;
-    const float sync_porch_seconds = 0.003f;
-    const float sep_porch_seconds = 0.0015f;
-    const float y_scan_seconds = 0.138f;
-    const float uv_scan_seconds = 0.069f;
-    const float seperator_seconds = 0.0045f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    y_begin = sync_porch_seconds * sample_rate;
-    y_end = y_begin + y_scan_seconds * sample_rate;
-    v_sep_begin = y_end;
-    v_sep_end = v_sep_begin + seperator_seconds * sample_rate;
-    v_begin = v_sep_end + sep_porch_seconds * sample_rate;
-    v_end = v_begin + uv_scan_seconds * sample_rate;
-    u_sep_begin = v_end;
-    u_sep_end = u_sep_begin + seperator_seconds * sample_rate;
-    u_begin = u_sep_end + sep_porch_seconds * sample_rate;
-    u_end = u_begin + uv_scan_seconds * sample_rate;
+    const float sync_ms = 9.0f;
+    const float sync_porch_ms = 3.0f;
+    const float sep_porch_ms = 1.5f;
+    const float y_scan_ms = 138.0f;
+    const float uv_scan_ms = 69.0f;
+    const float seperator_ms = 4.5f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float y_begin_ms = sync_porch_ms;
+    float y_end_ms = y_begin_ms + y_scan_ms;
+    float v_sep_begin_ms = y_end_ms;
+    float v_sep_end_ms = v_sep_begin_ms + seperator_ms;
+    float v_begin_ms = v_sep_end_ms + sep_porch_ms;
+    float v_end_ms = v_begin_ms + uv_scan_ms;
+    float u_sep_begin_ms = v_end_ms;
+    float u_sep_end_ms = u_sep_begin_ms + seperator_ms;
+    float u_begin_ms = u_sep_end_ms + sep_porch_ms;
+    float u_end_ms = u_begin_ms + uv_scan_ms;
+
+    y_begin = round((y_begin_ms * sample_rate) / 1000.0f);
+    y_end = round((y_end_ms * sample_rate) / 1000.0f);
+    v_sep_begin = round((v_sep_begin_ms * sample_rate) / 1000.0f);
+    v_sep_end = round((v_sep_end_ms * sample_rate) / 1000.0f);
+    v_begin = round((v_begin_ms * sample_rate) / 1000.0f);
+    v_end = round((v_end_ms * sample_rate) / 1000.0f);
+    u_sep_begin = round((u_sep_begin_ms * sample_rate) / 1000.0f);
+    u_sep_end = round((u_sep_end_ms * sample_rate) / 1000.0f);
+    u_begin = round((u_begin_ms * sample_rate) / 1000.0f);
+    u_end = round((u_end_ms * sample_rate) / 1000.0f);
+
     scanline_length = robot72_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void martin1_mode()
 {
@@ -128,22 +150,29 @@ void martin1_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.5f;
-    const float sync_seconds = 0.004862f;
-    const float sync_porch_seconds = 0.000572f;
-    const float r_scan_seconds = 0.146432f;
-    const float g_scan_seconds = 0.146432f;
-    const float b_scan_seconds = 0.146432f;
-    const float seperator_seconds = 0.000572f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    g_begin = sync_porch_seconds * sample_rate;
-    g_end = g_begin + g_scan_seconds * sample_rate;
-    b_begin = g_end + seperator_seconds * sample_rate;
-    b_end = b_begin + b_scan_seconds * sample_rate;
-    r_begin = b_end + seperator_seconds * sample_rate;
-    r_end = r_begin + r_scan_seconds * sample_rate;
+    const float sync_ms = 4.862f;
+    const float sync_porch_ms = 0.572f;
+    const float rgb_scan_ms = 146.432f;
+    const float seperator_ms = 0.572f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float g_begin_ms = sync_porch_ms;
+    float g_end_ms = g_begin_ms + rgb_scan_ms;
+    float b_begin_ms = g_end_ms + seperator_ms;
+    float b_end_ms = b_begin_ms + rgb_scan_ms;
+    float r_begin_ms = b_end_ms + seperator_ms;
+    float r_end_ms = r_begin_ms + rgb_scan_ms;
+
+    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
+    r_end = round((r_end_ms * sample_rate) / 1000.0f);
+    g_end = round((g_end_ms * sample_rate) / 1000.0f);
+    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
+    b_end = round((b_end_ms * sample_rate) / 1000.0f);
+    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
+
     scanline_length = martin1_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void martin2_mode()
 {
@@ -155,22 +184,29 @@ void martin2_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.5f;
-    const float sync_seconds = 0.004862f;
-    const float sync_porch_seconds = 0.000572f;
-    const float r_scan_seconds = 0.073216f;
-    const float g_scan_seconds = 0.073216f;
-    const float b_scan_seconds = 0.073216f;
-    const float seperator_seconds = 0.000572f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    g_begin = sync_porch_seconds * sample_rate;
-    g_end = g_begin + g_scan_seconds * sample_rate;
-    b_begin = g_end + seperator_seconds * sample_rate;
-    b_end = b_begin + b_scan_seconds * sample_rate;
-    r_begin = b_end + seperator_seconds * sample_rate;
-    r_end = r_begin + r_scan_seconds * sample_rate;
+    const float sync_ms = 4.862f;
+    const float sync_porch_ms = 0.572f;
+    const float rgb_scan_ms = 73.216f;
+    const float seperator_ms = 0.572f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float g_begin_ms = sync_porch_ms;
+    float g_end_ms = g_begin_ms + rgb_scan_ms;
+    float b_begin_ms = g_end_ms + seperator_ms;
+    float b_end_ms = b_begin_ms + rgb_scan_ms;
+    float r_begin_ms = b_end_ms + seperator_ms;
+    float r_end_ms = r_begin_ms + rgb_scan_ms;
+
+    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
+    r_end = round((r_end_ms * sample_rate) / 1000.0f);
+    g_end = round((g_end_ms * sample_rate) / 1000.0f);
+    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
+    b_end = round((b_end_ms * sample_rate) / 1000.0f);
+    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
+
     scanline_length = martin2_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void scottie1_mode()
 {
@@ -182,20 +218,29 @@ void scottie1_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.8f;
-    const float sync_seconds = 0.009f;
-    const float sync_porch_seconds = 0.0015f;
-    const float rgb_scan_seconds = 0.138240f;
-    const float seperator_seconds = 0.0015f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = sync_porch_seconds * sample_rate;
-    r_end = r_begin + rgb_scan_seconds * sample_rate;
-    b_end = - sync_seconds * sample_rate;
-    b_begin = b_end - rgb_scan_seconds * sample_rate;
-    g_end = b_begin - seperator_seconds * sample_rate;
-    g_begin = g_end - rgb_scan_seconds * sample_rate;
+    const float sync_ms = 9.0f;
+    const float sync_porch_ms = 1.5f;
+    const float rgb_scan_ms = 138.240f;
+    const float seperator_ms = 1.5f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float r_begin_ms = sync_porch_ms;
+    float r_end_ms = r_begin_ms + rgb_scan_ms;
+    float b_end_ms = - sync_ms;
+    float b_begin_ms = b_end_ms - rgb_scan_ms;
+    float g_end_ms = b_begin_ms - seperator_ms;
+    float g_begin_ms = g_end_ms - rgb_scan_ms;
+
+    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
+    r_end = round((r_end_ms * sample_rate) / 1000.0f);
+    g_end = round((g_end_ms * sample_rate) / 1000.0f);
+    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
+    b_end = round((b_end_ms * sample_rate) / 1000.0f);
+    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
+
     scanline_length = scottie1_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void scottie2_mode()
 {
@@ -207,20 +252,29 @@ void scottie2_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.8f;
-    const float sync_seconds = 0.009f;
-    const float sync_porch_seconds = 0.0015f;
-    const float rgb_scan_seconds = 0.088064f;
-    const float seperator_seconds = 0.0015f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = sync_porch_seconds * sample_rate;
-    r_end = r_begin + rgb_scan_seconds * sample_rate;
-    b_end = - sync_seconds * sample_rate;
-    b_begin = b_end - rgb_scan_seconds * sample_rate;
-    g_end = b_begin - seperator_seconds * sample_rate;
-    g_begin = g_end - rgb_scan_seconds * sample_rate;
+    const float sync_ms = 9.0f;
+    const float sync_porch_ms = 1.5f;
+    const float rgb_scan_ms = 88.064f;
+    const float seperator_ms = 1.5f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float r_begin_ms = sync_porch_ms;
+    float r_end_ms = r_begin_ms + rgb_scan_ms;
+    float b_end_ms = - sync_ms;
+    float b_begin_ms = b_end_ms - rgb_scan_ms;
+    float g_end_ms = b_begin_ms - seperator_ms;
+    float g_begin_ms = g_end_ms - rgb_scan_ms;
+
+    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
+    r_end = round((r_end_ms * sample_rate) / 1000.0f);
+    g_end = round((g_end_ms * sample_rate) / 1000.0f);
+    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
+    b_end = round((b_end_ms * sample_rate) / 1000.0f);
+    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
+
     scanline_length = scottie2_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void scottieDX_mode()
 {
@@ -232,20 +286,29 @@ void scottieDX_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.8f;
-    const float sync_seconds = 0.009f;
-    const float sync_porch_seconds = 0.0015f;
-    const float rgb_scan_seconds = 0.3456f;
-    const float seperator_seconds = 0.0015f;
-    seperator_length = seperator_seconds * sample_rate;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = sync_porch_seconds * sample_rate;
-    r_end = r_begin + rgb_scan_seconds * sample_rate;
-    b_end = - sync_seconds * sample_rate;
-    b_begin = b_end - rgb_scan_seconds * sample_rate;
-    g_end = b_begin - seperator_seconds * sample_rate;
-    g_begin = g_end - rgb_scan_seconds * sample_rate;
+    const float sync_ms = 9.0f;
+    const float sync_porch_ms = 1.5f;
+    const float rgb_scan_ms = 345.6f;
+    const float seperator_ms = 1.5f;
+    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float r_begin_ms = sync_porch_ms;
+    float r_end_ms = r_begin_ms + rgb_scan_ms;
+    float b_end_ms = - sync_ms;
+    float b_begin_ms = b_end_ms - rgb_scan_ms;
+    float g_end_ms = b_begin_ms - seperator_ms;
+    float g_begin_ms = g_end_ms - rgb_scan_ms;
+
+    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
+    r_end = round((r_end_ms * sample_rate) / 1000.0f);
+    g_end = round((g_end_ms * sample_rate) / 1000.0f);
+    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
+    b_end = round((b_end_ms * sample_rate) / 1000.0f);
+    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
+
     scanline_length = scottieDX_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 void wrasseSC2_180_mode()
 {
@@ -257,18 +320,27 @@ void wrasseSC2_180_mode()
     bitmap_width = 320;
     bitmap_height = 256;
     const float tolerance = 0.5f;
-    const float sync_seconds = 0.0055225f;
-    const float sync_porch_seconds = 0.0005f;
-    const float rgb_scan_seconds = 0.235f;
-    sync_length = tolerance * sync_seconds * sample_rate;
-    r_begin = sync_porch_seconds * sample_rate;
-    r_end = r_begin + rgb_scan_seconds * sample_rate;
-    g_begin = r_end;
-    g_end = g_begin + rgb_scan_seconds * sample_rate;
-    b_begin = g_end;
-    b_end = b_begin + rgb_scan_seconds * sample_rate;
+    const float sync_ms = 5.5225f;
+    const float sync_porch_ms = 0.5f;
+    const float rgb_scan_ms = 235.0f;
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float r_begin_ms = sync_porch_ms;
+    float r_end_ms = r_begin_ms + rgb_scan_ms;
+    float g_begin_ms = r_end_ms;
+    float g_end_ms = g_begin_ms + rgb_scan_ms;
+    float b_begin_ms = g_end_ms;
+    float b_end_ms = b_begin_ms + rgb_scan_ms;
+
+    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
+    r_end = round((r_end_ms * sample_rate) / 1000.0f);
+    g_end = round((g_end_ms * sample_rate) / 1000.0f);
+    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
+    b_end = round((b_end_ms * sample_rate) / 1000.0f);
+    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
+
     scanline_length = wrasseSC2_180_scanline_length;
-    maximum_length = scanline_length + sync_porch_seconds * sample_rate;
+    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
 }
 
 static void switch_mode(int new_mode)
