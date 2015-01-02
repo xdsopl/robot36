@@ -62,7 +62,7 @@ static void save_buffer()
         saved_buffer[i] = pixel_buffer[i];
 }
 
-static void robot36_decoder()
+static void robot36_decoder(int sync_timeout)
 {
     static int prev_timeout, mismatch_counter, parity, latch;
     if (!prev_timeout && 2 * abs(seperator_counter) > seperator_length)
@@ -73,17 +73,19 @@ static void robot36_decoder()
         parity = 0;
         latch = 1;
     }
-    prev_timeout = hpos >= maximum_length;
+    prev_timeout = sync_timeout;
     static int even_sync_pos, odd_sync_pos;
     if (parity) {
         odd_sync_pos = prev_sync_pos;
+        int even_vpos = vpos;
+        int odd_vpos = (vpos + 1) % maximum_height;
         for (int i = 0; i < bitmap_width; ++i) {
             uchar even_y = value_blur(i, even_sync_pos + y_begin, even_sync_pos + y_end);
             uchar v = value_blur(i, even_sync_pos + v_begin, even_sync_pos + v_end);
             uchar odd_y = value_blur(i, odd_sync_pos + y_begin, odd_sync_pos + y_end);
             uchar u = value_blur(i, odd_sync_pos + u_begin, odd_sync_pos + u_end);
-            pixel_buffer[bitmap_width * vpos + i] = yuv(even_y, u, v);
-            pixel_buffer[bitmap_width * (vpos+1) + i] = yuv(odd_y, u, v);
+            pixel_buffer[bitmap_width * even_vpos + i] = yuv(even_y, u, v);
+            pixel_buffer[bitmap_width * odd_vpos + i] = yuv(odd_y, u, v);
         }
         vpos += 2;
         latch = 0;
@@ -196,16 +198,19 @@ void decode(int samples) {
                 seperator_counter = 0;
                 continue;
             }
+            int sync_timeout;
             if (hpos >= maximum_length) {
+                sync_timeout = 1;
                 hpos -= scanline_length;
                 prev_sync_pos = sync_pos;
                 sync_pos += scanline_length;
             } else {
+                sync_timeout = 0;
                 hpos = buffer_pos - sync_pos;
             }
             switch (current_decoder) {
                 case decoder_robot36:
-                    robot36_decoder();
+                    robot36_decoder(sync_timeout);
                     break;
                 case decoder_yuv:
                     yuv_decoder();
