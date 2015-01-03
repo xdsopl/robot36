@@ -5,6 +5,8 @@
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_sharper_image" android:title="@string/action_sharper_image"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_toggle_scaling" android:title="@string/action_toggle_scaling"
+        android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode"

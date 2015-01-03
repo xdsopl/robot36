@@ -148,6 +148,9 @@ public class MainActivity extends Activity {
             case R.id.action_sharper_image:
                 view.sharper_image();
                 return true;
+            case R.id.action_toggle_scaling:
+                view.toggle_scaling();
+                return true;
             case R.id.action_robot36_mode:
                 view.robot36_mode();
                 return true;

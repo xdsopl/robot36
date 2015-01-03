@@ -37,6 +37,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private boolean takeABreak = true, cantTouchThis = true, quitThread = false;
     private int imageWidth = 320;
     private int imageHeight = 240;
+    private boolean intScale = false;
     MainActivity activity;
     private final SurfaceHolder holder;
     private final Bitmap bitmap;
@@ -134,6 +135,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         thread.start();
     }
 
+    void toggle_scaling() { intScale ^= true; }
     void softer_image() { rsDecoder.invoke_incr_blur(); }
     void sharper_image() { rsDecoder.invoke_decr_blur(); }
     void debug_sync() { rsDecoder.invoke_debug_sync(); }
@@ -254,18 +256,20 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     void drawBitmap(Canvas canvas) {
-        float sx, sy, px, py;
+        float sx, sy;
         if (imageWidth * canvasHeight < canvasWidth * bitmap.getHeight()) {
             sy = (float)canvasHeight / bitmap.getHeight();
             sx = sy * imageWidth / bitmap.getWidth();
-            px = (canvasWidth - sx * bitmap.getWidth()) / 2.0f;
-            py = 0.0f;
         } else {
             sx = (float)canvasWidth / bitmap.getWidth();
             sy = (float)canvasWidth / imageWidth;
-            px = 0.0f;
-            py = (canvasHeight - sy * bitmap.getHeight()) / 2.0f;
         }
+        if (intScale) {
+            sx = (float)Math.floor(sx);
+            sy = (float)Math.floor(sy);
+        }
+        float px = (canvasWidth - sx * bitmap.getWidth()) / 2.0f;
+        float py = (canvasHeight - sy * bitmap.getHeight()) / 2.0f;
         canvas.drawColor(Color.BLACK);
         canvas.save();
         canvas.scale(sx, sy, px, py);
