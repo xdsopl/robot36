@@ -77,23 +77,47 @@ static void robot36_decoder(int sync_timeout)
         mismatch_counter = 0;
     }
     prev_timeout = sync_timeout;
-    static int even_sync_pos, odd_sync_pos;
-    if (parity) {
-        odd_sync_pos = prev_sync_pos;
-        int even_vpos = vpos;
-        int odd_vpos = (vpos + 1) % maximum_height;
+    if (debug_mode) {
         for (int i = 0; i < bitmap_width; ++i) {
-            uchar even_y = value_blur(i, even_sync_pos + y_begin, even_sync_pos + y_end);
-            uchar v = value_blur(i, even_sync_pos + v_begin, even_sync_pos + v_end);
-            uchar odd_y = value_blur(i, odd_sync_pos + y_begin, odd_sync_pos + y_end);
-            uchar u = value_blur(i, odd_sync_pos + u_begin, odd_sync_pos + u_end);
-            pixel_buffer[bitmap_width * even_vpos + i] = yuv(even_y, u, v);
-            pixel_buffer[bitmap_width * odd_vpos + i] = yuv(odd_y, u, v);
+            uchar r, g, b;
+            r = g = b = value_blur(i, prev_sync_pos, sync_pos);
+            int pos = (i * (sync_pos - prev_sync_pos) + (sync_pos - prev_sync_pos) / 2) / bitmap_width;
+            if (y_begin <= pos && pos < y_end)
+                r = b = 0;
+            if (parity) {
+                if (v_begin <= pos && pos < v_end)
+                    g = b = 0;
+                if (u_sep_begin <= pos && pos < u_sep_end)
+                    b = 128;
+            } else {
+                if (u_begin <= pos && pos < u_end)
+                    r = g = 0;
+                if (v_sep_begin <= pos && pos < v_sep_end)
+                    r = g = 128;
+            }
+            pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
         }
-        vpos += 2;
         latch = 0;
+        ++vpos;
     } else {
-        even_sync_pos = prev_sync_pos;
+        static int even_sync_pos, odd_sync_pos;
+        if (parity) {
+            odd_sync_pos = prev_sync_pos;
+            int even_vpos = vpos;
+            int odd_vpos = (vpos + 1) % maximum_height;
+            for (int i = 0; i < bitmap_width; ++i) {
+                uchar even_y = value_blur(i, even_sync_pos + y_begin, even_sync_pos + y_end);
+                uchar v = value_blur(i, even_sync_pos + v_begin, even_sync_pos + v_end);
+                uchar odd_y = value_blur(i, odd_sync_pos + y_begin, odd_sync_pos + y_end);
+                uchar u = value_blur(i, odd_sync_pos + u_begin, odd_sync_pos + u_end);
+                pixel_buffer[bitmap_width * even_vpos + i] = yuv(even_y, u, v);
+                pixel_buffer[bitmap_width * odd_vpos + i] = yuv(odd_y, u, v);
+            }
+            vpos += 2;
+            latch = 0;
+        } else {
+            even_sync_pos = prev_sync_pos;
+        }
     }
     parity ^= 1;
 }
@@ -101,10 +125,27 @@ static void robot36_decoder(int sync_timeout)
 static void yuv_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar y = value_blur(i, y_begin + prev_sync_pos, y_end + prev_sync_pos);
-        uchar u = value_blur(i, u_begin + prev_sync_pos, u_end + prev_sync_pos);
-        uchar v = value_blur(i, v_begin + prev_sync_pos, v_end + prev_sync_pos);
-        pixel_buffer[bitmap_width * vpos + i] = yuv(y, u, v);
+        if (debug_mode) {
+            uchar r, g, b;
+            r = g = b = value_blur(i, prev_sync_pos, sync_pos);
+            int pos = (i * (sync_pos - prev_sync_pos) + (sync_pos - prev_sync_pos) / 2) / bitmap_width;
+            if (v_begin <= pos && pos < v_end)
+                g = b = 0;
+            if (y_begin <= pos && pos < y_end)
+                r = b = 0;
+            if (u_begin <= pos && pos < u_end)
+                r = g = 0;
+            if (u_sep_begin <= pos && pos < u_sep_end)
+                b = 128;
+            if (v_sep_begin <= pos && pos < v_sep_end)
+                r = g = 128;
+            pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
+        } else {
+            uchar y = value_blur(i, y_begin + prev_sync_pos, y_end + prev_sync_pos);
+            uchar u = value_blur(i, u_begin + prev_sync_pos, u_end + prev_sync_pos);
+            uchar v = value_blur(i, v_begin + prev_sync_pos, v_end + prev_sync_pos);
+            pixel_buffer[bitmap_width * vpos + i] = yuv(y, u, v);
+        }
     }
     ++vpos;
 }
@@ -112,9 +153,21 @@ static void yuv_decoder()
 static void rgb_decoder()
 {
     for (int i = 0; i < bitmap_width; ++i) {
-        uchar r = value_blur(i, r_begin + prev_sync_pos, r_end + prev_sync_pos);
-        uchar g = value_blur(i, g_begin + prev_sync_pos, g_end + prev_sync_pos);
-        uchar b = value_blur(i, b_begin + prev_sync_pos, b_end + prev_sync_pos);
+        uchar r, g, b;
+        if (debug_mode) {
+            r = g = b = value_blur(i, prev_sync_pos, sync_pos);
+            int pos = (i * (sync_pos - prev_sync_pos) + (sync_pos - prev_sync_pos) / 2) / bitmap_width;
+            if (r_begin <= pos && pos < r_end)
+                g = b = 0;
+            if (g_begin <= pos && pos < g_end)
+                r = b = 0;
+            if (b_begin <= pos && pos < b_end)
+                r = g = 0;
+        } else {
+            r = value_blur(i, r_begin + prev_sync_pos, r_end + prev_sync_pos);
+            g = value_blur(i, g_begin + prev_sync_pos, g_end + prev_sync_pos);
+            b = value_blur(i, b_begin + prev_sync_pos, b_end + prev_sync_pos);
+        }
         pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
     }
     ++vpos;
@@ -138,7 +191,25 @@ static void scottie_decoder()
         return;
     }
     first_sync = 1;
-    rgb_decoder();
+    for (int i = 0; i < bitmap_width; ++i) {
+        uchar r, g, b;
+        if (debug_mode) {
+            r = g = b = value_blur(i, g_begin + prev_sync_pos, r_end + prev_sync_pos);
+            int pos = (i * (r_end - g_begin) + (r_end - g_begin) / 2) / bitmap_width + g_begin;
+            if (r_begin <= pos && pos < r_end)
+                g = b = 0;
+            if (g_begin <= pos && pos < g_end)
+                r = b = 0;
+            if (b_begin <= pos && pos < b_end)
+                r = g = 0;
+        } else {
+            r = value_blur(i, r_begin + prev_sync_pos, r_end + prev_sync_pos);
+            g = value_blur(i, g_begin + prev_sync_pos, g_end + prev_sync_pos);
+            b = value_blur(i, b_begin + prev_sync_pos, b_end + prev_sync_pos);
+        }
+        pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
+    }
+    ++vpos;
 }
 
 void decode(int samples) {
@@ -162,8 +233,8 @@ void decode(int samples) {
 
         int cnt_active = dat_amp < 1.1f * cnt_amp;
         int dat_active = cnt_amp < 2.0f * dat_amp;
-        uchar cnt_level = save_cnt && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
-        uchar dat_level = save_dat && dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
+        uchar cnt_level = debug_mode && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
+        uchar dat_level = dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
         value_buffer[buffer_pos & buffer_mask] = cnt_level | dat_level;
 
         int cnt_quantized = round(cnt_value);
@@ -177,7 +248,7 @@ void decode(int samples) {
             sync_pos = buffer_pos - sync_buildup_length;
         }
 
-        if (*current_mode != mode_debug) {
+        if (automatic_mode_detection) {
             int detected_mode = calibration_detector(dat_value, dat_amp, cnt_amp, cnt_quantized);
             if (detected_mode >= 0) {
                 free_running = 0;

@@ -23,7 +23,7 @@ static const int decoder_yuv = 2;
 static const int decoder_rgb = 3;
 static const int decoder_scottie = 4;
 
-static const int mode_debug = 0;
+static const int mode_raw = 0;
 static const int mode_robot36 = 1;
 static const int mode_robot72 = 2;
 static const int mode_martin1 = 3;
@@ -32,7 +32,6 @@ static const int mode_scottie1 = 5;
 static const int mode_scottie2 = 6;
 static const int mode_scottieDX = 7;
 static const int mode_wrasseSC2_180 = 8;
-
 
 static const float sync_buildup_ms = 1.1f;
 static const float robot36_scanline_ms = 150.0f;

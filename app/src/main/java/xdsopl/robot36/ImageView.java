@@ -64,7 +64,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private final Allocation rsDecoderSavedHeight;
     private final ScriptC_decoder rsDecoder;
 
-    private final int mode_debug = 0;
+    private final int mode_raw = 0;
     private final int mode_robot36 = 1;
     private final int mode_robot72 = 2;
     private final int mode_martin1 = 3;
@@ -138,9 +138,9 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     void toggle_scaling() { intScale ^= true; }
     void softer_image() { rsDecoder.invoke_incr_blur(); }
     void sharper_image() { rsDecoder.invoke_decr_blur(); }
-    void debug_sync() { rsDecoder.invoke_debug_sync(); }
-    void debug_image() { rsDecoder.invoke_debug_image(); }
-    void debug_both() { rsDecoder.invoke_debug_both(); }
+    void toggle_debug() { rsDecoder.invoke_toggle_debug(); }
+    void toggle_auto() { rsDecoder.invoke_toggle_auto(); }
+    void raw_mode() { rsDecoder.invoke_raw_mode(); }
     void robot36_mode() { rsDecoder.invoke_robot36_mode(); }
     void robot72_mode() { rsDecoder.invoke_robot72_mode(); }
     void martin1_mode() { rsDecoder.invoke_martin1_mode(); }
@@ -154,10 +154,10 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     void switch_mode(int mode)
     {
         switch (mode) {
-            case mode_debug:
+            case mode_raw:
                 imageWidth = bitmap.getWidth();
                 imageHeight = bitmap.getHeight();
-                updateTitle(R.string.action_debug_mode);
+                updateTitle(R.string.action_raw_mode);
                 break;
             case mode_robot36:
                 imageWidth = 320;

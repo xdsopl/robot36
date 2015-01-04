@@ -151,6 +151,15 @@ public class MainActivity extends Activity {
             case R.id.action_toggle_scaling:
                 view.toggle_scaling();
                 return true;
+            case R.id.action_toggle_debug:
+                view.toggle_debug();
+                return true;
+            case R.id.action_toggle_auto:
+                view.toggle_auto();
+                return true;
+            case R.id.action_raw_mode:
+                view.raw_mode();
+                return true;
             case R.id.action_robot36_mode:
                 view.robot36_mode();
                 return true;
@@ -174,15 +183,6 @@ public class MainActivity extends Activity {
                 return true;
             case R.id.action_wrasseSC2_180_mode:
                 view.wrasseSC2_180_mode();
-                return true;
-            case R.id.action_debug_sync:
-                view.debug_sync();
-                return true;
-            case R.id.action_debug_image:
-                view.debug_image();
-                return true;
-            case R.id.action_debug_both:
-                view.debug_both();
                 return true;
         }
 

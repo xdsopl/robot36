@@ -7,6 +7,12 @@
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_toggle_scaling" android:title="@string/action_toggle_scaling"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_toggle_debug" android:title="@string/action_toggle_debug"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_toggle_auto" android:title="@string/action_toggle_auto"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_raw_mode" android:title="@string/action_raw_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode"
@@ -22,11 +28,5 @@
     <item android:id="@+id/action_scottieDX_mode" android:title="@string/action_scottieDX_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_wrasseSC2_180_mode" android:title="@string/action_wrasseSC2_180_mode"
-        android:orderInCategory="100" android:showAsAction="never" />
-    <item android:id="@+id/action_debug_sync" android:title="@string/action_debug_sync"
-        android:orderInCategory="100" android:showAsAction="never" />
-    <item android:id="@+id/action_debug_image" android:title="@string/action_debug_image"
-        android:orderInCategory="100" android:showAsAction="never" />
-    <item android:id="@+id/action_debug_both" android:title="@string/action_debug_both"
         android:orderInCategory="100" android:showAsAction="never" />
 </menu>

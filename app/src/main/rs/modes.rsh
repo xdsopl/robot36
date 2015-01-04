@@ -21,38 +21,18 @@ limitations under the License.
 #include "state.rsh"
 #include "exports.rsh"
 
-void debug_sync()
+void toggle_auto()
 {
-    save_cnt = 1;
-    save_dat = 0;
-    blur_power = -1;
-    *current_mode = mode_debug;
-    current_decoder = decoder_raw;
-    bitmap_width = maximum_width;
-    bitmap_height = maximum_height;
-    sync_length = minimum_sync_length;
-    maximum_length = buffer_length;
-    scanline_length = maximum_length;
+    automatic_mode_detection ^= 1;
 }
-void debug_image()
+void toggle_debug()
 {
-    save_dat = 1;
-    save_cnt = 0;
-    blur_power = -1;
-    *current_mode = mode_debug;
-    current_decoder = decoder_raw;
-    bitmap_width = maximum_width;
-    bitmap_height = maximum_height;
-    sync_length = minimum_sync_length;
-    maximum_length = buffer_length;
-    scanline_length = maximum_length;
+    debug_mode ^= 1;
 }
-void debug_both()
+void raw_mode()
 {
-    save_cnt = 1;
-    save_dat = 1;
     blur_power = -1;
-    *current_mode = mode_debug;
+    *current_mode = mode_raw;
     current_decoder = decoder_raw;
     bitmap_width = maximum_width;
     bitmap_height = maximum_height;
@@ -62,8 +42,6 @@ void debug_both()
 }
 void robot36_mode()
 {
-    save_dat = 1;
-    save_cnt = 0;
     blur_power = 2;
     *current_mode = mode_robot36;
     current_decoder = decoder_robot36;
@@ -98,8 +76,6 @@ void robot36_mode()
 }
 void robot72_mode()
 {
-    save_dat = 1;
-    save_cnt = 0;
     blur_power = 3;
     *current_mode = mode_robot72;
     current_decoder = decoder_yuv;
@@ -142,8 +118,6 @@ void robot72_mode()
 }
 void martin1_mode()
 {
-    save_cnt = 0;
-    save_dat = 1;
     blur_power = 3;
     *current_mode = mode_martin1;
     current_decoder = decoder_rgb;
@@ -176,8 +150,6 @@ void martin1_mode()
 }
 void martin2_mode()
 {
-    save_cnt = 0;
-    save_dat = 1;
     blur_power = 2;
     *current_mode = mode_martin2;
     current_decoder = decoder_rgb;
@@ -210,8 +182,6 @@ void martin2_mode()
 }
 void scottie1_mode()
 {
-    save_cnt = 0;
-    save_dat = 1;
     blur_power = 3;
     *current_mode = mode_scottie1;
     current_decoder = decoder_scottie;
@@ -244,8 +214,6 @@ void scottie1_mode()
 }
 void scottie2_mode()
 {
-    save_cnt = 0;
-    save_dat = 1;
     blur_power = 2;
     *current_mode = mode_scottie2;
     current_decoder = decoder_scottie;
@@ -278,8 +246,6 @@ void scottie2_mode()
 }
 void scottieDX_mode()
 {
-    save_cnt = 0;
-    save_dat = 1;
     blur_power = 5;
     *current_mode = mode_scottieDX;
     current_decoder = decoder_scottie;
@@ -312,8 +278,6 @@ void scottieDX_mode()
 }
 void wrasseSC2_180_mode()
 {
-    save_cnt = 0;
-    save_dat = 1;
     blur_power = 4;
     *current_mode = mode_wrasseSC2_180;
     current_decoder = decoder_rgb;

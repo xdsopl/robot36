@@ -32,6 +32,8 @@ void initialize(float rate, int length, int width, int height)
     for (int i = 0; i < width * height; ++i)
         pixel_buffer[i] = 0;
 
+    automatic_mode_detection = 1;
+    debug_mode = 0;
     vpos = 0;
     hpos = 0;
     prev_sync_pos = sync_pos = 0;

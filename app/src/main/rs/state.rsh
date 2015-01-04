@@ -20,6 +20,8 @@ limitations under the License.
 static ema_t avg_amplitude, leader_lowpass;
 static ddc_t cnt_ddc, dat_ddc;
 static fmd_t cnt_fmd, dat_fmd;
+static int automatic_mode_detection;
+static int debug_mode;
 static int current_decoder;
 static int blur_power, free_running;
 static int sample_rate, sync_pos, prev_sync_pos;
@@ -34,7 +36,7 @@ static int buffer_cleared;
 static int bitmap_width, bitmap_height;
 static int maximum_width, maximum_height;
 static int sync_length, sync_counter, vpos, hpos;
-static int save_cnt, save_dat, seperator_counter, seperator_length;
+static int seperator_counter, seperator_length;
 static int u_sep_begin, u_sep_end, v_sep_begin, v_sep_end;
 static int y_begin, y_end, u_begin, u_end, v_begin, v_end;
 static int r_begin, r_end, b_begin, b_end, g_begin, g_end;
