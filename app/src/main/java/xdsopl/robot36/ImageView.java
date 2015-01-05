@@ -265,8 +265,8 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
             sy = (float)canvasWidth / imageWidth;
         }
         if (intScale) {
-            sx = (float)Math.floor(sx);
-            sy = (float)Math.floor(sy);
+            sx = (float)Math.max(1, Math.floor(sx));
+            sy = (float)Math.max(1, Math.floor(sy));
         }
         float px = (canvasWidth - sx * bitmap.getWidth()) / 2.0f;
         float py = (canvasHeight - sy * bitmap.getHeight()) / 2.0f;
