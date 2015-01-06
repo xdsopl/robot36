@@ -35,6 +35,7 @@ static int buffer_length, buffer_mask, buffer_pos;
 static int buffer_cleared;
 static int bitmap_width, bitmap_height;
 static int maximum_width, maximum_height;
+static int spectrum_width, spectrum_height;
 static int sync_length, sync_counter, vpos, hpos;
 static int seperator_counter, seperator_length;
 static int u_sep_begin, u_sep_end, v_sep_begin, v_sep_end;

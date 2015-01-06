@@ -105,7 +105,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         changeLayoutOrientation(getResources().getConfiguration());
-        decoder = new Decoder((ImageView)findViewById(R.id.image), this);
+        decoder = new Decoder(this,
+                (SpectrumView)findViewById(R.id.spectrum),
+                (ImageView)findViewById(R.id.image)
+        );
         manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         showNotification();
     }

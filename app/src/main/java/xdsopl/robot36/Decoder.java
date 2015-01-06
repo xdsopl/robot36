@@ -27,7 +27,8 @@ import android.support.v8.renderscript.RenderScript;
 public class Decoder {
     private boolean drawImage = true, quitThread = false;
     private final MainActivity activity;
-    private final ImageView view;
+    private final ImageView image;
+    private final SpectrumView spectrum;
     private final AudioRecord audio;
     private final int audioSource = MediaRecorder.AudioSource.MIC;
     private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
@@ -35,6 +36,7 @@ public class Decoder {
     private final int sampleRate = 44100;
     private final short[] audioBuffer;
     private final int[] pixelBuffer;
+    private final int[] spectrumBuffer;
     private final int[] currentMode;
     private final int[] savedBuffer;
     private final int[] savedWidth;
@@ -43,6 +45,7 @@ public class Decoder {
     private final RenderScript rs;
     private final Allocation rsDecoderAudioBuffer;
     private final Allocation rsDecoderPixelBuffer;
+    private final Allocation rsDecoderSpectrumBuffer;
     private final Allocation rsDecoderValueBuffer;
     private final Allocation rsDecoderCurrentMode;
     private final Allocation rsDecoderSavedBuffer;
@@ -67,18 +70,22 @@ public class Decoder {
                 synchronized (this) {
                     if (quitThread)
                         return;
-                    if (drawImage)
-                        view.drawCanvas();
+                    if (drawImage) {
+                        image.drawCanvas();
+                        spectrum.drawCanvas();
+                    }
                 }
                 decode();
             }
         }
     };
 
-    public Decoder(ImageView view, MainActivity activity) {
-        this.view = view;
+    public Decoder(MainActivity activity, SpectrumView spectrum, ImageView image) {
+        this.image = image;
+        this.spectrum = spectrum;
         this.activity = activity;
-        pixelBuffer = new int[view.bitmap.getWidth() * view.bitmap.getHeight()];
+        pixelBuffer = new int[image.bitmap.getWidth() * image.bitmap.getHeight()];
+        spectrumBuffer = new int[spectrum.bitmap.getWidth() * spectrum.bitmap.getHeight()];
 
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
         int bufferSizeInSamples = bufferSizeInBytes / 2;
@@ -101,6 +108,7 @@ public class Decoder {
         rsDecoderAudioBuffer = Allocation.createSized(rs, Element.I16(rs), audioBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderValueBuffer = Allocation.createSized(rs, Element.U8(rs), valueBufferLength, Allocation.USAGE_SCRIPT);
         rsDecoderPixelBuffer = Allocation.createSized(rs, Element.I32(rs), pixelBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderSpectrumBuffer = Allocation.createSized(rs, Element.I32(rs), spectrumBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedWidth = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedHeight = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
@@ -109,16 +117,19 @@ public class Decoder {
         rsDecoder.bind_audio_buffer(rsDecoderAudioBuffer);
         rsDecoder.bind_value_buffer(rsDecoderValueBuffer);
         rsDecoder.bind_pixel_buffer(rsDecoderPixelBuffer);
+        rsDecoder.bind_spectrum_buffer(rsDecoderSpectrumBuffer);
         rsDecoder.bind_current_mode(rsDecoderCurrentMode);
         rsDecoder.bind_saved_width(rsDecoderSavedWidth);
         rsDecoder.bind_saved_height(rsDecoderSavedHeight);
         rsDecoder.bind_saved_buffer(rsDecoderSavedBuffer);
-        rsDecoder.invoke_initialize(sampleRate, valueBufferLength, view.bitmap.getWidth(), view.bitmap.getHeight());
+        rsDecoder.invoke_initialize(sampleRate, valueBufferLength,
+                image.bitmap.getWidth(), image.bitmap.getHeight(),
+                spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight());
 
         thread.start();
     }
 
-    void toggle_scaling() { view.intScale ^= true; }
+    void toggle_scaling() { image.intScale ^= true; }
     void softer_image() { rsDecoder.invoke_incr_blur(); }
     void sharper_image() { rsDecoder.invoke_decr_blur(); }
     void toggle_debug() { rsDecoder.invoke_toggle_debug(); }
@@ -139,48 +150,48 @@ public class Decoder {
     {
         switch (mode) {
             case mode_raw:
-                view.imageWidth = view.bitmap.getWidth();
-                view.imageHeight = view.bitmap.getHeight();
+                image.imageWidth = image.bitmap.getWidth();
+                image.imageHeight = image.bitmap.getHeight();
                 updateTitle(R.string.action_raw_mode);
                 break;
             case mode_robot36:
-                view.imageWidth = 320;
-                view.imageHeight = 240;
+                image.imageWidth = 320;
+                image.imageHeight = 240;
                 updateTitle(R.string.action_robot36_mode);
                 break;
             case mode_robot72:
-                view.imageWidth = 320;
-                view.imageHeight = 240;
+                image.imageWidth = 320;
+                image.imageHeight = 240;
                 updateTitle(R.string.action_robot72_mode);
                 break;
             case mode_martin1:
-                view.imageWidth = 320;
-                view.imageHeight = 256;
+                image.imageWidth = 320;
+                image.imageHeight = 256;
                 updateTitle(R.string.action_martin1_mode);
                 break;
             case mode_martin2:
-                view.imageWidth = 320;
-                view.imageHeight = 256;
+                image.imageWidth = 320;
+                image.imageHeight = 256;
                 updateTitle(R.string.action_martin2_mode);
                 break;
             case mode_scottie1:
-                view.imageWidth = 320;
-                view.imageHeight = 256;
+                image.imageWidth = 320;
+                image.imageHeight = 256;
                 updateTitle(R.string.action_scottie1_mode);
                 break;
             case mode_scottie2:
-                view.imageWidth = 320;
-                view.imageHeight = 256;
+                image.imageWidth = 320;
+                image.imageHeight = 256;
                 updateTitle(R.string.action_scottie2_mode);
                 break;
             case mode_scottieDX:
-                view.imageWidth = 320;
-                view.imageHeight = 256;
+                image.imageWidth = 320;
+                image.imageHeight = 256;
                 updateTitle(R.string.action_scottieDX_mode);
                 break;
             case mode_wrasseSC2_180:
-                view.imageWidth = 320;
-                view.imageHeight = 256;
+                image.imageWidth = 320;
+                image.imageHeight = 256;
                 updateTitle(R.string.action_wrasseSC2_180_mode);
                 break;
             default:
@@ -220,7 +231,7 @@ public class Decoder {
         rsDecoderAudioBuffer.copyFrom(audioBuffer);
         rsDecoder.invoke_decode(samples);
         rsDecoderPixelBuffer.copyTo(pixelBuffer);
-        view.bitmap.setPixels(pixelBuffer, 0, view.bitmap.getWidth(), 0, 0, view.bitmap.getWidth(), view.bitmap.getHeight());
+        image.bitmap.setPixels(pixelBuffer, 0, image.bitmap.getWidth(), 0, 0, image.bitmap.getWidth(), image.bitmap.getHeight());
 
         rsDecoderCurrentMode.copyTo(currentMode);
         switch_mode(currentMode[0]);
@@ -231,5 +242,8 @@ public class Decoder {
             rsDecoderSavedBuffer.copyTo(savedBuffer);
             activity.storeBitmap(Bitmap.createBitmap(savedBuffer, savedWidth[0], savedHeight[0], Bitmap.Config.ARGB_8888));
         }
+
+        rsDecoderSpectrumBuffer.copyTo(spectrumBuffer);
+        spectrum.bitmap.setPixels(spectrumBuffer, 0, spectrum.bitmap.getWidth(), 0, 0, spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight());
     }
 }

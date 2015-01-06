@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Ahmet Inan <xdsopl@googlemail.com>
+Copyright 2015 Ahmet Inan <xdsopl@googlemail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-#ifndef EXPORTS_RSH
-#define EXPORTS_RSH
+#ifndef UTILS_RSH
+#define UTILS_RSH
 
-short *audio_buffer;
-uchar *value_buffer;
-uchar4 *pixel_buffer;
-uchar4 *spectrum_buffer;
-uchar4 *saved_buffer;
-int *saved_width;
-int *saved_height;
-int *current_mode;
+static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
+static inline uchar4 yuv(uchar y, uchar u, uchar v)
+{
+    uchar4 bgra = rsYuvToRGBA_uchar4(y, u, v);
+    return rgb(bgra[0], bgra[1], bgra[2]);
+}
 
 #endif

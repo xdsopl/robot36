@@ -21,16 +21,21 @@ limitations under the License.
 #include "state.rsh"
 #include "modes.rsh"
 
-void initialize(float rate, int length, int width, int height)
+void initialize(float rate, int length, int iw, int ih, int sw, int sh)
 {
     sample_rate = rate;
     buffer_length = length;
     buffer_mask = length - 1;
-    maximum_width = width;
-    maximum_height = height;
+    maximum_width = iw;
+    maximum_height = ih;
+    spectrum_width = sw;
+    spectrum_height = sh;
 
-    for (int i = 0; i < width * height; ++i)
+    for (int i = 0; i < iw * ih; ++i)
         pixel_buffer[i] = 0;
+
+    for (int i = 0; i < sw * sh; ++i)
+        spectrum_buffer[i] = 0;
 
     automatic_mode_detection = 1;
     debug_mode = 0;

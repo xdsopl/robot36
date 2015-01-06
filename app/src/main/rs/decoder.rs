@@ -29,13 +29,8 @@ limitations under the License.
 #include "state.rsh"
 #include "exports.rsh"
 #include "blur.rsh"
-
-static inline uchar4 rgb(uchar r, uchar g, uchar b) { return (uchar4){ b, g, r, 255 }; }
-static inline uchar4 yuv(uchar y, uchar u, uchar v)
-{
-    uchar4 bgra = rsYuvToRGBA_uchar4(y, u, v);
-    return rgb(bgra[0], bgra[1], bgra[2]);
-}
+#include "stft.rsh"
+#include "utils.rsh"
 
 static void reset_buffer()
 {
@@ -221,6 +216,8 @@ void decode(int samples) {
         if (avg_amp < 16.0f)
             continue;
         float norm_amp = amp / avg_amp;
+
+        spectrum_analyzer(norm_amp);
 
         complex_t cnt_baseband = convert(&cnt_ddc, norm_amp);
         complex_t dat_baseband = convert(&dat_ddc, norm_amp);
