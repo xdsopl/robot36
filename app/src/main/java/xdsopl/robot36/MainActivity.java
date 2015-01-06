@@ -22,6 +22,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -30,6 +31,8 @@ import android.os.Environment;
 import android.support.v4.app.NotificationCompat;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.LinearLayout;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -37,7 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainActivity extends Activity {
-    private ImageView view;
+    private Decoder decoder;
     private Bitmap bitmap;
     private NotificationManager manager;
     private int notifyID = 1;
@@ -101,91 +104,99 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        view = (ImageView)findViewById(R.id.image);
-        view.activity = this;
+        changeLayoutOrientation(getResources().getConfiguration());
+        decoder = new Decoder((ImageView)findViewById(R.id.image), this);
         manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         showNotification();
     }
 
     @Override
     protected void onDestroy () {
-        view.destroy();
+        decoder.destroy();
         manager.cancel(notifyID);
         super.onDestroy();
     }
 
     @Override
     protected void onPause() {
-        view.pause();
+        decoder.pause();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        view.resume();
+        decoder.resume();
         super.onResume();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+    public void onConfigurationChanged(Configuration config) {
+        super.onConfigurationChanged(config);
+        changeLayoutOrientation(config);
+    }
 
-        //noinspection SimplifiableIfStatement
-        switch (id) {
+    private void changeLayoutOrientation(Configuration config) {
+        boolean horizontal = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
+        findViewById(R.id.spectrum).setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT, horizontal ? 1.0f : 10.0f));
+        int orientation = horizontal ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL;
+        ((LinearLayout)findViewById(R.id.content)).setOrientation(orientation);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
             case R.id.action_softer_image:
-                view.softer_image();
+                decoder.softer_image();
                 return true;
             case R.id.action_sharper_image:
-                view.sharper_image();
+                decoder.sharper_image();
                 return true;
             case R.id.action_toggle_scaling:
-                view.toggle_scaling();
+                decoder.toggle_scaling();
                 return true;
             case R.id.action_toggle_debug:
-                view.toggle_debug();
+                decoder.toggle_debug();
                 return true;
             case R.id.action_toggle_auto:
-                view.toggle_auto();
+                decoder.toggle_auto();
                 return true;
             case R.id.action_raw_mode:
-                view.raw_mode();
+                decoder.raw_mode();
                 return true;
             case R.id.action_robot36_mode:
-                view.robot36_mode();
+                decoder.robot36_mode();
                 return true;
             case R.id.action_robot72_mode:
-                view.robot72_mode();
+                decoder.robot72_mode();
                 return true;
             case R.id.action_martin1_mode:
-                view.martin1_mode();
+                decoder.martin1_mode();
                 return true;
             case R.id.action_martin2_mode:
-                view.martin2_mode();
+                decoder.martin2_mode();
                 return true;
             case R.id.action_scottie1_mode:
-                view.scottie1_mode();
+                decoder.scottie1_mode();
                 return true;
             case R.id.action_scottie2_mode:
-                view.scottie2_mode();
+                decoder.scottie2_mode();
                 return true;
             case R.id.action_scottieDX_mode:
-                view.scottieDX_mode();
+                decoder.scottieDX_mode();
                 return true;
             case R.id.action_wrasseSC2_180_mode:
-                view.wrasseSC2_180_mode();
+                decoder.wrasseSC2_180_mode();
                 return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

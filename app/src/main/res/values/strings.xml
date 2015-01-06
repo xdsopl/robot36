@@ -17,5 +17,7 @@
     <string name="action_softer_image">Softer Image</string>
     <string name="action_sharper_image">Sharper Image</string>
     <string name="action_toggle_scaling">Toggle Scaling</string>
+    <string name="decoder_view">Decoder View</string>
+    <string name="spectrum_view">Spectrum View</string>
 
 </resources>
