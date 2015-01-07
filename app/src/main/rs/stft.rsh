@@ -44,7 +44,7 @@ static void spectrum_analyzer(float amplitude)
     static complex_t input[radix2_N];
     static complex_t output[radix2_N];
 
-    input[n&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
+    input[(n/7)&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
     if (++n >= stft_N) {
         n = 0;
         // yep, were wasting 3x performance
