@@ -26,15 +26,9 @@ limitations under the License.
 
 static inline uchar4 rainbow(float v)
 {
-#if 1
-    float r = clamp(4.0f * v - 2.0f, 0.0f, 1.0f);
-    float g = clamp(2.0f - 4.0f * fabs(v - 0.5f), 0.0f, 1.0f);
-    float b = clamp(2.0f - 4.0f * v, 0.0f, 1.0f);
-#else
-    float r = v;
-    float g = v;
-    float b = v;
-#endif
+    float r = v * clamp(4.0f * v - 2.0f, 0.0f, 1.0f);
+    float g = v * clamp(1.0f - 4.0f * fabs(v - 0.5f), 0.0f, 1.0f);
+    float b = v * clamp(2.0f - 4.0f * v, 0.0f, 1.0f);
     return rgb(255.0f * sqrt(r), 255.0f * sqrt(g), 255.0f * sqrt(b));
 }
 
@@ -60,14 +54,15 @@ static void spectrum_analyzer(float amplitude)
         for (int i = 0; i < spectrum_width; ++i) {
             int b = (i * (radix2_N / 2)) / spectrum_width;
             float power = clamp(pown(cabs(output[b]) / maximum, 2), 0.0f, 1.0f);
-#if 0
             float dB = 10.0f * log10(max(0.000001f, power));
-            float v = clamp(60.0f + dB) / 60.0f, 0.0f, 1.0f);
-#else
-            float v = power;
-#endif
+            float v = clamp((60.0f + dB) / 60.0f, 0.0f, 1.0f);
             spectrum_buffer[i] = rainbow(v);
         }
+#if 0
+        for (int j = spectrum_height / 2; j < spectrum_height; ++j)
+            for (int i = 0; i < spectrum_width; ++i)
+                spectrum_buffer[spectrum_width * j + i] = rainbow((float)i / spectrum_width);
+#endif
     }
 }
 
