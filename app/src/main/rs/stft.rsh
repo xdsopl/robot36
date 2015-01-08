@@ -27,9 +27,9 @@ limitations under the License.
 static inline uchar4 rainbow(float v)
 {
 #if 1
-    float r = 4.0f * v - 2.0f;
-    float g = 2.0f - 4.0f * fabs(v - 0.5f);
-    float b = 2.0f - 4.0f * v;
+    float r = clamp(4.0f * v - 2.0f, 0.0f, 1.0f);
+    float g = clamp(2.0f - 4.0f * fabs(v - 0.5f), 0.0f, 1.0f);
+    float b = clamp(2.0f - 4.0f * v, 0.0f, 1.0f);
 #else
     float r = v;
     float g = v;
