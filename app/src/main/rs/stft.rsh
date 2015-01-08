@@ -32,13 +32,22 @@ static inline uchar4 rainbow(float v)
     return rgb(255.0f * sqrt(r), 255.0f * sqrt(g), 255.0f * sqrt(b));
 }
 
+static void freq_marker(int freq)
+{
+    for (int j = 0; j < spectrum_height; ++j) {
+        int i = (radix2_N * freq) / sample_rate;
+        spectrum_buffer[spectrum_width * j + i] = rgb(255, 255, 255);
+    }
+}
+
 static void spectrum_analyzer(float amplitude)
 {
+    const int M = 7;
     static int n;
     static complex_t input[radix2_N];
     static complex_t output[radix2_N];
 
-    input[(n/7)&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
+    input[(n/M)&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
     if (++n >= stft_N) {
         n = 0;
         // yep, were wasting 3x performance
@@ -58,6 +67,10 @@ static void spectrum_analyzer(float amplitude)
             float v = clamp((60.0f + dB) / 60.0f, 0.0f, 1.0f);
             spectrum_buffer[i] = rainbow(v);
         }
+        freq_marker(1100 * M);
+        freq_marker(1300 * M);
+        freq_marker(1500 * M);
+        freq_marker(2300 * M);
 #if 0
         for (int j = spectrum_height / 2; j < spectrum_height; ++j)
             for (int i = 0; i < spectrum_width; ++i)
