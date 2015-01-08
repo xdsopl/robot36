@@ -59,11 +59,12 @@ static void spectrum_analyzer(float amplitude)
                 spectrum_buffer[spectrum_width * j + i] = spectrum_buffer[spectrum_width * (j-1) + i];
         for (int i = 0; i < spectrum_width; ++i) {
             int b = (i * (radix2_N / 2)) / spectrum_width;
+            float power = clamp(pown(cabs(output[b]) / maximum, 2), 0.0f, 1.0f);
 #if 0
-            float dB = 20.0f * log10(cabs(output[b]) / maximum);
-            float v = min(1.0f, max(0.0f, (60.0f + dB) / 60.0f));
+            float dB = 10.0f * log10(max(0.000001f, power));
+            float v = clamp(60.0f + dB) / 60.0f, 0.0f, 1.0f);
 #else
-            float v = min(1.0f, max(0.0f, pown(cabs(output[b]) / maximum, 2)));
+            float v = power;
 #endif
             spectrum_buffer[i] = rainbow(v);
         }
