@@ -22,6 +22,7 @@ limitations under the License.
 #include "utils.rsh"
 #include "complex.rsh"
 #include "radix2.rsh"
+#include "cic.rsh"
 #include "stft_generated.rsh"
 
 static inline uchar4 rainbow(float v)
@@ -43,11 +44,18 @@ static void freq_marker(int freq)
 static void spectrum_analyzer(int amplitude)
 {
     const int M = 7;
-    static int n;
+    static int n, m;
     static complex_t input[radix2_N];
     static complex_t output[radix2_N];
+    static cic_cascade_t cascade;
 
-    input[(n/M)&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
+    int tmp = cic_int_cascade(&cascade, amplitude);
+    if (++m < M)
+        return;
+    m = 0;
+    amplitude = cic_comb_cascade(&cascade, tmp);
+
+    input[n&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
     if (++n >= stft_N) {
         n = 0;
         // yep, were wasting 3x performance
