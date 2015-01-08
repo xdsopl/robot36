@@ -40,7 +40,7 @@ static void freq_marker(int freq)
     }
 }
 
-static void spectrum_analyzer(float amplitude)
+static void spectrum_analyzer(int amplitude)
 {
     const int M = 7;
     static int n;

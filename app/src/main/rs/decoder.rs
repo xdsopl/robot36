@@ -217,7 +217,7 @@ void decode(int samples) {
             continue;
         float norm_amp = amp / avg_amp;
 
-        spectrum_analyzer(norm_amp);
+        spectrum_analyzer(amp);
 
         complex_t cnt_baseband = convert(&cnt_ddc, norm_amp);
         complex_t dat_baseband = convert(&dat_ddc, norm_amp);
