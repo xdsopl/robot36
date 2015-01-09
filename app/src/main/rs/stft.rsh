@@ -36,7 +36,7 @@ static inline uchar4 rainbow(float v)
 static void freq_marker(int freq)
 {
     for (int j = 0; j < spectrum_height; ++j) {
-        int i = (radix2_N * freq) / sample_rate;
+        int i = (radix2_N * freq + sample_rate / 2) / sample_rate;
         spectrum_buffer[spectrum_width * j + i] = rgb(255, 255, 255);
     }
 }
