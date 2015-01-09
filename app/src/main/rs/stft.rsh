@@ -47,13 +47,23 @@ static void spectrum_analyzer(int amplitude)
     static int n, m;
     static complex_t input[radix2_N];
     static complex_t output[radix2_N];
-    static cic_cascade_t cascade;
 
+#if 1
+    static cic_cascade_t cascade;
     int tmp = cic_int_cascade(&cascade, amplitude);
     if (++m < M)
         return;
     m = 0;
     amplitude = cic_comb_cascade(&cascade, tmp);
+#else
+    static int sum;
+    sum += amplitude;
+    if (++m < M)
+        return;
+    m = 0;
+    amplitude = sum / M;
+    sum = 0;
+#endif
 
     input[n&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
     if (++n >= stft_N) {
