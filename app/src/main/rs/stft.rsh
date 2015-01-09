@@ -45,6 +45,7 @@ static void spectrum_analyzer(int amplitude)
 {
     const int M = 7;
     static int n, m;
+    static int buffer[stft_N];
     static complex_t input[radix2_N];
     static complex_t output[radix2_N];
 
@@ -65,9 +66,11 @@ static void spectrum_analyzer(int amplitude)
     sum = 0;
 #endif
 
-    input[n&(radix2_N-1)] += complex(stft_w[n] * amplitude, 0.0f);
-    if (++n >= stft_N) {
-        n = 0;
+    buffer[n] = amplitude;
+    if (!((++n)%(radix2_N))) {
+        n &= stft_N - 1;
+        for (int i = 0; i < stft_N; ++i)
+            input[i&(radix2_N-1)] += complex(stft_w[i] * buffer[(i+n)&(stft_N-1)], 0.0f);
         // yep, were wasting 3x performance
         radix2(output, input, radix2_N, 1, 0);
         for (int i = 0; i < radix2_N; ++i)
