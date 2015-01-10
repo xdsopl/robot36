@@ -57,12 +57,14 @@ static void spectrum_analyzer(int amplitude)
     static complex_t output[radix2_N];
 
 #if 1
-    static cic_cascade_t cascade;
-    int tmp = cic_int_cascade(&cascade, amplitude);
+    const int order = 5;
+    const int gain = pown(M, order);
+    static cic_t cascade[order];
+    int tmp = cic_int_cascade(&cascade, amplitude, order);
     if (++m < M)
         return;
     m = 0;
-    amplitude = cic_comb_cascade(&cascade, tmp);
+    amplitude = cic_comb_cascade(&cascade, tmp, order) / gain;
 #else
     static int sum;
     sum += amplitude;

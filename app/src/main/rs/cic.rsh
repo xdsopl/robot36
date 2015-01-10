@@ -21,11 +21,6 @@ typedef struct {
     int prev_comb, prev_int;
 } cic_t;
 
-static const int cic_cascade_order = 5;
-typedef struct {
-    cic_t cic[cic_cascade_order];
-} cic_cascade_t;
-
 static int cic_comb(cic_t *cic, int input)
 {
     int output = input - cic->prev_comb;
@@ -38,17 +33,17 @@ static int cic_int(cic_t *cic, int input)
     return cic->prev_int = input + cic->prev_int;
 }
 
-static int cic_comb_cascade(cic_cascade_t *cascade, int input)
+static int cic_comb_cascade(cic_t *cascade, int input, int order)
 {
-    for (int i = 0; i < cic_cascade_order; ++i)
-        input = cic_comb(cascade->cic + i, input);
+    for (int i = 0; i < order; ++i)
+        input = cic_comb(cascade + i, input);
     return input;
 }
 
-static int cic_int_cascade(cic_cascade_t *cascade, int input)
+static int cic_int_cascade(cic_t *cascade, int input, int order)
 {
-    for (int i = 0; i < cic_cascade_order; ++i)
-        input = cic_int(cascade->cic + i, input);
+    for (int i = 0; i < order; ++i)
+        input = cic_int(cascade + i, input);
     return input;
 }
 
