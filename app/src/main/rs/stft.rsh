@@ -35,10 +35,17 @@ static inline uchar4 rainbow(float v)
 
 static void freq_marker(int freq)
 {
-    for (int j = 0; j < spectrum_height; ++j) {
-        int i = (radix2_N * freq + sample_rate / 2) / sample_rate;
-        spectrum_buffer[spectrum_width * j + i] = rgb(255, 255, 255);
-    }
+    int i = (radix2_N * freq + sample_rate / 2) / sample_rate;
+    spectrum_buffer[i] = rgb(255, 255, 255);
+}
+
+static void init_analyzer(int sw, int sh)
+{
+    spectrum_width = sw;
+    spectrum_height = sh;
+    for (int j = 0; j < spectrum_height; ++j)
+        for (int i = 0; i < spectrum_width; ++i)
+            spectrum_buffer[spectrum_width * j + i] = rainbow((float)i / spectrum_width);
 }
 
 static void spectrum_analyzer(int amplitude)
@@ -92,11 +99,6 @@ static void spectrum_analyzer(int amplitude)
         freq_marker(1300 * M);
         freq_marker(1500 * M);
         freq_marker(2300 * M);
-#if 0
-        for (int j = spectrum_height / 2; j < spectrum_height; ++j)
-            for (int i = 0; i < spectrum_width; ++i)
-                spectrum_buffer[spectrum_width * j + i] = rainbow((float)i / spectrum_width);
-#endif
     }
 }
 
