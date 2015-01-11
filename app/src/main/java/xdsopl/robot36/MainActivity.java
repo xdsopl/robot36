@@ -20,6 +20,9 @@ package xdsopl.robot36;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -28,14 +31,17 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
+import android.widget.ShareActionProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -43,6 +49,7 @@ public class MainActivity extends Activity {
     private Decoder decoder;
     private Bitmap bitmap;
     private NotificationManager manager;
+    private ShareActionProvider share;
     private int notifyID = 1;
 
     private void showNotification() {
@@ -75,7 +82,8 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                String name = new SimpleDateFormat("yyyyMMdd_HHmmss_").format(new Date());
+                Date date = new Date();
+                String name = new SimpleDateFormat("yyyyMMdd_HHmmss_").format(date);
                 File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
                 if (!dir.exists())
                     dir.mkdirs();
@@ -93,9 +101,17 @@ public class MainActivity extends Activity {
                 } catch (IOException ignore) {
                     return;
                 }
-                Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                intent.setData(Uri.fromFile(file));
-                sendBroadcast(intent);
+                String title = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.ImageColumns.DATA, file.toString());
+                values.put(MediaStore.Images.ImageColumns.TITLE, title);
+                values.put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/png");
+                ContentResolver resolver = getContentResolver();
+                Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.putExtra(Intent.EXTRA_STREAM, uri);
+                intent.setType("image/png");
+                share.setShareIntent(intent);
             }
         });
     }
@@ -135,6 +151,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        share = (ShareActionProvider)menu.findItem(R.id.menu_item_share).getActionProvider();
         return true;
     }
 
