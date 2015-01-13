@@ -20,6 +20,7 @@ limitations under the License.
 static ema_t avg_amplitude, leader_lowpass;
 static ddc_t cnt_ddc, dat_ddc;
 static fmd_t cnt_fmd, dat_fmd;
+static int disable_analyzer;
 static int automatic_mode_detection;
 static int debug_mode;
 static int current_decoder;

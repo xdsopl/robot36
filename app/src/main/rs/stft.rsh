@@ -39,13 +39,34 @@ static void freq_marker(int freq)
     spectrum_buffer[i] = rgb(255, 255, 255);
 }
 
-static void init_analyzer(int sw, int sh)
+static void show_rainbow()
 {
-    spectrum_width = sw;
-    spectrum_height = sh;
     for (int j = 0; j < spectrum_height; ++j)
         for (int i = 0; i < spectrum_width; ++i)
             spectrum_buffer[spectrum_width * j + i] = rainbow((float)i / spectrum_width);
+}
+
+static void clear_spectrum()
+{
+    for (int i = 0; i < spectrum_height * spectrum_width; ++i)
+        spectrum_buffer[i] = 0;
+}
+
+static void init_analyzer(int sw, int sh)
+{
+    disable_analyzer = 0;
+    spectrum_width = sw;
+    spectrum_height = sh;
+    show_rainbow();
+}
+
+void enable_analyzer(int enable)
+{
+    disable_analyzer = !enable;
+    if (disable_analyzer)
+        clear_spectrum();
+    else
+        show_rainbow();
 }
 
 static void spectrum_analyzer(int amplitude)
@@ -55,6 +76,9 @@ static void spectrum_analyzer(int amplitude)
     static int buffer[stft_N];
     static complex_t input[radix2_N];
     static complex_t output[radix2_N];
+
+    if (disable_analyzer)
+        return;
 
 #if 1
     const int order = 5;

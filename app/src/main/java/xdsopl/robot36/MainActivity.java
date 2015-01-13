@@ -35,6 +35,7 @@ import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ShareActionProvider;
 
@@ -51,6 +52,7 @@ public class MainActivity extends Activity {
     private NotificationManager manager;
     private ShareActionProvider share;
     private int notifyID = 1;
+    private boolean enableAnalyzer = true;
 
     private void showNotification() {
         Intent intent = new Intent(this, MainActivity.class);
@@ -163,7 +165,9 @@ public class MainActivity extends Activity {
 
     private void changeLayoutOrientation(Configuration config) {
         boolean horizontal = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
-        findViewById(R.id.spectrum).setLayoutParams(
+        View spectrum = findViewById(R.id.spectrum);
+        spectrum.setVisibility(enableAnalyzer ? View.VISIBLE : View.GONE);
+        spectrum.setLayoutParams(
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT, horizontal ? 1.0f : 10.0f));
@@ -188,6 +192,10 @@ public class MainActivity extends Activity {
                 return true;
             case R.id.action_toggle_auto:
                 decoder.toggle_auto();
+                return true;
+            case R.id.action_toggle_analyzer:
+                decoder.enable_analyzer(enableAnalyzer ^= true);
+                changeLayoutOrientation(getResources().getConfiguration());
                 return true;
             case R.id.action_raw_mode:
                 decoder.raw_mode();

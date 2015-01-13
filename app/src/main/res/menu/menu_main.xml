@@ -18,6 +18,8 @@
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_toggle_auto" android:title="@string/action_toggle_auto"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_toggle_analyzer" android:title="@string/action_toggle_analyzer"
+        android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_raw_mode" android:title="@string/action_raw_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode"

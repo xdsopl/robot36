@@ -26,6 +26,7 @@ import android.support.v8.renderscript.RenderScript;
 
 public class Decoder {
     private boolean drawImage = true, quitThread = false;
+    private boolean enableAnalyzer = true;
     private final MainActivity activity;
     private final ImageView image;
     private final SpectrumView spectrum;
@@ -134,6 +135,7 @@ public class Decoder {
     void sharper_image() { rsDecoder.invoke_decr_blur(); }
     void toggle_debug() { rsDecoder.invoke_toggle_debug(); }
     void toggle_auto() { rsDecoder.invoke_toggle_auto(); }
+    void enable_analyzer(boolean enable) { rsDecoder.invoke_enable_analyzer((enableAnalyzer = enable) ? 1 : 0); }
     void raw_mode() { rsDecoder.invoke_raw_mode(); }
     void robot36_mode() { rsDecoder.invoke_robot36_mode(); }
     void robot72_mode() { rsDecoder.invoke_robot72_mode(); }
@@ -243,7 +245,9 @@ public class Decoder {
             activity.storeBitmap(Bitmap.createBitmap(savedBuffer, savedWidth[0], savedHeight[0], Bitmap.Config.ARGB_8888));
         }
 
-        rsDecoderSpectrumBuffer.copyTo(spectrumBuffer);
-        spectrum.bitmap.setPixels(spectrumBuffer, 0, spectrum.bitmap.getWidth(), 0, 0, spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight());
+        if (enableAnalyzer) {
+            rsDecoderSpectrumBuffer.copyTo(spectrumBuffer);
+            spectrum.bitmap.setPixels(spectrumBuffer, 0, spectrum.bitmap.getWidth(), 0, 0, spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight());
+        }
     }
 }

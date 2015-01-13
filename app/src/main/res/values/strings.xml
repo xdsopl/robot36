@@ -5,6 +5,7 @@
     <string name="decoder_running">"decoder is running</string>
     <string name="action_toggle_auto">Toggle Auto Mode</string>
     <string name="action_toggle_debug">Toggle Debug Mode</string>
+    <string name="action_toggle_analyzer">Toggle Analyzer</string>
     <string name="action_raw_mode">Raw Mode</string>
     <string name="action_robot36_mode">Robot36 Mode</string>
     <string name="action_robot72_mode">Robot72 Mode</string>
