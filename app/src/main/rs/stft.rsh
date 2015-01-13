@@ -60,11 +60,11 @@ static void spectrum_analyzer(int amplitude)
     const int order = 5;
     const int gain = pown(M, order);
     static cic_t cascade[order];
-    int tmp = cic_int_cascade(&cascade, amplitude, order);
+    int tmp = cic_int_cascade(cascade, amplitude, order);
     if (++m < M)
         return;
     m = 0;
-    amplitude = cic_comb_cascade(&cascade, tmp, order) / gain;
+    amplitude = cic_comb_cascade(cascade, tmp, order) / gain;
 #else
     static int sum;
     sum += amplitude;
