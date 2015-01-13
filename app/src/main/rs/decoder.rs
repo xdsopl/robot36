@@ -212,12 +212,13 @@ void decode(int samples) {
     *saved_height = 0;
     for (int sample = 0; sample < samples; ++sample, ++buffer_pos) {
         int amp = audio_buffer[sample];
-        float avg_amp = filter(&avg_amplitude, abs(amp));
+        float avg_rms = filter(&avg_amplitude, amp * amp);
+        float avg_amp = sqrt(2.0f * avg_rms);
         if (avg_amp < 16.0f)
             continue;
         float norm_amp = amp / avg_amp;
 
-        spectrum_analyzer(amp);
+        spectrum_analyzer(127.0f * norm_amp);
 
         complex_t cnt_baseband = convert(&cnt_ddc, norm_amp);
         complex_t dat_baseband = convert(&dat_ddc, norm_amp);

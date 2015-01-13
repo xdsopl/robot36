@@ -76,7 +76,7 @@ static void spectrum_analyzer(int amplitude)
 #endif
 
     buffer[n] = amplitude;
-    if (!((++n)%(radix2_N))) {
+    if (!(++n&(radix2_N-1))) {
         n &= stft_N - 1;
         for (int i = 0; i < stft_N; ++i)
             input[i&(radix2_N-1)] += complex(stft_w[i] * buffer[(i+n)&(stft_N-1)], 0.0f);
@@ -84,15 +84,12 @@ static void spectrum_analyzer(int amplitude)
         radix2(output, input, radix2_N, 1, 0);
         for (int i = 0; i < radix2_N; ++i)
             input[i] = 0.0f;
-        float maximum = 0.0f;
-        for (int i = 0; i < radix2_N; ++i)
-            maximum = max(maximum, cabs(output[i]));
         for (int j = spectrum_height - 1; 0 < j; --j)
             for (int i = 0; i < spectrum_width; ++i)
                 spectrum_buffer[spectrum_width * j + i] = spectrum_buffer[spectrum_width * (j-1) + i];
         for (int i = 0; i < spectrum_width; ++i) {
             int b = (i * (radix2_N / 2)) / spectrum_width;
-            float power = clamp(pown(cabs(output[b]) / maximum, 2), 0.0f, 1.0f);
+            float power = clamp(pown(cabs(output[b]) / 127.0f, 2), 0.0f, 1.0f);
             float dB = 10.0f * log10(max(0.000001f, power));
             float v = clamp((60.0f + dB) / 60.0f, 0.0f, 1.0f);
             spectrum_buffer[i] = rainbow(v);
