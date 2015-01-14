@@ -20,7 +20,7 @@ limitations under the License.
 #include "complex.rsh"
 #include "radix2_generated.rsh"
 
-static void radix2(complex_t *out, complex_t *in, int N, int S, int L)
+static void radix2(complex_t *out, float *in, int N, int S, int L)
 {
     if (1 == N) {
         out[0] = in[0];
@@ -32,9 +32,9 @@ static void radix2(complex_t *out, complex_t *in, int N, int S, int L)
     } else if (4 == N) {
         complex_t w = radix2_z[1 << L];
         out[0] = in[0] + in[S] + in[2 * S] + in[3 * S];
-        out[1] = in[0] + cmul(w, in[S]) - in[2 * S] - cmul(w, in[3 * S]);
+        out[1] = in[0] + w * in[S] - in[2 * S] - w * in[3 * S];
         out[2] = in[0] - in[S] + in[2 * S] - in[3 * S];
-        out[3] = in[0] - cmul(w, in[S]) - in[2 * S] + cmul(w, in[3 * S]);
+        out[3] = in[0] - w * in[S] - in[2 * S] + w * in[3 * S];
         return;
     }
     radix2(out, in, N / 2, 2 * S, L + 1);
