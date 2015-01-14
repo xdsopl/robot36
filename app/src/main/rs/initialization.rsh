@@ -22,7 +22,7 @@ limitations under the License.
 #include "modes.rsh"
 #include "stft.rsh"
 
-void initialize(float rate, int length, int iw, int ih, int sw, int sh)
+void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw, int sgh)
 {
     sample_rate = rate;
     buffer_length = length;
@@ -33,7 +33,7 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh)
     for (int i = 0; i < iw * ih; ++i)
         pixel_buffer[i] = 0;
 
-    init_analyzer(sw, sh);
+    init_analyzer(sw, sh, sgw, sgh);
 
     automatic_mode_detection = 1;
     debug_mode = 0;

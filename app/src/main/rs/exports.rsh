@@ -21,6 +21,7 @@ short *audio_buffer;
 uchar *value_buffer;
 uchar4 *pixel_buffer;
 uchar4 *spectrum_buffer;
+uchar4 *spectrogram_buffer;
 uchar4 *saved_buffer;
 int *saved_width;
 int *saved_height;

@@ -35,28 +35,42 @@ static inline uchar4 rainbow(float v)
 
 static void freq_marker(int freq)
 {
-    int i = (radix2_N * freq + sample_rate / 2) / sample_rate;
-    spectrum_buffer[i] = rgb(255, 255, 255);
+    int sgi = (spectrogram_width * freq + sample_rate / 4) / (sample_rate / 2);
+    spectrogram_buffer[sgi] |= rgb(64, 64, 64);
+
+    int si = (spectrum_width * freq + sample_rate / 4) / (sample_rate / 2);
+    for (int j = 0; j < spectrum_height; ++j)
+        spectrum_buffer[spectrum_width * j + si] |= rgb(64, 64, 64);
 }
 
 static void show_rainbow()
 {
-    for (int j = 0; j < spectrum_height; ++j)
-        for (int i = 0; i < spectrum_width; ++i)
-            spectrum_buffer[spectrum_width * j + i] = rainbow((float)i / spectrum_width);
+    for (int j = 0; j < spectrogram_height; ++j)
+        for (int i = 0; i < spectrogram_width; ++i)
+            spectrogram_buffer[spectrogram_width * j + i] = rainbow((float)i / spectrogram_width);
 }
 
 static void clear_spectrum()
 {
     for (int i = 0; i < spectrum_height * spectrum_width; ++i)
         spectrum_buffer[i] = 0;
+    for (int i = 0; i < spectrogram_height * spectrogram_width; ++i)
+        spectrogram_buffer[i] = 0;
 }
 
-static void init_analyzer(int sw, int sh)
+static void fade_spectrum()
+{
+    for (int i = 0; i < spectrum_height * spectrum_width; ++i)
+        spectrum_buffer[i] = 0xff000000 | (0x00fefefe & (int)spectrum_buffer[i]) >> 1;
+}
+
+static void init_analyzer(int sw, int sh, int sgw, int sgh)
 {
     disable_analyzer = 0;
     spectrum_width = sw;
     spectrum_height = sh;
+    spectrogram_width = sgw;
+    spectrogram_height = sgh;
     show_rainbow();
 }
 
@@ -108,15 +122,24 @@ static void spectrum_analyzer(int amplitude)
         radix2(output, input, radix2_N, 1, 0);
         for (int i = 0; i < radix2_N; ++i)
             input[i] = 0.0f;
-        for (int j = spectrum_height - 1; 0 < j; --j)
-            for (int i = 0; i < spectrum_width; ++i)
-                spectrum_buffer[spectrum_width * j + i] = spectrum_buffer[spectrum_width * (j-1) + i];
-        for (int i = 0; i < spectrum_width; ++i) {
-            int b = (i * (radix2_N / 2)) / spectrum_width;
-            float power = clamp(pown(cabs(output[b]) / 127.0f, 2), 0.0f, 1.0f);
+        for (int j = spectrogram_height - 1; 0 < j; --j)
+            for (int i = 0; i < spectrogram_width; ++i)
+                spectrogram_buffer[spectrogram_width * j + i] = spectrogram_buffer[spectrogram_width * (j-1) + i];
+        for (int i = 0; i < spectrogram_width; ++i) {
+            int b = (i * (radix2_N / 2)) / spectrogram_width;
+            float power = min(pown(cabs(output[b]) / 127.0f, 2), 1.0f);
             float dB = 10.0f * log10(max(0.000001f, power));
             float v = clamp((60.0f + dB) / 60.0f, 0.0f, 1.0f);
-            spectrum_buffer[i] = rainbow(v);
+            spectrogram_buffer[i] = rainbow(v);
+        }
+        fade_spectrum();
+        for (int b = 0; b < radix2_N / 2; ++b) {
+            float power = min(pown(cabs(output[b]) / 127.0f, 2), 1.0f);
+            float dB = 10.0f * log10(max(0.000001f, power));
+            float v = clamp((60.0f + dB) / 60.0f, 0.0f, 1.0f);
+            int i = (b * spectrum_width) / (radix2_N / 2);
+            int j = (spectrum_height - 1) - (spectrum_height - 1) * v;
+            spectrum_buffer[spectrum_width * j + i] = rgb(255, 255, 255);
         }
         freq_marker(1100 * M);
         freq_marker(1300 * M);

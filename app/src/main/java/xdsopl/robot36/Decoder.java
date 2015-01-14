@@ -30,6 +30,7 @@ public class Decoder {
     private final MainActivity activity;
     private final ImageView image;
     private final SpectrumView spectrum;
+    private final SpectrumView spectrogram;
     private final VUMeterView meter;
     private final AudioRecord audio;
     private final int audioSource = MediaRecorder.AudioSource.MIC;
@@ -39,6 +40,7 @@ public class Decoder {
     private final short[] audioBuffer;
     private final int[] pixelBuffer;
     private final int[] spectrumBuffer;
+    private final int[] spectrogramBuffer;
     private final int[] currentMode;
     private final int[] savedBuffer;
     private final int[] savedWidth;
@@ -49,6 +51,7 @@ public class Decoder {
     private final Allocation rsDecoderAudioBuffer;
     private final Allocation rsDecoderPixelBuffer;
     private final Allocation rsDecoderSpectrumBuffer;
+    private final Allocation rsDecoderSpectrogramBuffer;
     private final Allocation rsDecoderValueBuffer;
     private final Allocation rsDecoderCurrentMode;
     private final Allocation rsDecoderSavedBuffer;
@@ -78,6 +81,7 @@ public class Decoder {
                         image.drawCanvas();
                         if(enableAnalyzer) {
                             spectrum.drawCanvas();
+                            spectrogram.drawCanvas();
                             meter.drawCanvas();
                         }
                     }
@@ -87,13 +91,15 @@ public class Decoder {
         }
     };
 
-    public Decoder(MainActivity activity, SpectrumView spectrum, ImageView image, VUMeterView meter) {
+    public Decoder(MainActivity activity, SpectrumView spectrum, SpectrumView spectrogram,ImageView image, VUMeterView meter) {
         this.image = image;
+        this.spectrogram = spectrogram;
         this.spectrum = spectrum;
         this.meter = meter;
         this.activity = activity;
         pixelBuffer = new int[image.bitmap.getWidth() * image.bitmap.getHeight()];
         spectrumBuffer = new int[spectrum.bitmap.getWidth() * spectrum.bitmap.getHeight()];
+        spectrogramBuffer = new int[spectrogram.bitmap.getWidth() * spectrogram.bitmap.getHeight()];
 
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
         int bufferSizeInSamples = bufferSizeInBytes / 2;
@@ -118,6 +124,7 @@ public class Decoder {
         rsDecoderValueBuffer = Allocation.createSized(rs, Element.U8(rs), valueBufferLength, Allocation.USAGE_SCRIPT);
         rsDecoderPixelBuffer = Allocation.createSized(rs, Element.I32(rs), pixelBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSpectrumBuffer = Allocation.createSized(rs, Element.I32(rs), spectrumBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderSpectrogramBuffer = Allocation.createSized(rs, Element.I32(rs), spectrogramBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedWidth = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedHeight = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
@@ -128,6 +135,7 @@ public class Decoder {
         rsDecoder.bind_value_buffer(rsDecoderValueBuffer);
         rsDecoder.bind_pixel_buffer(rsDecoderPixelBuffer);
         rsDecoder.bind_spectrum_buffer(rsDecoderSpectrumBuffer);
+        rsDecoder.bind_spectrogram_buffer(rsDecoderSpectrogramBuffer);
         rsDecoder.bind_current_mode(rsDecoderCurrentMode);
         rsDecoder.bind_saved_width(rsDecoderSavedWidth);
         rsDecoder.bind_saved_height(rsDecoderSavedHeight);
@@ -135,7 +143,8 @@ public class Decoder {
         rsDecoder.bind_saved_buffer(rsDecoderSavedBuffer);
         rsDecoder.invoke_initialize(sampleRate, valueBufferLength,
                 image.bitmap.getWidth(), image.bitmap.getHeight(),
-                spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight());
+                spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight(),
+                spectrogram.bitmap.getWidth(), spectrogram.bitmap.getHeight());
 
         thread.start();
     }
@@ -261,6 +270,8 @@ public class Decoder {
         if (enableAnalyzer) {
             rsDecoderSpectrumBuffer.copyTo(spectrumBuffer);
             spectrum.bitmap.setPixels(spectrumBuffer, 0, spectrum.bitmap.getWidth(), 0, 0, spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight());
+            rsDecoderSpectrogramBuffer.copyTo(spectrogramBuffer);
+            spectrogram.bitmap.setPixels(spectrogramBuffer, 0, spectrogram.bitmap.getWidth(), 0, 0, spectrogram.bitmap.getWidth(), spectrogram.bitmap.getHeight());
         }
     }
 }

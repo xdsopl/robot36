@@ -123,6 +123,7 @@ public class MainActivity extends Activity {
         changeLayoutOrientation(getResources().getConfiguration());
         decoder = new Decoder(this,
                 (SpectrumView)findViewById(R.id.spectrum),
+                (SpectrumView)findViewById(R.id.spectrogram),
                 (ImageView)findViewById(R.id.image),
                 (VUMeterView)findViewById(R.id.meter)
         );

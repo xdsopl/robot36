@@ -37,7 +37,7 @@ public class SpectrumView extends SurfaceView implements SurfaceHolder.Callback 
         holder = getHolder();
         holder.addCallback(this);
         paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-        bitmap = Bitmap.createBitmap(256, 32, Bitmap.Config.ARGB_8888);
+        bitmap = Bitmap.createBitmap(256, 64, Bitmap.Config.ARGB_8888);
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
@@ -76,17 +76,12 @@ public class SpectrumView extends SurfaceView implements SurfaceHolder.Callback 
     }
 
     void drawBitmap(Canvas canvas) {
-        float scale;
-        if (bitmap.getWidth() * canvasHeight < canvasWidth * bitmap.getHeight())
-            scale = (float)canvasHeight / bitmap.getHeight();
-        else
-            scale = (float)canvasWidth / bitmap.getWidth();
-        float px = (canvasWidth - scale * bitmap.getWidth()) / 2.0f;
-        float py = (canvasHeight - scale * bitmap.getHeight()) / 2.0f;
         canvas.drawColor(Color.BLACK);
         canvas.save();
-        canvas.scale(scale, scale, px, py);
-        canvas.drawBitmap(bitmap, px, py, paint);
+        float sx = (float)canvasWidth / bitmap.getWidth();
+        float sy = (float)canvasHeight / bitmap.getHeight();
+        canvas.scale(sx, sy, 0, 0);
+        canvas.drawBitmap(bitmap, 0, 0, paint);
         canvas.restore();
     }
 }
