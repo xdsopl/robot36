@@ -71,7 +71,7 @@ public class VUMeterView extends SurfaceView implements SurfaceHolder.Callback {
                 if (canvasHeight > canvasWidth)
                     canvas.drawRect(0, canvasHeight - volume * canvasHeight, canvasWidth, canvasHeight, paint);
                 else
-                    canvas.drawRect(canvasWidth - volume * canvasWidth, 0, canvasWidth, canvasHeight, paint);
+                    canvas.drawRect(0, 0, volume * canvasWidth, canvasHeight, paint);
             } finally {
                 if (canvas != null)
                     holder.unlockCanvasAndPost(canvas);
