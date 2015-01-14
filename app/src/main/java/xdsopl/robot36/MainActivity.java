@@ -21,7 +21,6 @@ import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -42,7 +41,6 @@ import android.widget.ShareActionProvider;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -166,14 +164,16 @@ public class MainActivity extends Activity {
 
     private void changeLayoutOrientation(Configuration config) {
         boolean horizontal = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
-        View spectrum_meter = findViewById(R.id.spectrum_meter);
-        spectrum_meter.setVisibility(enableAnalyzer ? View.VISIBLE : View.GONE);
-        spectrum_meter.setLayoutParams(
+        View analysis = findViewById(R.id.analysis);
+        analysis.setVisibility(enableAnalyzer ? View.VISIBLE : View.GONE);
+        analysis.setLayoutParams(
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT, horizontal ? 1.0f : 10.0f));
-        int orientation = horizontal ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL;
-        ((LinearLayout)findViewById(R.id.content)).setOrientation(orientation);
+        int content_orientation = horizontal ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL;
+        ((LinearLayout)findViewById(R.id.content)).setOrientation(content_orientation);
+        int analysis_orientation = horizontal ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL;
+        ((LinearLayout)findViewById(R.id.analysis)).setOrientation(analysis_orientation);
     }
 
     @Override

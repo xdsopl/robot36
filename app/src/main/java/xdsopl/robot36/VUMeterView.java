@@ -68,7 +68,10 @@ public class VUMeterView extends SurfaceView implements SurfaceHolder.Callback {
                 canvas = holder.lockCanvas(null);
                 canvas.drawColor(Color.DKGRAY);
                 paint.setColor(volume < 0.1 ? Color.YELLOW : (volume < 0.9 ? Color.GREEN : Color.RED));
-                canvas.drawRect(0, canvasHeight - volume * canvasHeight, canvasWidth, canvasHeight, paint);
+                if (canvasHeight > canvasWidth)
+                    canvas.drawRect(0, canvasHeight - volume * canvasHeight, canvasWidth, canvasHeight, paint);
+                else
+                    canvas.drawRect(canvasWidth - volume * canvasWidth, 0, canvasWidth, canvasHeight, paint);
             } finally {
                 if (canvas != null)
                     holder.unlockCanvasAndPost(canvas);
