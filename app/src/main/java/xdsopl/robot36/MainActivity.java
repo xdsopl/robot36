@@ -125,7 +125,8 @@ public class MainActivity extends Activity {
         changeLayoutOrientation(getResources().getConfiguration());
         decoder = new Decoder(this,
                 (SpectrumView)findViewById(R.id.spectrum),
-                (ImageView)findViewById(R.id.image)
+                (ImageView)findViewById(R.id.image),
+                (VUMeterView)findViewById(R.id.meter)
         );
         manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         showNotification();
@@ -165,9 +166,9 @@ public class MainActivity extends Activity {
 
     private void changeLayoutOrientation(Configuration config) {
         boolean horizontal = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
-        View spectrum = findViewById(R.id.spectrum);
-        spectrum.setVisibility(enableAnalyzer ? View.VISIBLE : View.GONE);
-        spectrum.setLayoutParams(
+        View spectrum_meter = findViewById(R.id.spectrum_meter);
+        spectrum_meter.setVisibility(enableAnalyzer ? View.VISIBLE : View.GONE);
+        spectrum_meter.setLayoutParams(
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT, horizontal ? 1.0f : 10.0f));

@@ -25,5 +25,6 @@ uchar4 *saved_buffer;
 int *saved_width;
 int *saved_height;
 int *current_mode;
+int *volume;
 
 #endif

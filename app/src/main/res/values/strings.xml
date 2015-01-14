@@ -20,5 +20,6 @@
     <string name="action_toggle_scaling">Toggle Scaling</string>
     <string name="decoder_view">Decoder View</string>
     <string name="spectrum_view">Spectrum View</string>
+    <string name="meter_view">VU Meter View</string>
 
 </resources>

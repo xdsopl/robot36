@@ -214,6 +214,7 @@ void decode(int samples) {
         int amp = audio_buffer[sample];
         float avg_rms = filter(&avg_amplitude, amp * amp);
         float avg_amp = sqrt(2.0f * avg_rms);
+        *volume = clamp(avg_amp / 32.0f, 0.0f, 1023.0f);
         if (avg_amp < 16.0f)
             continue;
         float norm_amp = amp / avg_amp;

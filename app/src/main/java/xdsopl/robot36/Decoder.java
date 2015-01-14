@@ -30,6 +30,7 @@ public class Decoder {
     private final MainActivity activity;
     private final ImageView image;
     private final SpectrumView spectrum;
+    private final VUMeterView meter;
     private final AudioRecord audio;
     private final int audioSource = MediaRecorder.AudioSource.MIC;
     private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
@@ -42,6 +43,7 @@ public class Decoder {
     private final int[] savedBuffer;
     private final int[] savedWidth;
     private final int[] savedHeight;
+    private final int[] volume;
 
     private final RenderScript rs;
     private final Allocation rsDecoderAudioBuffer;
@@ -52,6 +54,7 @@ public class Decoder {
     private final Allocation rsDecoderSavedBuffer;
     private final Allocation rsDecoderSavedWidth;
     private final Allocation rsDecoderSavedHeight;
+    private final Allocation rsDecoderVolume;
     private final ScriptC_decoder rsDecoder;
 
     private final int mode_raw = 0;
@@ -73,7 +76,10 @@ public class Decoder {
                         return;
                     if (drawImage) {
                         image.drawCanvas();
-                        spectrum.drawCanvas();
+                        if(enableAnalyzer) {
+                            spectrum.drawCanvas();
+                            meter.drawCanvas();
+                        }
                     }
                 }
                 decode();
@@ -81,9 +87,10 @@ public class Decoder {
         }
     };
 
-    public Decoder(MainActivity activity, SpectrumView spectrum, ImageView image) {
+    public Decoder(MainActivity activity, SpectrumView spectrum, ImageView image, VUMeterView meter) {
         this.image = image;
         this.spectrum = spectrum;
+        this.meter = meter;
         this.activity = activity;
         pixelBuffer = new int[image.bitmap.getWidth() * image.bitmap.getHeight()];
         spectrumBuffer = new int[spectrum.bitmap.getWidth() * spectrum.bitmap.getHeight()];
@@ -103,6 +110,7 @@ public class Decoder {
         currentMode = new int[1];
         savedWidth = new int[1];
         savedHeight = new int[1];
+        volume = new int[1];
         savedBuffer = new int[pixelBuffer.length];
 
         rs = RenderScript.create(activity.getApplicationContext());
@@ -113,6 +121,7 @@ public class Decoder {
         rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedWidth = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedHeight = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderVolume = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedBuffer = Allocation.createSized(rs, Element.I32(rs), savedBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoder = new ScriptC_decoder(rs);
         rsDecoder.bind_audio_buffer(rsDecoderAudioBuffer);
@@ -122,6 +131,7 @@ public class Decoder {
         rsDecoder.bind_current_mode(rsDecoderCurrentMode);
         rsDecoder.bind_saved_width(rsDecoderSavedWidth);
         rsDecoder.bind_saved_height(rsDecoderSavedHeight);
+        rsDecoder.bind_volume(rsDecoderVolume);
         rsDecoder.bind_saved_buffer(rsDecoderSavedBuffer);
         rsDecoder.invoke_initialize(sampleRate, valueBufferLength,
                 image.bitmap.getWidth(), image.bitmap.getHeight(),
@@ -237,6 +247,9 @@ public class Decoder {
 
         rsDecoderCurrentMode.copyTo(currentMode);
         switch_mode(currentMode[0]);
+
+        rsDecoderVolume.copyTo(volume);
+        meter.volume = volume[0] / 1023.0f;
 
         rsDecoderSavedHeight.copyTo(savedHeight);
         if (savedHeight[0] > 0) {

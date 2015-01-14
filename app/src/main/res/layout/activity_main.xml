@@ -19,11 +19,27 @@
         android:layout_weight="1"
         android:contentDescription="@string/decoder_view" />
 
-    <xdsopl.robot36.SpectrumView
-        android:id="@+id/spectrum"
+    <LinearLayout
+        android:id="@+id/spectrum_meter"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="10"
-        android:contentDescription="@string/spectrum_view" />
+        android:weightSum="10">
+
+        <xdsopl.robot36.SpectrumView
+            android:id="@+id/spectrum"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:contentDescription="@string/spectrum_view" />
+
+        <xdsopl.robot36.VUMeterView
+            android:id="@+id/meter"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="9"
+            android:contentDescription="@string/meter_view" />
+    </LinearLayout>
 
 </LinearLayout>
