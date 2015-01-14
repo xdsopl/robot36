@@ -43,7 +43,7 @@ public class Decoder {
     private final int[] savedBuffer;
     private final int[] savedWidth;
     private final int[] savedHeight;
-    private final int[] volume;
+    private final float[] volume;
 
     private final RenderScript rs;
     private final Allocation rsDecoderAudioBuffer;
@@ -110,7 +110,7 @@ public class Decoder {
         currentMode = new int[1];
         savedWidth = new int[1];
         savedHeight = new int[1];
-        volume = new int[1];
+        volume = new float[1];
         savedBuffer = new int[pixelBuffer.length];
 
         rs = RenderScript.create(activity.getApplicationContext());
@@ -121,7 +121,7 @@ public class Decoder {
         rsDecoderCurrentMode = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedWidth = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedHeight = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
-        rsDecoderVolume = Allocation.createSized(rs, Element.I32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
+        rsDecoderVolume = Allocation.createSized(rs, Element.F32(rs), 1, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoderSavedBuffer = Allocation.createSized(rs, Element.I32(rs), savedBuffer.length, Allocation.USAGE_SHARED | Allocation.USAGE_SCRIPT);
         rsDecoder = new ScriptC_decoder(rs);
         rsDecoder.bind_audio_buffer(rsDecoderAudioBuffer);
@@ -249,7 +249,7 @@ public class Decoder {
         switch_mode(currentMode[0]);
 
         rsDecoderVolume.copyTo(volume);
-        meter.volume = volume[0] / 1023.0f;
+        meter.volume = volume[0];
 
         rsDecoderSavedHeight.copyTo(savedHeight);
         if (savedHeight[0] > 0) {

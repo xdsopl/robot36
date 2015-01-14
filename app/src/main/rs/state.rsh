@@ -17,7 +17,7 @@ limitations under the License.
 #ifndef STATE_RSH
 #define STATE_RSH
 
-static ema_t avg_amplitude, leader_lowpass;
+static ema_t avg_power, leader_lowpass;
 static ddc_t cnt_ddc, dat_ddc;
 static fmd_t cnt_fmd, dat_fmd;
 static int disable_analyzer;
