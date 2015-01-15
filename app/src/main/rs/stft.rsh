@@ -36,11 +36,11 @@ static inline uchar4 rainbow(float v)
 static void freq_marker(int freq)
 {
     int sgi = (spectrogram_width * freq + sample_rate / 4) / (sample_rate / 2);
-    spectrogram_buffer[sgi] |= rgb(64, 64, 64);
+    spectrogram_buffer[sgi] = rgb(255, 255, 255);
 
     int si = (spectrum_width * freq + sample_rate / 4) / (sample_rate / 2);
     for (int j = 0; j < spectrum_height; ++j)
-        spectrum_buffer[spectrum_width * j + si] |= rgb(64, 64, 64);
+        spectrum_buffer[spectrum_width * j + si] = rgb(255, 255, 255);
 }
 
 static void show_rainbow()
@@ -60,8 +60,12 @@ static void clear_spectrum()
 
 static void fade_spectrum()
 {
-    for (int i = 0; i < spectrum_height * spectrum_width; ++i)
-        spectrum_buffer[i] = 0xff000000 | (0x00fefefe & (int)spectrum_buffer[i]) >> 1;
+    for (int i = 0; i < spectrum_height * spectrum_width; ++i) {
+        int b = (spectrum_buffer[i][0] * 7) >> 3;
+        int g = (spectrum_buffer[i][1] * 7) >> 3;
+        int r = (spectrum_buffer[i][2] * 7) >> 3;
+        spectrum_buffer[i] = rgb(r, g, b);
+    }
 }
 
 static void init_analyzer(int sw, int sh, int sgw, int sgh)
