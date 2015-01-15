@@ -23,18 +23,18 @@ limitations under the License.
 static void radix2(complex_t *out, float *in, int N, int S, int L)
 {
     if (1 == N) {
-        out[0] = in[0];
+        out[0] = complex(in[0], 0.0f);
         return;
     } else if (2 == N) {
-        out[0] = in[0] + in[S];
-        out[1] = in[0] - in[S];
+        out[0] = complex(in[0] + in[S], 0.0f);
+        out[1] = complex(in[0] - in[S], 0.0f);
         return;
     } else if (4 == N) {
         complex_t w = radix2_z[1 << L];
-        out[0] = in[0] + in[S] + in[2 * S] + in[3 * S];
-        out[1] = in[0] + w * in[S] - in[2 * S] - w * in[3 * S];
-        out[2] = in[0] - in[S] + in[2 * S] - in[3 * S];
-        out[3] = in[0] - w * in[S] - in[2 * S] + w * in[3 * S];
+        out[0] = complex(in[0] + in[S] + in[2 * S] + in[3 * S], 0.0f);
+        out[1] = complex(in[0] - in[2 * S], 0.0f) + w * (in[S] - in[3 * S]);
+        out[2] = complex(in[0] - in[S] + in[2 * S] - in[3 * S], 0.0f);
+        out[3] = complex(in[0] - in[2 * S], 0.0f) + w * (in[3 * S] - in[S]);
         return;
     }
     radix2(out, in, N / 2, 2 * S, L + 1);
