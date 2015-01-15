@@ -83,6 +83,19 @@ void enable_analyzer(int enable)
         show_rainbow();
 }
 
+// only made for abs(x0-x1) <= 1
+static void draw_line(int x0, int y0, int x1, int y1)
+{
+    int a0 = min(y0, (y0 + y1) / 2);
+    int a1 = max(y0, (y0 + y1) / 2);
+    for (int y = a0; y <= a1; ++y)
+        spectrum_buffer[spectrum_width * y + x0] = rgb(255, 255, 255);
+    int b0 = min((y0 + y1) / 2, y1);
+    int b1 = max((y0 + y1) / 2, y1);
+    for (int y = b0; y <= b1; ++y)
+        spectrum_buffer[spectrum_width * y + x1] = rgb(255, 255, 255);
+}
+
 static void spectrum_analyzer(int amplitude)
 {
     const int M = 7;
@@ -133,13 +146,16 @@ static void spectrum_analyzer(int amplitude)
             spectrogram_buffer[i] = rainbow(v);
         }
         fade_spectrum();
-        for (int b = 0; b < radix2_N / 2; ++b) {
+        for (int b = 0, i0, j0; b < radix2_N / 2; ++b) {
             float power = min(pown(cabs(output[b]) / 127.0f, 2), 1.0f);
             float dB = 10.0f * log10(max(0.000001f, power));
             float v = clamp((60.0f + dB) / 60.0f, 0.0f, 1.0f);
-            int i = (b * spectrum_width) / (radix2_N / 2);
-            int j = (spectrum_height - 1) - (spectrum_height - 1) * v;
-            spectrum_buffer[spectrum_width * j + i] = rgb(255, 255, 255);
+            int i1 = (b * spectrum_width) / (radix2_N / 2);
+            int j1 = (spectrum_height - 1) - (spectrum_height - 1) * v;
+            if (b)
+                draw_line(i0, j0, i1, j1);
+            i0 = i1;
+            j0 = j1;
         }
         freq_marker(1100 * M);
         freq_marker(1300 * M);
