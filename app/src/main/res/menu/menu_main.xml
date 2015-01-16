@@ -20,6 +20,10 @@
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_toggle_analyzer" android:title="@string/action_toggle_analyzer"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_increase_update_rate" android:title="@string/action_increase_update_rate"
+        android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_decrease_update_rate" android:title="@string/action_decrease_update_rate"
+        android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_raw_mode" android:title="@string/action_raw_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode"

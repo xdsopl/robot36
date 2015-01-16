@@ -46,6 +46,7 @@ public class Decoder {
     private final int[] savedWidth;
     private final int[] savedHeight;
     private final float[] volume;
+    private int updateRate = 1;
 
     private final RenderScript rs;
     private final Allocation rsDecoderAudioBuffer;
@@ -165,6 +166,9 @@ public class Decoder {
     void scottieDX_mode() { rsDecoder.invoke_scottieDX_mode(); }
     void wrasseSC2_180_mode() { rsDecoder.invoke_wrasseSC2_180_mode(); }
 
+
+    void increaseUpdateRate() { updateRate = Math.min(4, updateRate + 1); }
+    void decreaseUpdateRate() { updateRate = Math.max(0, updateRate - 1); }
     void updateTitle(int id) { activity.updateTitle(activity.getString(id)); }
 
     void switch_mode(int mode)
@@ -245,7 +249,7 @@ public class Decoder {
     }
 
     void decode() {
-        int samples = audio.read(audioBuffer, 0, audioBuffer.length);
+        int samples = audio.read(audioBuffer, 0, audioBuffer.length >> updateRate);
         if (samples <= 0)
             return;
 

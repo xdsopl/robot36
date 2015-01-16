@@ -199,6 +199,12 @@ public class MainActivity extends Activity {
                 decoder.enable_analyzer(enableAnalyzer ^= true);
                 changeLayoutOrientation(getResources().getConfiguration());
                 return true;
+            case R.id.action_increase_update_rate:
+                decoder.increaseUpdateRate();
+                return true;
+            case R.id.action_decrease_update_rate:
+                decoder.decreaseUpdateRate();
+                return true;
             case R.id.action_raw_mode:
                 decoder.raw_mode();
                 return true;
