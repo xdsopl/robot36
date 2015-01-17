@@ -8,6 +8,18 @@
         android:title="Share"
         android:actionProviderClass="android.widget.ShareActionProvider" />
 
+    <item
+        android:id="@+id/action_save_image"
+        android:title="@string/action_save_image"
+        android:icon="@android:drawable/ic_menu_save"
+        android:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_clear_image"
+        android:title="@string/action_clear_image"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:showAsAction="ifRoom" />
+
     <item android:id="@+id/action_softer_image" android:title="@string/action_softer_image"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_sharper_image" android:title="@string/action_sharper_image"

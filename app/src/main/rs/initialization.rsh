@@ -31,7 +31,7 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     maximum_height = ih;
 
     for (int i = 0; i < iw * ih; ++i)
-        pixel_buffer[i] = 0;
+        pixel_buffer[i] = rgb(0, 0, 0);
 
     init_analyzer(sw, sh, sgw, sgh);
 

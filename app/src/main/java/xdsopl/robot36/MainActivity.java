@@ -46,6 +46,7 @@ import java.util.Date;
 
 public class MainActivity extends Activity {
     private Decoder decoder;
+    private ImageView image;
     private Bitmap bitmap;
     private NotificationManager manager;
     private ShareActionProvider share;
@@ -121,10 +122,11 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         changeLayoutOrientation(getResources().getConfiguration());
+        image = (ImageView)findViewById(R.id.image);
         decoder = new Decoder(this,
                 (SpectrumView)findViewById(R.id.spectrum),
                 (SpectrumView)findViewById(R.id.spectrogram),
-                (ImageView)findViewById(R.id.image),
+                image,
                 (VUMeterView)findViewById(R.id.meter)
         );
         manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -180,6 +182,12 @@ public class MainActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_save_image:
+                storeBitmap(image.bitmap);
+                return true;
+            case R.id.action_clear_image:
+                decoder.clear_image();
+                return true;
             case R.id.action_softer_image:
                 decoder.softer_image();
                 return true;

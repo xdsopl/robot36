@@ -32,7 +32,7 @@ limitations under the License.
 #include "stft.rsh"
 #include "utils.rsh"
 
-static void reset_buffer()
+void reset_buffer()
 {
     vpos = 0;
     hpos = 0;

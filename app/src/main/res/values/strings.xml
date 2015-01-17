@@ -3,6 +3,8 @@
 
     <string name="app_name">Robot36</string>
     <string name="decoder_running">"decoder is running</string>
+    <string name="action_save_image">Save Image</string>
+    <string name="action_clear_image">Clear Image</string>
     <string name="action_toggle_auto">Toggle Auto Mode</string>
     <string name="action_toggle_debug">Toggle Debug Mode</string>
     <string name="action_toggle_analyzer">Toggle Analyzer</string>

@@ -92,7 +92,7 @@ public class Decoder {
         }
     };
 
-    public Decoder(MainActivity activity, SpectrumView spectrum, SpectrumView spectrogram,ImageView image, VUMeterView meter) {
+    public Decoder(MainActivity activity, SpectrumView spectrum, SpectrumView spectrogram, ImageView image, VUMeterView meter) {
         this.image = image;
         this.spectrogram = spectrogram;
         this.spectrum = spectrum;
@@ -150,6 +150,7 @@ public class Decoder {
         thread.start();
     }
 
+    void clear_image() { rsDecoder.invoke_reset_buffer(); }
     void toggle_scaling() { image.intScale ^= true; }
     void softer_image() { rsDecoder.invoke_incr_blur(); }
     void sharper_image() { rsDecoder.invoke_decr_blur(); }
