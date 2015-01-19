@@ -1,6 +1,6 @@
 
 CFLAGS = -g -DUP=0 -DDN=1 -D_GNU_SOURCE=1 -W -Wall -O3 -std=c99 -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fno-trapping-math -fcx-limited-range -fsingle-precision-constant $(shell sdl-config --cflags)
-LDFLAGS = -lm -lasound $(shell sdl-config --libs)
+LDLIBS = -lm -lasound $(shell sdl-config --libs)
 
 all: encode decode debug
 
