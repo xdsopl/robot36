@@ -41,7 +41,7 @@ public class SpectrumView extends SurfaceView implements SurfaceHolder.Callback 
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        synchronized (holder) {
+        synchronized (this.holder) {
             canvasWidth = width;
             canvasHeight = height;
         }
@@ -49,13 +49,13 @@ public class SpectrumView extends SurfaceView implements SurfaceHolder.Callback 
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
-        synchronized (holder) {
+        synchronized (this.holder) {
             cantTouchThis = false;
         }
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
-        synchronized (holder) {
+        synchronized (this.holder) {
             cantTouchThis = true;
         }
     }
