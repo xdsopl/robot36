@@ -59,8 +59,8 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     wrasseSC2_180_scanline_length = round((wrasseSC2_180_scanline_ms * sample_rate) / 1000.0f);
 
     const float pairwise_minimum_of_scanline_time_distances = 0.018226f;
-    float deviation = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;
-    maximum_variance = deviation * deviation;
+    maximum_absolute_deviaton = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;
+    maximum_variance = pown(0.0005f * sample_rate, 2);
 
     const float first_leader_tolerance = 0.3f;
     const float second_leader_tolerance = 0.9f;
