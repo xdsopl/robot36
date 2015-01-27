@@ -37,6 +37,7 @@ void raw_mode()
     bitmap_width = maximum_width;
     bitmap_height = maximum_height;
     sync_length = minimum_sync_length;
+    minimum_length = 0.05f * sample_rate;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
 }
@@ -72,7 +73,8 @@ void robot36_mode()
     u_end = v_end = round((uv_end_ms * sample_rate) / 1000.0f);
 
     scanline_length = robot36_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void robot72_mode()
 {
@@ -114,7 +116,8 @@ void robot72_mode()
     u_end = round((u_end_ms * sample_rate) / 1000.0f);
 
     scanline_length = robot72_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void martin1_mode()
 {
@@ -146,7 +149,8 @@ void martin1_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = martin1_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void martin2_mode()
 {
@@ -178,7 +182,8 @@ void martin2_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = martin2_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void scottie1_mode()
 {
@@ -210,7 +215,8 @@ void scottie1_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = scottie1_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void scottie2_mode()
 {
@@ -242,7 +248,8 @@ void scottie2_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = scottie2_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void scottieDX_mode()
 {
@@ -274,7 +281,8 @@ void scottieDX_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = scottieDX_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 void wrasseSC2_180_mode()
 {
@@ -304,7 +312,8 @@ void wrasseSC2_180_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = wrasseSC2_180_scanline_length;
-    maximum_length = scanline_length + (sync_porch_ms * sample_rate) / 1000.0f;
+    minimum_length = scanline_length - 0.001f * sample_rate;
+    maximum_length = scanline_length + 0.001f * sample_rate;
 }
 
 static void switch_mode(int new_mode)

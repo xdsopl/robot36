@@ -247,9 +247,11 @@ void decode(int samples) {
             sync_pos = buffer_pos - sync_buildup_length;
         }
 
+        static int reset_on_first_sync;
         if (automatic_mode_detection) {
             int detected_mode = calibration_detector(dat_value, dat_amp, cnt_amp, cnt_quantized);
             if (detected_mode >= 0) {
+                reset_on_first_sync = 1;
                 free_running = 0;
                 reset_buffer();
                 switch_mode(detected_mode);
@@ -261,13 +263,23 @@ void decode(int samples) {
                 switch_mode(estimated_mode);
             }
         }
+        if (sync_pulse && reset_on_first_sync) {
+            reset_on_first_sync = 0;
+            hpos = buffer_pos - sync_pos;
+            seperator_counter = 0;
+            continue;
+        }
 
         int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;
         int v_sep = v_sep_begin <= hpos && hpos < v_sep_end;
         seperator_counter += (u_sep || v_sep) ? dat_quantized : 0;
 
         if (++hpos >= maximum_length || sync_pulse) {
+            static int too_early_sync_counter;
             if (hpos < minimum_length) {
+                if (++too_early_sync_counter <= 5)
+                    continue;
+                too_early_sync_counter = 0;
                 hpos = buffer_pos - sync_pos;
                 seperator_counter = 0;
                 continue;
@@ -280,6 +292,7 @@ void decode(int samples) {
                 sync_pos += scanline_length;
             } else {
                 sync_timeout = 0;
+                too_early_sync_counter = 0;
                 hpos = buffer_pos - sync_pos;
             }
             switch (current_decoder) {

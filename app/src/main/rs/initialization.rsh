@@ -45,7 +45,6 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     seperator_counter = 0;
     buffer_cleared = 0;
     free_running = 1;
-    minimum_length = 0.05f * sample_rate;
     minimum_sync_length = 0.002f * sample_rate;
     sync_buildup_length = round((sync_buildup_ms * sample_rate) / 1000.0f);
 
