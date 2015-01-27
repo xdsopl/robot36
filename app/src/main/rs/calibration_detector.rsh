@@ -77,13 +77,7 @@ static int calibration_detected(float dat_value, float dat_amp, float cnt_amp, i
             } else if (0 < bit_pos && bit_pos < 9 && 2 * abs(bit_counter) > bit_length) {
                 int bit_val = bit_counter < 0 ? 1 : 0;
                 vis_code |= bit_val << (bit_pos - 1);
-                // sometimes stop bit is missing, finish up here.
-                if (bit_pos == 8) {
-                    progress = 0;
-                    countdown = 0;
-                    return vis_code;
-                }
-            } else if (bit_pos == 9 && 2 * abs(bit_counter) < bit_length) {
+            } else if (bit_pos == 9 /* && 2 * abs(bit_counter) < bit_length */) {
                 progress = 0;
                 countdown = 0;
                 return vis_code;
