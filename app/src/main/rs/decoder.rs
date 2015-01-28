@@ -274,7 +274,7 @@ void decode(int samples) {
             seperator_counter = 0;
             continue;
         }
-        if (sync_pulse && scottie_extrawurst())
+        if (sync_pulse && current_decoder == decoder_scottie && scottie_extrawurst())
             continue;
 
         int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;
