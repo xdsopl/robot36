@@ -178,14 +178,19 @@ static void raw_decoder()
 }
 
 // don't you guys have anything better to do?
-static void scottie_decoder()
+static int scottie_extrawurst()
 {
     static int first_sync = 1;
     if (!free_running && !vpos && first_sync) {
         first_sync = 0;
-        return;
+        hpos = buffer_pos - sync_pos;
+        return 1;
     }
     first_sync = 1;
+    return 0;
+}
+static void scottie_decoder()
+{
     for (int i = 0; i < bitmap_width; ++i) {
         uchar r, g, b;
         if (debug_mode) {
@@ -269,6 +274,8 @@ void decode(int samples) {
             seperator_counter = 0;
             continue;
         }
+        if (sync_pulse && scottie_extrawurst())
+            continue;
 
         int u_sep = u_sep_begin <= hpos && hpos < u_sep_end;
         int v_sep = v_sep_begin <= hpos && hpos < v_sep_end;
