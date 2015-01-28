@@ -34,6 +34,7 @@ static const int mode_scottieDX = 7;
 static const int mode_wrasseSC2_180 = 8;
 
 static const float sync_buildup_ms = 1.1f;
+static const float scanline_tolerance = 0.005f;
 static const float robot36_scanline_ms = 150.0f;
 static const float robot72_scanline_ms = 300.0f;
 static const float martin1_scanline_ms = 446.446f;
