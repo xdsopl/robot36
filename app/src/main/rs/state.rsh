@@ -37,11 +37,13 @@ static int buffer_length, buffer_mask, buffer_pos;
 static int buffer_cleared;
 static int bitmap_width, bitmap_height;
 static int maximum_width, maximum_height;
+static int freerun_height;
 static int spectrum_width, spectrum_height;
 static int spectrogram_width, spectrogram_height;
 static int sync_length, sync_counter, vpos, hpos;
 static int seperator_counter, seperator_length;
 static int u_sep_begin, u_sep_end, v_sep_begin, v_sep_end;
+static int y_even_begin, y_even_end, y_odd_begin, y_odd_end;
 static int y_begin, y_end, u_begin, u_end, v_begin, v_end;
 static int r_begin, r_end, b_begin, b_end, g_begin, g_end;
 static int sync_buildup_length;
@@ -53,5 +55,6 @@ static int scottie1_scanline_length;
 static int scottie2_scanline_length;
 static int scottieDX_scanline_length;
 static int wrasseSC2_180_scanline_length;
+static int pd180_scanline_length;
 
 #endif

@@ -53,15 +53,19 @@ static int scanline_estimator(int sync_level)
     int scottie2_adev = abs(mean - scottie2_scanline_length);
     int scottieDX_adev = abs(mean - scottieDX_scanline_length);
     int wrasseSC2_180_adev = abs(mean - wrasseSC2_180_scanline_length);
+    int pd180_adev = abs(mean - pd180_scanline_length);
 
     int min_adev = min(
         min(
-            min(robot36_adev, robot72_adev),
-            min(martin1_adev, martin2_adev)
-        ), min(
-            min(scottie1_adev, scottie2_adev),
-            min(scottieDX_adev, wrasseSC2_180_adev)
-        )
+            min(
+                min(robot36_adev, robot72_adev),
+                min(martin1_adev, martin2_adev)
+            ), min(
+                min(scottie1_adev, scottie2_adev),
+                min(scottieDX_adev, wrasseSC2_180_adev)
+            )
+        ),
+        pd180_adev
     );
 
     if (min_adev > maximum_absolute_deviaton)
@@ -82,6 +86,8 @@ static int scanline_estimator(int sync_level)
         return mode_scottieDX;
     else if (min_adev == wrasseSC2_180_adev)
         return mode_wrasseSC2_180;
+    else if (min_adev == pd180_adev)
+        return mode_pd180;
     return -1;
 }
 

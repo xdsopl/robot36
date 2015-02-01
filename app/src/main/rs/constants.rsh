@@ -22,6 +22,7 @@ static const int decoder_robot36 = 1;
 static const int decoder_yuv = 2;
 static const int decoder_rgb = 3;
 static const int decoder_scottie = 4;
+static const int decoder_pd = 5;
 
 static const int mode_raw = 0;
 static const int mode_robot36 = 1;
@@ -32,6 +33,7 @@ static const int mode_scottie1 = 5;
 static const int mode_scottie2 = 6;
 static const int mode_scottieDX = 7;
 static const int mode_wrasseSC2_180 = 8;
+static const int mode_pd180 = 9;
 
 static const float sync_buildup_ms = 1.1f;
 static const float scanline_tolerance = 0.05f;
@@ -43,5 +45,6 @@ static const float scottie1_scanline_ms = 428.22f;
 static const float scottie2_scanline_ms = 277.692f;
 static const float scottieDX_scanline_ms = 1050.3f;
 static const float wrasseSC2_180_scanline_ms = 711.0225f;
+static const float pd180_scanline_ms = 754.24f;
 
 #endif

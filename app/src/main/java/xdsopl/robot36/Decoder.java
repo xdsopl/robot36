@@ -37,6 +37,8 @@ public class Decoder {
     private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
     private final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
     private final int sampleRate = 44100;
+    private final int maxHeight = freeRunReserve(496);
+    private final int maxWidth = 640;
     private final short[] audioBuffer;
     private final int[] pixelBuffer;
     private final int[] spectrumBuffer;
@@ -70,6 +72,7 @@ public class Decoder {
     private final int mode_scottie2 = 6;
     private final int mode_scottieDX = 7;
     private final int mode_wrasseSC2_180 = 8;
+    private final int mode_pd180 = 9;
 
     private final Thread thread = new Thread() {
         @Override
@@ -80,7 +83,7 @@ public class Decoder {
                         return;
                     if (drawImage) {
                         image.drawCanvas();
-                        if(enableAnalyzer) {
+                        if (enableAnalyzer) {
                             spectrum.drawCanvas();
                             spectrogram.drawCanvas();
                             meter.drawCanvas();
@@ -98,7 +101,7 @@ public class Decoder {
         this.spectrum = spectrum;
         this.meter = meter;
         this.activity = activity;
-        pixelBuffer = new int[image.bitmap.getWidth() * image.bitmap.getHeight()];
+        pixelBuffer = new int[maxWidth * maxHeight];
         spectrumBuffer = new int[spectrum.bitmap.getWidth() * spectrum.bitmap.getHeight()];
         spectrogramBuffer = new int[spectrogram.bitmap.getWidth() * spectrogram.bitmap.getHeight()];
 
@@ -142,8 +145,7 @@ public class Decoder {
         rsDecoder.bind_saved_height(rsDecoderSavedHeight);
         rsDecoder.bind_volume(rsDecoderVolume);
         rsDecoder.bind_saved_buffer(rsDecoderSavedBuffer);
-        rsDecoder.invoke_initialize(sampleRate, valueBufferLength,
-                image.bitmap.getWidth(), image.bitmap.getHeight(),
+        rsDecoder.invoke_initialize(sampleRate, valueBufferLength, maxWidth, maxHeight,
                 spectrum.bitmap.getWidth(), spectrum.bitmap.getHeight(),
                 spectrogram.bitmap.getWidth(), spectrogram.bitmap.getHeight());
 
@@ -166,8 +168,9 @@ public class Decoder {
     void scottie2_mode() { rsDecoder.invoke_scottie2_mode(); }
     void scottieDX_mode() { rsDecoder.invoke_scottieDX_mode(); }
     void wrasseSC2_180_mode() { rsDecoder.invoke_wrasseSC2_180_mode(); }
+    void pd180_mode() { rsDecoder.invoke_pd180_mode(); }
 
-
+    int freeRunReserve(int height) { return (height * 3) / 2; }
     void increaseUpdateRate() { updateRate = Math.min(4, updateRate + 1); }
     void decreaseUpdateRate() { updateRate = Math.max(0, updateRate - 1); }
     void updateTitle(int id) { activity.updateTitle(activity.getString(id)); }
@@ -176,49 +179,44 @@ public class Decoder {
     {
         switch (mode) {
             case mode_raw:
-                image.imageWidth = image.bitmap.getWidth();
-                image.imageHeight = image.bitmap.getHeight();
+                image.setImageResolution(maxWidth, maxHeight);
                 updateTitle(R.string.action_raw_mode);
                 break;
             case mode_robot36:
-                image.imageWidth = 320;
-                image.imageHeight = 240;
+                image.setImageResolution(320, freeRunReserve(240));
                 updateTitle(R.string.action_robot36_mode);
                 break;
             case mode_robot72:
-                image.imageWidth = 320;
-                image.imageHeight = 240;
+                image.setImageResolution(320, freeRunReserve(240));
                 updateTitle(R.string.action_robot72_mode);
                 break;
             case mode_martin1:
-                image.imageWidth = 320;
-                image.imageHeight = 256;
+                image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_martin1_mode);
                 break;
             case mode_martin2:
-                image.imageWidth = 320;
-                image.imageHeight = 256;
+                image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_martin2_mode);
                 break;
             case mode_scottie1:
-                image.imageWidth = 320;
-                image.imageHeight = 256;
+                image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_scottie1_mode);
                 break;
             case mode_scottie2:
-                image.imageWidth = 320;
-                image.imageHeight = 256;
+                image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_scottie2_mode);
                 break;
             case mode_scottieDX:
-                image.imageWidth = 320;
-                image.imageHeight = 256;
+                image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_scottieDX_mode);
                 break;
             case mode_wrasseSC2_180:
-                image.imageWidth = 320;
-                image.imageHeight = 256;
+                image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_wrasseSC2_180_mode);
+                break;
+            case mode_pd180:
+                image.setImageResolution(640, freeRunReserve(496));
+                updateTitle(R.string.action_pd180_mode);
                 break;
             default:
                 break;
@@ -256,11 +254,12 @@ public class Decoder {
 
         rsDecoderAudioBuffer.copyFrom(audioBuffer);
         rsDecoder.invoke_decode(samples);
-        rsDecoderPixelBuffer.copyTo(pixelBuffer);
-        image.bitmap.setPixels(pixelBuffer, 0, image.bitmap.getWidth(), 0, 0, image.bitmap.getWidth(), image.bitmap.getHeight());
 
         rsDecoderCurrentMode.copyTo(currentMode);
         switch_mode(currentMode[0]);
+
+        rsDecoderPixelBuffer.copyTo(pixelBuffer);
+        image.setPixels(pixelBuffer);
 
         rsDecoderVolume.copyTo(volume);
         meter.volume = volume[0];

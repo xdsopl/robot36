@@ -240,6 +240,9 @@ public class MainActivity extends Activity {
             case R.id.action_wrasseSC2_180_mode:
                 decoder.wrasseSC2_180_mode();
                 return true;
+            case R.id.action_pd180_mode:
+                decoder.pd180_mode();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }

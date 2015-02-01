@@ -29,20 +29,36 @@ import android.graphics.Paint;
 public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
     private int canvasWidth = -1, canvasHeight = -1;
     private boolean cantTouchThis = true;
-    public int imageWidth = 320;
-    public int imageHeight = 240;
+    private int imageWidth = -1;
+    private int imageHeight = -1;
     public boolean intScale = false;
     private final SurfaceHolder holder;
-    public final Bitmap bitmap;
+    public Bitmap bitmap = null;
     private final Paint paint;
 
     public ImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
         holder = getHolder();
         holder.addCallback(this);
-
         paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-        bitmap = Bitmap.createBitmap(320, 384, Bitmap.Config.ARGB_8888);
+    }
+
+    public void setImageResolution(int width, int height) {
+        synchronized (holder) {
+            if (width != imageWidth || height != imageHeight) {
+                imageWidth = width;
+                imageHeight = height;
+                if (bitmap != null)
+                    bitmap.recycle();
+                bitmap = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
+            }
+        }
+    }
+
+    public void setPixels(int pixels[]) {
+        synchronized (holder) {
+            bitmap.setPixels(pixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+        }
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
@@ -67,7 +83,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
 
     void drawCanvas() {
         synchronized (holder) {
-            if (cantTouchThis)
+            if (cantTouchThis || bitmap == null)
                 return;
             Canvas canvas = null;
             try {

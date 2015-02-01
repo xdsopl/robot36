@@ -21,6 +21,10 @@ limitations under the License.
 #include "state.rsh"
 #include "exports.rsh"
 
+static int freerun_reserve(int height)
+{
+    return (height * 3) / 2;
+}
 void toggle_auto()
 {
     automatic_mode_detection ^= 1;
@@ -34,6 +38,7 @@ void raw_mode()
     blur_power = -1;
     *current_mode = mode_raw;
     current_decoder = decoder_raw;
+    freerun_height = maximum_height;
     bitmap_width = maximum_width;
     bitmap_height = maximum_height;
     sync_length = minimum_sync_length;
@@ -48,6 +53,7 @@ void robot36_mode()
     current_decoder = decoder_robot36;
     bitmap_width = 320;
     bitmap_height = 240;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.8f;
     const float sync_ms = 9.0f;
     const float sync_porch_ms = 3.0f;
@@ -83,6 +89,7 @@ void robot72_mode()
     current_decoder = decoder_yuv;
     bitmap_width = 320;
     bitmap_height = 240;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.8f;
     const float sync_ms = 9.0f;
     const float sync_porch_ms = 3.0f;
@@ -119,6 +126,42 @@ void robot72_mode()
     minimum_length = ((1.0f - scanline_tolerance) * robot72_scanline_ms * sample_rate) / 1000.0f;
     maximum_length = ((1.0f + scanline_tolerance) * robot72_scanline_ms * sample_rate) / 1000.0f;
 }
+void pd180_mode()
+{
+    blur_power = 3;
+    *current_mode = mode_pd180;
+    current_decoder = decoder_pd;
+    bitmap_width = 640;
+    bitmap_height = 496;
+    freerun_height = freerun_reserve(bitmap_height);
+    const float tolerance = 0.8f;
+    const float sync_ms = 20.0f;
+    const float porch_ms = 2.08f;
+    const float yuv_scan_ms = 183.04f;
+    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+
+    float y_odd_begin_ms = porch_ms;
+    float y_odd_end_ms = y_odd_begin_ms + yuv_scan_ms;
+    float v_begin_ms = y_odd_end_ms;
+    float v_end_ms = v_begin_ms + yuv_scan_ms;
+    float u_begin_ms = v_end_ms;
+    float u_end_ms = u_begin_ms + yuv_scan_ms;
+    float y_even_begin_ms = u_end_ms;
+    float y_even_end_ms = y_even_begin_ms + yuv_scan_ms;
+
+    y_odd_begin = round((y_odd_begin_ms * sample_rate) / 1000.0f);
+    y_odd_end = round((y_odd_end_ms * sample_rate) / 1000.0f);
+    v_begin = round((v_begin_ms * sample_rate) / 1000.0f);
+    v_end = round((v_end_ms * sample_rate) / 1000.0f);
+    u_begin = round((u_begin_ms * sample_rate) / 1000.0f);
+    u_end = round((u_end_ms * sample_rate) / 1000.0f);
+    y_even_begin = round((y_even_begin_ms * sample_rate) / 1000.0f);
+    y_even_end = round((y_even_end_ms * sample_rate) / 1000.0f);
+
+    scanline_length = pd180_scanline_length;
+    minimum_length = ((1.0f - scanline_tolerance) * pd180_scanline_ms * sample_rate) / 1000.0f;
+    maximum_length = ((1.0f + scanline_tolerance) * pd180_scanline_ms * sample_rate) / 1000.0f;
+}
 void martin1_mode()
 {
     blur_power = 3;
@@ -126,6 +169,7 @@ void martin1_mode()
     current_decoder = decoder_rgb;
     bitmap_width = 320;
     bitmap_height = 256;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.5f;
     const float sync_ms = 4.862f;
     const float sync_porch_ms = 0.572f;
@@ -159,6 +203,7 @@ void martin2_mode()
     current_decoder = decoder_rgb;
     bitmap_width = 320;
     bitmap_height = 256;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.5f;
     const float sync_ms = 4.862f;
     const float sync_porch_ms = 0.572f;
@@ -192,6 +237,7 @@ void scottie1_mode()
     current_decoder = decoder_scottie;
     bitmap_width = 320;
     bitmap_height = 256;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.8f;
     const float sync_ms = 9.0f;
     const float sync_porch_ms = 1.5f;
@@ -225,6 +271,7 @@ void scottie2_mode()
     current_decoder = decoder_scottie;
     bitmap_width = 320;
     bitmap_height = 256;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.8f;
     const float sync_ms = 9.0f;
     const float sync_porch_ms = 1.5f;
@@ -258,6 +305,7 @@ void scottieDX_mode()
     current_decoder = decoder_scottie;
     bitmap_width = 320;
     bitmap_height = 256;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.8f;
     const float sync_ms = 9.0f;
     const float sync_porch_ms = 1.5f;
@@ -291,6 +339,7 @@ void wrasseSC2_180_mode()
     current_decoder = decoder_rgb;
     bitmap_width = 320;
     bitmap_height = 256;
+    freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.5f;
     const float sync_ms = 5.5225f;
     const float sync_porch_ms = 0.5f;
@@ -344,6 +393,9 @@ static void switch_mode(int new_mode)
             break;
         case mode_wrasseSC2_180:
             wrasseSC2_180_mode();
+            break;
+        case mode_pd180:
+            pd180_mode();
             break;
         default:
             return;

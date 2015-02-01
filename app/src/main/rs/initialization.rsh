@@ -56,6 +56,7 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     scottie2_scanline_length = round((scottie2_scanline_ms * sample_rate) / 1000.0f);
     scottieDX_scanline_length = round((scottieDX_scanline_ms * sample_rate) / 1000.0f);
     wrasseSC2_180_scanline_length = round((wrasseSC2_180_scanline_ms * sample_rate) / 1000.0f);
+    pd180_scanline_length = round((pd180_scanline_ms * sample_rate) / 1000.0f);
 
     const float pairwise_minimum_of_scanline_time_distances = 0.018226f;
     maximum_absolute_deviaton = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;

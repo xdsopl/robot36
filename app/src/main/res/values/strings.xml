@@ -13,6 +13,7 @@
     <string name="action_raw_mode">Raw Mode</string>
     <string name="action_robot36_mode">Robot36 Mode</string>
     <string name="action_robot72_mode">Robot72 Mode</string>
+    <string name="action_pd180_mode">PD180 Mode</string>
     <string name="action_martin1_mode">Martin1 Mode</string>
     <string name="action_martin2_mode">Martin2 Mode</string>
     <string name="action_scottie1_mode">Scottie1 Mode</string>

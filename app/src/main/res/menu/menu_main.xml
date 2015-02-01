@@ -42,6 +42,8 @@
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_pd180_mode" android:title="@string/action_pd180_mode"
+        android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_martin1_mode" android:title="@string/action_martin1_mode"
         android:orderInCategory="100" android:showAsAction="never" />
     <item android:id="@+id/action_martin2_mode" android:title="@string/action_martin2_mode"

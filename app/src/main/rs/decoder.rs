@@ -99,7 +99,7 @@ static void robot36_decoder(int sync_timeout)
         if (parity) {
             odd_sync_pos = prev_sync_pos;
             int even_vpos = vpos;
-            int odd_vpos = (vpos + 1) % maximum_height;
+            int odd_vpos = (vpos + 1) % freerun_height;
             for (int i = 0; i < bitmap_width; ++i) {
                 uchar even_y = value_blur(i, even_sync_pos + y_begin, even_sync_pos + y_end);
                 uchar v = value_blur(i, even_sync_pos + v_begin, even_sync_pos + v_end);
@@ -143,6 +143,37 @@ static void yuv_decoder()
         }
     }
     ++vpos;
+}
+
+static void pd_decoder()
+{
+    if (debug_mode) {
+        for (int i = 0; i < bitmap_width; ++i) {
+            uchar r, g, b;
+            r = g = b = value_blur(i, prev_sync_pos, sync_pos);
+            int pos = (i * (sync_pos - prev_sync_pos) + (sync_pos - prev_sync_pos) / 2) / bitmap_width;
+            if (v_begin <= pos && pos < v_end)
+                g = b = 0;
+            if ((y_even_begin <= pos && pos < y_even_end) || (y_odd_begin <= pos && pos < y_odd_end))
+                r = b = 0;
+            if (u_begin <= pos && pos < u_end)
+                r = g = 0;
+            pixel_buffer[bitmap_width * vpos + i] = rgb(r, g, b);
+        }
+        ++vpos;
+    } else {
+        int even_vpos = vpos;
+        int odd_vpos = (vpos + 1) % freerun_height;
+        for (int i = 0; i < bitmap_width; ++i) {
+            uchar odd_y = value_blur(i, y_odd_begin + prev_sync_pos, y_odd_end + prev_sync_pos);
+            uchar u = value_blur(i, u_begin + prev_sync_pos, u_end + prev_sync_pos);
+            uchar v = value_blur(i, v_begin + prev_sync_pos, v_end + prev_sync_pos);
+            uchar even_y = value_blur(i, y_even_begin + prev_sync_pos, y_even_end + prev_sync_pos);
+            pixel_buffer[bitmap_width * even_vpos + i] = yuv(even_y, u, v);
+            pixel_buffer[bitmap_width * odd_vpos + i] = yuv(odd_y, u, v);
+        }
+        vpos += 2;
+    }
 }
 
 static void rgb_decoder()
@@ -306,6 +337,9 @@ void decode(int samples) {
                 case decoder_robot36:
                     robot36_decoder(sync_timeout);
                     break;
+                case decoder_pd:
+                    pd_decoder();
+                    break;
                 case decoder_yuv:
                     yuv_decoder();
                     break;
@@ -320,8 +354,8 @@ void decode(int samples) {
             }
             if (vpos >= bitmap_height)
                 save_buffer();
-            if (vpos >= maximum_height)
-                vpos -= maximum_height;
+            if (vpos >= freerun_height)
+                vpos -= freerun_height;
             seperator_counter = 0;
         }
     }
