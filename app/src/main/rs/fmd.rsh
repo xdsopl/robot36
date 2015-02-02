@@ -31,7 +31,12 @@ static fmd_t fmd(float bandwidth, float rate)
 
 static float demodulate(fmd_t *fmd, complex_t baseband)
 {
+#if 0
     float phase = carg(cdiv(baseband, fmd->prev));
+#else
+    // good enough, as we are working at the sampling rate
+    float phase = (fmd->prev[0] * baseband[1] - baseband[0] * fmd->prev[1]) / dot(baseband, baseband);
+#endif
     fmd->prev = baseband;
     return clamp(fmd->scale * phase, -1.0f, 1.0f);
 }
