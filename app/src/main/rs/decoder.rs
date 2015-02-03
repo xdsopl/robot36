@@ -266,7 +266,7 @@ void decode(int samples) {
         float cnt_amp = cabs(cnt_baseband);
         float dat_amp = cabs(dat_baseband);
 
-        int cnt_active = dat_amp < 1.1f * cnt_amp;
+        int cnt_active = dat_amp < 2.0f * cnt_amp;
         int dat_active = cnt_amp < 2.0f * dat_amp;
         uchar cnt_level = debug_mode && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
@@ -285,7 +285,7 @@ void decode(int samples) {
 
         static int reset_on_first_sync;
         if (automatic_mode_detection) {
-            int detected_mode = calibration_detector(dat_value, dat_amp, cnt_amp, cnt_quantized);
+            int detected_mode = calibration_detector(dat_value, cnt_quantized);
             if (detected_mode >= 0) {
                 reset_on_first_sync = 1;
                 free_running = 0;

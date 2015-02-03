@@ -20,7 +20,7 @@ limitations under the License.
 #include "constants.rsh"
 #include "state.rsh"
 
-static int calibration_detected(float dat_value, float dat_amp, float cnt_amp, int cnt_quantized)
+static int calibration_detected(float dat_value, int cnt_quantized)
 {
     static int progress, countdown;
     static int leader_counter, break_counter;
@@ -28,11 +28,8 @@ static int calibration_detected(float dat_value, float dat_amp, float cnt_amp, i
     progress = countdown ? progress : 0;
     countdown -= !!countdown;
 
-    int cnt_active = dat_amp < cnt_amp;
-    int dat_active = !cnt_active;
-
     int leader_quantized = round(filter(&leader_lowpass, dat_value));
-    int leader_level = dat_active && leader_quantized == 0;
+    int leader_level = leader_quantized == 0;
     int leader_pulse = !leader_level && leader_counter >= leader_length;
     leader_counter = leader_level ? leader_counter + 1 : 0;
     if (leader_pulse) {
@@ -47,7 +44,7 @@ static int calibration_detected(float dat_value, float dat_amp, float cnt_amp, i
         }
     }
 
-    int break_level = cnt_active && cnt_quantized == 0;
+    int break_level = cnt_quantized == 0;
     int break_pulse = !break_level && break_counter >= break_length;
     break_counter = break_level ? break_counter + 1 : 0;
     if (break_pulse) {
@@ -95,9 +92,9 @@ static int calibration_detected(float dat_value, float dat_amp, float cnt_amp, i
     return -1;
 }
 
-static int calibration_detector(float dat_value, float dat_amp, float cnt_amp, int cnt_quantized)
+static int calibration_detector(float dat_value, int cnt_quantized)
 {
-    switch (calibration_detected(dat_value, dat_amp, cnt_amp, cnt_quantized)) {
+    switch (calibration_detected(dat_value, cnt_quantized)) {
         case 0x88:
             return mode_robot36;
         case 0x0c:
