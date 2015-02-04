@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Robot36</string>
+    <string name="decoder_running">"Dekodierer läuft</string>
+    <string name="action_save_image">Bild speichern</string>
+    <string name="action_clear_image">Bild löschen</string>
+    <string name="action_toggle_auto">Automatik umschalten</string>
+    <string name="action_toggle_debug">Bildanalyse umschalten</string>
+    <string name="action_toggle_analyzer">Analysator umschalten</string>
+    <string name="action_increase_update_rate">Bildwiederholrate erhöhen</string>
+    <string name="action_decrease_update_rate">Bildwiederholrate verringern</string>
+    <string name="action_raw_mode">Roh Modus</string>
+    <string name="action_robot36_mode">Robot36 Modus</string>
+    <string name="action_robot72_mode">Robot72 Modus</string>
+    <string name="action_pd180_mode">PD180 Modus</string>
+    <string name="action_martin1_mode">Martin1 Modus</string>
+    <string name="action_martin2_mode">Martin2 Modus</string>
+    <string name="action_scottie1_mode">Scottie1 Modus</string>
+    <string name="action_scottie2_mode">Scottie2 Modus</string>
+    <string name="action_scottieDX_mode">ScottieDX Modus</string>
+    <string name="action_wrasseSC2_180_mode">WrasseSC2 180 Modus</string>
+    <string name="action_softer_image">Weicheres Bild</string>
+    <string name="action_sharper_image">Schärferes Bild</string>
+    <string name="action_toggle_scaling">Skalierung umschalten</string>
+    <string name="decoder_view">Dekodierer Ansicht</string>
+    <string name="spectrum_view">Spektrum Ansicht</string>
+    <string name="spectrogram_view">Spektrogramm Ansicht</string>
+    <string name="meter_view">Aussteuerungsmesser Ansicht</string>
+    <string name="action_share">Teilen</string>
+
+</resources>
