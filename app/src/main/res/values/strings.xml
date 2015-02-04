@@ -27,5 +27,6 @@
     <string name="spectrum_view">Spectrum View</string>
     <string name="spectrogram_view">Spectrogram View</string>
     <string name="meter_view">VU Meter View</string>
+    <string name="action_share">Share</string>
 
 </resources>
