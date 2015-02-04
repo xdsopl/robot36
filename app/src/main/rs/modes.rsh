@@ -140,23 +140,23 @@ void pd180_mode()
     const float yuv_scan_ms = 183.04f;
     sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
 
-    float y_odd_begin_ms = porch_ms;
-    float y_odd_end_ms = y_odd_begin_ms + yuv_scan_ms;
-    float v_begin_ms = y_odd_end_ms;
+    float y_even_begin_ms = porch_ms;
+    float y_even_end_ms = y_even_begin_ms + yuv_scan_ms;
+    float v_begin_ms = y_even_end_ms;
     float v_end_ms = v_begin_ms + yuv_scan_ms;
     float u_begin_ms = v_end_ms;
     float u_end_ms = u_begin_ms + yuv_scan_ms;
-    float y_even_begin_ms = u_end_ms;
-    float y_even_end_ms = y_even_begin_ms + yuv_scan_ms;
+    float y_odd_begin_ms = u_end_ms;
+    float y_odd_end_ms = y_odd_begin_ms + yuv_scan_ms;
 
-    y_odd_begin = round((y_odd_begin_ms * sample_rate) / 1000.0f);
-    y_odd_end = round((y_odd_end_ms * sample_rate) / 1000.0f);
+    y_even_begin = round((y_even_begin_ms * sample_rate) / 1000.0f);
+    y_even_end = round((y_even_end_ms * sample_rate) / 1000.0f);
     v_begin = round((v_begin_ms * sample_rate) / 1000.0f);
     v_end = round((v_end_ms * sample_rate) / 1000.0f);
     u_begin = round((u_begin_ms * sample_rate) / 1000.0f);
     u_end = round((u_end_ms * sample_rate) / 1000.0f);
-    y_even_begin = round((y_even_begin_ms * sample_rate) / 1000.0f);
-    y_even_end = round((y_even_end_ms * sample_rate) / 1000.0f);
+    y_odd_begin = round((y_odd_begin_ms * sample_rate) / 1000.0f);
+    y_odd_end = round((y_odd_end_ms * sample_rate) / 1000.0f);
 
     scanline_length = pd180_scanline_length;
     minimum_length = ((1.0f - scanline_tolerance) * pd180_scanline_ms * sample_rate) / 1000.0f;

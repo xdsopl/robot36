@@ -165,10 +165,10 @@ static void pd_decoder()
         int even_vpos = vpos;
         int odd_vpos = (vpos + 1) % freerun_height;
         for (int i = 0; i < bitmap_width; ++i) {
-            uchar odd_y = value_blur(i, y_odd_begin + prev_sync_pos, y_odd_end + prev_sync_pos);
+            uchar even_y = value_blur(i, y_even_begin + prev_sync_pos, y_even_end + prev_sync_pos);
             uchar u = value_blur(i, u_begin + prev_sync_pos, u_end + prev_sync_pos);
             uchar v = value_blur(i, v_begin + prev_sync_pos, v_end + prev_sync_pos);
-            uchar even_y = value_blur(i, y_even_begin + prev_sync_pos, y_even_end + prev_sync_pos);
+            uchar odd_y = value_blur(i, y_odd_begin + prev_sync_pos, y_odd_end + prev_sync_pos);
             pixel_buffer[bitmap_width * even_vpos + i] = yuv(even_y, u, v);
             pixel_buffer[bitmap_width * odd_vpos + i] = yuv(odd_y, u, v);
         }
