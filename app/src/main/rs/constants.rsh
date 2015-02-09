@@ -45,6 +45,12 @@ static const float scottie1_scanline_ms = 428.22f;
 static const float scottie2_scanline_ms = 277.692f;
 static const float scottieDX_scanline_ms = 1050.3f;
 static const float wrasseSC2_180_scanline_ms = 711.0225f;
+static const float pd50_scanline_ms = 388.16f;
+static const float pd90_scanline_ms = 703.04f;
+static const float pd120_scanline_ms = 508.48f;
+static const float pd160_scanline_ms = 804.416f;
 static const float pd180_scanline_ms = 754.24f;
+static const float pd240_scanline_ms = 1000.0f;
+static const float pd290_scanline_ms = 937.28f;
 
 #endif
