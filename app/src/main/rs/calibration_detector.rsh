@@ -111,8 +111,20 @@ static int calibration_detector(float dat_value, int cnt_quantized)
             return mode_scottieDX;
         case 0xb7:
             return mode_wrasseSC2_180;
+        case 0xdd:
+            return mode_pd50;
+        case 0x63:
+            return mode_pd90;
+        case 0x5f:
+            return mode_pd120;
+        case 0xe2:
+            return mode_pd160;
         case 0x60:
             return mode_pd180;
+        case 0xe1:
+            return mode_pd240;
+        case 0xde:
+            return mode_pd290;
         default:
             return -1;
     }

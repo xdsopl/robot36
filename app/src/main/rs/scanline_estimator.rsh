@@ -53,7 +53,13 @@ static int scanline_estimator(int sync_level)
     int scottie2_adev = abs(mean - scottie2_scanline_length);
     int scottieDX_adev = abs(mean - scottieDX_scanline_length);
     int wrasseSC2_180_adev = abs(mean - wrasseSC2_180_scanline_length);
+    int pd50_adev = abs(mean - pd50_scanline_length);
+    int pd90_adev = abs(mean - pd90_scanline_length);
+    int pd120_adev = abs(mean - pd120_scanline_length);
+    int pd160_adev = abs(mean - pd160_scanline_length);
     int pd180_adev = abs(mean - pd180_scanline_length);
+    int pd240_adev = abs(mean - pd240_scanline_length);
+    int pd290_adev = abs(mean - pd290_scanline_length);
 
     int min_adev = min(
         min(
@@ -65,7 +71,16 @@ static int scanline_estimator(int sync_level)
                 min(scottieDX_adev, wrasseSC2_180_adev)
             )
         ),
-        pd180_adev
+        min(
+            min(
+                min(pd50_adev, pd90_adev),
+                min(pd120_adev, pd160_adev)
+            ),
+            min(
+                min(pd180_adev, pd240_adev),
+                pd290_adev
+            )
+        )
     );
 
     if (min_adev > maximum_absolute_deviaton)
@@ -86,8 +101,20 @@ static int scanline_estimator(int sync_level)
         return mode_scottieDX;
     else if (min_adev == wrasseSC2_180_adev)
         return mode_wrasseSC2_180;
+    else if (min_adev == pd50_adev)
+        return mode_pd50;
+    else if (min_adev == pd90_adev)
+        return mode_pd90;
+    else if (min_adev == pd120_adev)
+        return mode_pd120;
+    else if (min_adev == pd160_adev)
+        return mode_pd160;
     else if (min_adev == pd180_adev)
         return mode_pd180;
+    else if (min_adev == pd240_adev)
+        return mode_pd240;
+    else if (min_adev == pd290_adev)
+        return mode_pd290;
     return -1;
 }
 

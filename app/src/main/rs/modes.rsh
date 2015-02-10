@@ -21,18 +21,10 @@ limitations under the License.
 #include "state.rsh"
 #include "exports.rsh"
 
-static int freerun_reserve(int height)
-{
-    return (height * 3) / 2;
-}
-void toggle_auto()
-{
-    automatic_mode_detection ^= 1;
-}
-void toggle_debug()
-{
-    debug_mode ^= 1;
-}
+static int freerun_reserve(int height) { return (height * 3) / 2; }
+void toggle_auto() { automatic_mode_detection ^= 1; }
+void toggle_debug() { debug_mode ^= 1; }
+
 void raw_mode()
 {
     blur_power = -1;
@@ -46,6 +38,7 @@ void raw_mode()
     maximum_length = buffer_length;
     scanline_length = maximum_length;
 }
+
 void robot36_mode()
 {
     blur_power = 2;
@@ -79,9 +72,10 @@ void robot36_mode()
     u_end = v_end = round((uv_end_ms * sample_rate) / 1000.0f);
 
     scanline_length = robot36_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * robot36_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * robot36_scanline_ms * sample_rate) / 1000.0f;
+    minimum_length = (1.0f - scanline_tolerance) * robot36_scanline_length;
+    maximum_length = (1.0f + scanline_tolerance) * robot36_scanline_length;
 }
+
 void robot72_mode()
 {
     blur_power = 3;
@@ -123,21 +117,21 @@ void robot72_mode()
     u_end = round((u_end_ms * sample_rate) / 1000.0f);
 
     scanline_length = robot72_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * robot72_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * robot72_scanline_ms * sample_rate) / 1000.0f;
+    minimum_length = (1.0f - scanline_tolerance) * robot72_scanline_length;
+    maximum_length = (1.0f + scanline_tolerance) * robot72_scanline_length;
 }
-void pd180_mode()
+
+static void pd_mode(int mode, int scanline, int blur, float yuv_scan_ms, int width, int height)
 {
-    blur_power = 3;
-    *current_mode = mode_pd180;
+    blur_power = blur;
+    *current_mode = mode;
     current_decoder = decoder_pd;
-    bitmap_width = 640;
-    bitmap_height = 496;
+    bitmap_width = width;
+    bitmap_height = height;
     freerun_height = freerun_reserve(bitmap_height);
     const float tolerance = 0.8f;
     const float sync_ms = 20.0f;
     const float porch_ms = 2.08f;
-    const float yuv_scan_ms = 183.04f;
     sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
 
     float y_even_begin_ms = porch_ms;
@@ -158,14 +152,22 @@ void pd180_mode()
     y_odd_begin = round((y_odd_begin_ms * sample_rate) / 1000.0f);
     y_odd_end = round((y_odd_end_ms * sample_rate) / 1000.0f);
 
-    scanline_length = pd180_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * pd180_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * pd180_scanline_ms * sample_rate) / 1000.0f;
+    scanline_length = scanline;
+    minimum_length = (1.0f - scanline_tolerance) * scanline;
+    maximum_length = (1.0f + scanline_tolerance) * scanline;
 }
-void martin1_mode()
+void pd50_mode() { pd_mode(mode_pd50, pd50_scanline_length, 3, 91.52f, 320, 256); }
+void pd90_mode() { pd_mode(mode_pd90, pd90_scanline_length, 4, 170.24f, 320, 256); }
+void pd120_mode() { pd_mode(mode_pd120, pd120_scanline_length, 3, 121.6f, 640, 496); }
+void pd160_mode() { pd_mode(mode_pd160, pd160_scanline_length, 4, 195.584f, 512, 400); }
+void pd180_mode() { pd_mode(mode_pd180, pd180_scanline_length, 3, 183.04f, 640, 496); }
+void pd240_mode() { pd_mode(mode_pd240, pd240_scanline_length, 4, 244.48f, 640, 496); }
+void pd290_mode() { pd_mode(mode_pd290, pd290_scanline_length, 3, 228.8f, 800, 616); }
+
+static void martin_mode(int mode, int scanline, int blur, float rgb_scan_ms)
 {
-    blur_power = 3;
-    *current_mode = mode_martin1;
+    blur_power = blur;
+    *current_mode = mode;
     current_decoder = decoder_rgb;
     bitmap_width = 320;
     bitmap_height = 256;
@@ -173,7 +175,6 @@ void martin1_mode()
     const float tolerance = 0.5f;
     const float sync_ms = 4.862f;
     const float sync_porch_ms = 0.572f;
-    const float rgb_scan_ms = 146.432f;
     const float seperator_ms = 0.572f;
     seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
     sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
@@ -192,48 +193,17 @@ void martin1_mode()
     b_end = round((b_end_ms * sample_rate) / 1000.0f);
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
-    scanline_length = martin1_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * martin1_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * martin1_scanline_ms * sample_rate) / 1000.0f;
+    scanline_length = scanline;
+    minimum_length = (1.0f - scanline_tolerance) * scanline;
+    maximum_length = (1.0f + scanline_tolerance) * scanline;
 }
-void martin2_mode()
+void martin1_mode() { martin_mode(mode_martin1, martin1_scanline_length, 3, 146.432f); }
+void martin2_mode() { martin_mode(mode_martin2, martin2_scanline_length, 2, 73.216f); }
+
+static void scottie_mode(int mode, int scanline, int blur, float rgb_scan_ms)
 {
-    blur_power = 2;
-    *current_mode = mode_martin2;
-    current_decoder = decoder_rgb;
-    bitmap_width = 320;
-    bitmap_height = 256;
-    freerun_height = freerun_reserve(bitmap_height);
-    const float tolerance = 0.5f;
-    const float sync_ms = 4.862f;
-    const float sync_porch_ms = 0.572f;
-    const float rgb_scan_ms = 73.216f;
-    const float seperator_ms = 0.572f;
-    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
-
-    float g_begin_ms = sync_porch_ms;
-    float g_end_ms = g_begin_ms + rgb_scan_ms;
-    float b_begin_ms = g_end_ms + seperator_ms;
-    float b_end_ms = b_begin_ms + rgb_scan_ms;
-    float r_begin_ms = b_end_ms + seperator_ms;
-    float r_end_ms = r_begin_ms + rgb_scan_ms;
-
-    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
-    r_end = round((r_end_ms * sample_rate) / 1000.0f);
-    g_end = round((g_end_ms * sample_rate) / 1000.0f);
-    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
-    b_end = round((b_end_ms * sample_rate) / 1000.0f);
-    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
-
-    scanline_length = martin2_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * martin2_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * martin2_scanline_ms * sample_rate) / 1000.0f;
-}
-void scottie1_mode()
-{
-    blur_power = 3;
-    *current_mode = mode_scottie1;
+    blur_power = blur;
+    *current_mode = mode;
     current_decoder = decoder_scottie;
     bitmap_width = 320;
     bitmap_height = 256;
@@ -241,7 +211,6 @@ void scottie1_mode()
     const float tolerance = 0.8f;
     const float sync_ms = 9.0f;
     const float sync_porch_ms = 1.5f;
-    const float rgb_scan_ms = 138.240f;
     const float seperator_ms = 1.5f;
     seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
     sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
@@ -260,78 +229,14 @@ void scottie1_mode()
     b_end = round((b_end_ms * sample_rate) / 1000.0f);
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
-    scanline_length = scottie1_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * scottie1_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * scottie1_scanline_ms * sample_rate) / 1000.0f;
+    scanline_length = scanline;
+    minimum_length = (1.0f - scanline_tolerance) * scanline;
+    maximum_length = (1.0f + scanline_tolerance) * scanline;
 }
-void scottie2_mode()
-{
-    blur_power = 2;
-    *current_mode = mode_scottie2;
-    current_decoder = decoder_scottie;
-    bitmap_width = 320;
-    bitmap_height = 256;
-    freerun_height = freerun_reserve(bitmap_height);
-    const float tolerance = 0.8f;
-    const float sync_ms = 9.0f;
-    const float sync_porch_ms = 1.5f;
-    const float rgb_scan_ms = 88.064f;
-    const float seperator_ms = 1.5f;
-    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+void scottie1_mode() { scottie_mode(mode_scottie1, scottie1_scanline_length, 3, 138.240f); }
+void scottie2_mode() { scottie_mode(mode_scottie2, scottie2_scanline_length, 2, 88.064f); }
+void scottieDX_mode() { scottie_mode(mode_scottieDX, scottieDX_scanline_length, 5, 345.6f); }
 
-    float r_begin_ms = sync_porch_ms;
-    float r_end_ms = r_begin_ms + rgb_scan_ms;
-    float b_end_ms = - sync_ms;
-    float b_begin_ms = b_end_ms - rgb_scan_ms;
-    float g_end_ms = b_begin_ms - seperator_ms;
-    float g_begin_ms = g_end_ms - rgb_scan_ms;
-
-    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
-    r_end = round((r_end_ms * sample_rate) / 1000.0f);
-    g_end = round((g_end_ms * sample_rate) / 1000.0f);
-    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
-    b_end = round((b_end_ms * sample_rate) / 1000.0f);
-    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
-
-    scanline_length = scottie2_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * scottie2_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * scottie2_scanline_ms * sample_rate) / 1000.0f;
-}
-void scottieDX_mode()
-{
-    blur_power = 5;
-    *current_mode = mode_scottieDX;
-    current_decoder = decoder_scottie;
-    bitmap_width = 320;
-    bitmap_height = 256;
-    freerun_height = freerun_reserve(bitmap_height);
-    const float tolerance = 0.8f;
-    const float sync_ms = 9.0f;
-    const float sync_porch_ms = 1.5f;
-    const float rgb_scan_ms = 345.6f;
-    const float seperator_ms = 1.5f;
-    seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
-
-    float r_begin_ms = sync_porch_ms;
-    float r_end_ms = r_begin_ms + rgb_scan_ms;
-    float b_end_ms = - sync_ms;
-    float b_begin_ms = b_end_ms - rgb_scan_ms;
-    float g_end_ms = b_begin_ms - seperator_ms;
-    float g_begin_ms = g_end_ms - rgb_scan_ms;
-
-    r_begin = round((r_begin_ms * sample_rate) / 1000.0f);
-    r_end = round((r_end_ms * sample_rate) / 1000.0f);
-    g_end = round((g_end_ms * sample_rate) / 1000.0f);
-    g_begin = round((g_begin_ms * sample_rate) / 1000.0f);
-    b_end = round((b_end_ms * sample_rate) / 1000.0f);
-    b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
-
-    scanline_length = scottieDX_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * scottieDX_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * scottieDX_scanline_ms * sample_rate) / 1000.0f;
-}
 void wrasseSC2_180_mode()
 {
     blur_power = 4;
@@ -361,8 +266,8 @@ void wrasseSC2_180_mode()
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
     scanline_length = wrasseSC2_180_scanline_length;
-    minimum_length = ((1.0f - scanline_tolerance) * wrasseSC2_180_scanline_ms * sample_rate) / 1000.0f;
-    maximum_length = ((1.0f + scanline_tolerance) * wrasseSC2_180_scanline_ms * sample_rate) / 1000.0f;
+    minimum_length = (1.0f - scanline_tolerance) * wrasseSC2_180_scanline_length;
+    maximum_length = (1.0f + scanline_tolerance) * wrasseSC2_180_scanline_length;
 }
 
 static void switch_mode(int new_mode)
@@ -394,8 +299,26 @@ static void switch_mode(int new_mode)
         case mode_wrasseSC2_180:
             wrasseSC2_180_mode();
             break;
+        case mode_pd50:
+            pd50_mode();
+            break;
+        case mode_pd90:
+            pd90_mode();
+            break;
+        case mode_pd120:
+            pd120_mode();
+            break;
+        case mode_pd160:
+            pd160_mode();
+            break;
         case mode_pd180:
             pd180_mode();
+            break;
+        case mode_pd240:
+            pd240_mode();
+            break;
+        case mode_pd290:
+            pd290_mode();
             break;
         default:
             return;

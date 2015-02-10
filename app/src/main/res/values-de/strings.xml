@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">Robot36</string>
     <string name="decoder_running">"Dekodierer läuft</string>
     <string name="action_save_image">Bild speichern</string>
@@ -13,7 +12,13 @@
     <string name="action_raw_mode">Roh Modus</string>
     <string name="action_robot36_mode">Robot36 Modus</string>
     <string name="action_robot72_mode">Robot72 Modus</string>
+    <string name="action_pd50_mode">PD50 Modus</string>
+    <string name="action_pd90_mode">PD90 Modus</string>
+    <string name="action_pd120_mode">PD120 Modus</string>
+    <string name="action_pd160_mode">PD160 Modus</string>
     <string name="action_pd180_mode">PD180 Modus</string>
+    <string name="action_pd240_mode">PD240 Modus</string>
+    <string name="action_pd290_mode">PD290 Modus</string>
     <string name="action_martin1_mode">Martin1 Modus</string>
     <string name="action_martin2_mode">Martin2 Modus</string>
     <string name="action_scottie1_mode">Scottie1 Modus</string>
@@ -28,5 +33,9 @@
     <string name="spectrogram_view">Spektrogramm Ansicht</string>
     <string name="meter_view">Aussteuerungsmesser Ansicht</string>
     <string name="action_share">Teilen</string>
-
+    <string name="robot_modes">Robot Modi</string>
+    <string name="pd_modes">PD Modi</string>
+    <string name="martin_modes">Martin Modi</string>
+    <string name="scottie_modes">Scottie Modi</string>
+    <string name="wrasse_modes">Wrasse Modi</string>
 </resources>

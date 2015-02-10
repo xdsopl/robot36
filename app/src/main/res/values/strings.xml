@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">Robot36</string>
     <string name="decoder_running">"decoder is running</string>
     <string name="action_save_image">Save Image</string>
@@ -13,7 +12,13 @@
     <string name="action_raw_mode">Raw Mode</string>
     <string name="action_robot36_mode">Robot36 Mode</string>
     <string name="action_robot72_mode">Robot72 Mode</string>
+    <string name="action_pd50_mode">PD50 Mode</string>
+    <string name="action_pd90_mode">PD90 Mode</string>
+    <string name="action_pd120_mode">PD120 Mode</string>
+    <string name="action_pd160_mode">PD160 Mode</string>
     <string name="action_pd180_mode">PD180 Mode</string>
+    <string name="action_pd240_mode">PD240 Mode</string>
+    <string name="action_pd290_mode">PD290 Mode</string>
     <string name="action_martin1_mode">Martin1 Mode</string>
     <string name="action_martin2_mode">Martin2 Mode</string>
     <string name="action_scottie1_mode">Scottie1 Mode</string>
@@ -28,5 +33,9 @@
     <string name="spectrogram_view">Spectrogram View</string>
     <string name="meter_view">VU Meter View</string>
     <string name="action_share">Share</string>
-
+    <string name="robot_modes">Robot Modes</string>
+    <string name="pd_modes">PD Modes</string>
+    <string name="martin_modes">Martin Modes</string>
+    <string name="scottie_modes">Scottie Modes</string>
+    <string name="wrasse_modes">Wrasse Modes</string>
 </resources>

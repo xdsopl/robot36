@@ -37,8 +37,8 @@ public class Decoder {
     private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
     private final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
     private final int sampleRate = 44100;
-    private final int maxHeight = freeRunReserve(496);
-    private final int maxWidth = 640;
+    private final int maxHeight = freeRunReserve(616);
+    private final int maxWidth = 800;
     private final short[] audioBuffer;
     private final int[] pixelBuffer;
     private final int[] spectrumBuffer;
@@ -72,7 +72,13 @@ public class Decoder {
     private final int mode_scottie2 = 6;
     private final int mode_scottieDX = 7;
     private final int mode_wrasseSC2_180 = 8;
-    private final int mode_pd180 = 9;
+    private final int mode_pd50 = 9;
+    private final int mode_pd90 = 10;
+    private final int mode_pd120 = 11;
+    private final int mode_pd160 = 12;
+    private final int mode_pd180 = 13;
+    private final int mode_pd240 = 14;
+    private final int mode_pd290 = 15;
 
     private final Thread thread = new Thread() {
         @Override
@@ -168,7 +174,13 @@ public class Decoder {
     void scottie2_mode() { rsDecoder.invoke_scottie2_mode(); }
     void scottieDX_mode() { rsDecoder.invoke_scottieDX_mode(); }
     void wrasseSC2_180_mode() { rsDecoder.invoke_wrasseSC2_180_mode(); }
+    void pd50_mode() { rsDecoder.invoke_pd50_mode(); }
+    void pd90_mode() { rsDecoder.invoke_pd90_mode(); }
+    void pd120_mode() { rsDecoder.invoke_pd120_mode(); }
+    void pd160_mode() { rsDecoder.invoke_pd160_mode(); }
     void pd180_mode() { rsDecoder.invoke_pd180_mode(); }
+    void pd240_mode() { rsDecoder.invoke_pd240_mode(); }
+    void pd290_mode() { rsDecoder.invoke_pd290_mode(); }
 
     int freeRunReserve(int height) { return (height * 3) / 2; }
     void increaseUpdateRate() { updateRate = Math.min(4, updateRate + 1); }
@@ -214,9 +226,33 @@ public class Decoder {
                 image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_wrasseSC2_180_mode);
                 break;
+            case mode_pd50:
+                image.setImageResolution(320, freeRunReserve(256));
+                updateTitle(R.string.action_pd50_mode);
+                break;
+            case mode_pd90:
+                image.setImageResolution(320, freeRunReserve(256));
+                updateTitle(R.string.action_pd90_mode);
+                break;
+            case mode_pd120:
+                image.setImageResolution(640, freeRunReserve(496));
+                updateTitle(R.string.action_pd120_mode);
+                break;
+            case mode_pd160:
+                image.setImageResolution(512, freeRunReserve(400));
+                updateTitle(R.string.action_pd160_mode);
+                break;
             case mode_pd180:
                 image.setImageResolution(640, freeRunReserve(496));
                 updateTitle(R.string.action_pd180_mode);
+                break;
+            case mode_pd240:
+                image.setImageResolution(640, freeRunReserve(496));
+                updateTitle(R.string.action_pd240_mode);
+                break;
+            case mode_pd290:
+                image.setImageResolution(800, freeRunReserve(616));
+                updateTitle(R.string.action_pd290_mode);
                 break;
             default:
                 break;

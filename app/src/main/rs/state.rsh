@@ -55,6 +55,12 @@ static int scottie1_scanline_length;
 static int scottie2_scanline_length;
 static int scottieDX_scanline_length;
 static int wrasseSC2_180_scanline_length;
+static int pd50_scanline_length;
+static int pd90_scanline_length;
+static int pd120_scanline_length;
+static int pd160_scanline_length;
 static int pd180_scanline_length;
+static int pd240_scanline_length;
+static int pd290_scanline_length;
 
 #endif
