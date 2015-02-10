@@ -27,7 +27,7 @@ I would like to keep the name Robot36 even since Robot36 is able to decode more 
 Currently the following modes are supported:
 
 Robot Modes: 36 & 72
-PD Modes: PD180
+PD Modes: 50, 90, 120, 160, 180, 240 and 290
 Martin Modes: 1 & 2
 Scottie Modes: 1, 2 & DX
 Wrasse Modes: SC2 180
