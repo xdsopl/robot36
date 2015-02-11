@@ -287,6 +287,7 @@ void decode(int samples) {
         if (automatic_mode_detection) {
             int detected_mode = calibration_detector(dat_value, cnt_quantized);
             if (detected_mode >= 0) {
+                //RS_DEBUG(detected_mode);
                 reset_on_first_sync = 1;
                 free_running = 0;
                 reset_buffer();
@@ -294,6 +295,7 @@ void decode(int samples) {
             }
             int estimated_mode = scanline_estimator(sync_level);
             if (estimated_mode >= 0 && estimated_mode != *current_mode) {
+                //RS_DEBUG(estimated_mode);
                 free_running = 1;
                 reset_buffer();
                 switch_mode(estimated_mode);

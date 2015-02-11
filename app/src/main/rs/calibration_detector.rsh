@@ -77,6 +77,7 @@ static int calibration_detected(float dat_value, int cnt_quantized)
             } else if (bit_pos == 9 /* && 2 * abs(bit_counter) < bit_length */) {
                 progress = 0;
                 countdown = 0;
+                //RS_DEBUG(vis_code);
                 return vis_code;
             } else {
                 progress = 0;
