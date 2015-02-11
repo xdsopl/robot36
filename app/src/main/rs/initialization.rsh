@@ -55,7 +55,7 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     scottie1_scanline_length = round((scottie1_scanline_ms * sample_rate) / 1000.0f);
     scottie2_scanline_length = round((scottie2_scanline_ms * sample_rate) / 1000.0f);
     scottieDX_scanline_length = round((scottieDX_scanline_ms * sample_rate) / 1000.0f);
-    wrasseSC2_180_scanline_length = round((wrasseSC2_180_scanline_ms * sample_rate) / 1000.0f);
+    wraaseSC2_180_scanline_length = round((wraaseSC2_180_scanline_ms * sample_rate) / 1000.0f);
     pd50_scanline_length = round((pd50_scanline_ms * sample_rate) / 1000.0f);
     pd90_scanline_length = round((pd90_scanline_ms * sample_rate) / 1000.0f);
     pd120_scanline_length = round((pd120_scanline_ms * sample_rate) / 1000.0f);

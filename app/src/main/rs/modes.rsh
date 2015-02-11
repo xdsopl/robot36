@@ -237,10 +237,10 @@ void scottie1_mode() { scottie_mode(mode_scottie1, scottie1_scanline_length, 3, 
 void scottie2_mode() { scottie_mode(mode_scottie2, scottie2_scanline_length, 2, 88.064f); }
 void scottieDX_mode() { scottie_mode(mode_scottieDX, scottieDX_scanline_length, 5, 345.6f); }
 
-void wrasseSC2_180_mode()
+void wraaseSC2_180_mode()
 {
     blur_power = 4;
-    *current_mode = mode_wrasseSC2_180;
+    *current_mode = mode_wraaseSC2_180;
     current_decoder = decoder_rgb;
     bitmap_width = 320;
     bitmap_height = 256;
@@ -265,9 +265,9 @@ void wrasseSC2_180_mode()
     b_end = round((b_end_ms * sample_rate) / 1000.0f);
     b_begin = round((b_begin_ms * sample_rate) / 1000.0f);
 
-    scanline_length = wrasseSC2_180_scanline_length;
-    minimum_length = (1.0f - scanline_tolerance) * wrasseSC2_180_scanline_length;
-    maximum_length = (1.0f + scanline_tolerance) * wrasseSC2_180_scanline_length;
+    scanline_length = wraaseSC2_180_scanline_length;
+    minimum_length = (1.0f - scanline_tolerance) * wraaseSC2_180_scanline_length;
+    maximum_length = (1.0f + scanline_tolerance) * wraaseSC2_180_scanline_length;
 }
 
 static void switch_mode(int new_mode)
@@ -296,8 +296,8 @@ static void switch_mode(int new_mode)
         case mode_scottieDX:
             scottieDX_mode();
             break;
-        case mode_wrasseSC2_180:
-            wrasseSC2_180_mode();
+        case mode_wraaseSC2_180:
+            wraaseSC2_180_mode();
             break;
         case mode_pd50:
             pd50_mode();

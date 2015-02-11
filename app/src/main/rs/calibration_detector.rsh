@@ -110,7 +110,7 @@ static int calibration_detector(float dat_value, int cnt_quantized)
         case 0xcc:
             return mode_scottieDX;
         case 0xb7:
-            return mode_wrasseSC2_180;
+            return mode_wraaseSC2_180;
         case 0xdd:
             return mode_pd50;
         case 0x63:

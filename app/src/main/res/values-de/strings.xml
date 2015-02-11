@@ -24,7 +24,7 @@
     <string name="action_scottie1_mode">Scottie1 Modus</string>
     <string name="action_scottie2_mode">Scottie2 Modus</string>
     <string name="action_scottieDX_mode">ScottieDX Modus</string>
-    <string name="action_wrasseSC2_180_mode">WrasseSC2 180 Modus</string>
+    <string name="action_wraaseSC2_180_mode">WraaseSC2 180 Modus</string>
     <string name="action_softer_image">Weicheres Bild</string>
     <string name="action_sharper_image">Schärferes Bild</string>
     <string name="action_toggle_scaling">Skalierung umschalten</string>
@@ -37,5 +37,5 @@
     <string name="pd_modes">PD Modi</string>
     <string name="martin_modes">Martin Modi</string>
     <string name="scottie_modes">Scottie Modi</string>
-    <string name="wrasse_modes">Wrasse Modi</string>
+    <string name="wraase_modes">Wraase Modi</string>
 </resources>

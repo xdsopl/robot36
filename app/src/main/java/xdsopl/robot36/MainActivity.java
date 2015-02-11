@@ -237,8 +237,8 @@ public class MainActivity extends Activity {
             case R.id.action_scottieDX_mode:
                 decoder.scottieDX_mode();
                 return true;
-            case R.id.action_wrasseSC2_180_mode:
-                decoder.wrasseSC2_180_mode();
+            case R.id.action_wraaseSC2_180_mode:
+                decoder.wraaseSC2_180_mode();
                 return true;
             case R.id.action_pd50_mode:
                 decoder.pd50_mode();

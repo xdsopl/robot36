@@ -52,7 +52,7 @@ static int scanline_estimator(int sync_level)
     int scottie1_adev = abs(mean - scottie1_scanline_length);
     int scottie2_adev = abs(mean - scottie2_scanline_length);
     int scottieDX_adev = abs(mean - scottieDX_scanline_length);
-    int wrasseSC2_180_adev = abs(mean - wrasseSC2_180_scanline_length);
+    int wraaseSC2_180_adev = abs(mean - wraaseSC2_180_scanline_length);
     int pd50_adev = abs(mean - pd50_scanline_length);
     int pd90_adev = abs(mean - pd90_scanline_length);
     int pd120_adev = abs(mean - pd120_scanline_length);
@@ -68,7 +68,7 @@ static int scanline_estimator(int sync_level)
                 min(martin1_adev, martin2_adev)
             ), min(
                 min(scottie1_adev, scottie2_adev),
-                min(scottieDX_adev, wrasseSC2_180_adev)
+                min(scottieDX_adev, wraaseSC2_180_adev)
             )
         ),
         min(
@@ -99,8 +99,8 @@ static int scanline_estimator(int sync_level)
         return mode_scottie2;
     else if (min_adev == scottieDX_adev)
         return mode_scottieDX;
-    else if (min_adev == wrasseSC2_180_adev)
-        return mode_wrasseSC2_180;
+    else if (min_adev == wraaseSC2_180_adev)
+        return mode_wraaseSC2_180;
     else if (min_adev == pd50_adev)
         return mode_pd50;
     else if (min_adev == pd90_adev)

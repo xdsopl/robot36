@@ -55,7 +55,7 @@
         <item android:id="@+id/action_scottie2_mode" android:title="@string/action_scottie2_mode" />
         <item android:id="@+id/action_scottieDX_mode" android:title="@string/action_scottieDX_mode" />
     </menu></item>
-    <item android:title="@string/wrasse_modes"><menu>
-        <item android:id="@+id/action_wrasseSC2_180_mode" android:title="@string/action_wrasseSC2_180_mode" />
+    <item android:title="@string/wraase_modes"><menu>
+        <item android:id="@+id/action_wraaseSC2_180_mode" android:title="@string/action_wraaseSC2_180_mode" />
     </menu></item>
 </menu>

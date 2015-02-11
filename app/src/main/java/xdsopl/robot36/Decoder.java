@@ -71,7 +71,7 @@ public class Decoder {
     private final int mode_scottie1 = 5;
     private final int mode_scottie2 = 6;
     private final int mode_scottieDX = 7;
-    private final int mode_wrasseSC2_180 = 8;
+    private final int mode_wraaseSC2_180 = 8;
     private final int mode_pd50 = 9;
     private final int mode_pd90 = 10;
     private final int mode_pd120 = 11;
@@ -173,7 +173,7 @@ public class Decoder {
     void scottie1_mode() { rsDecoder.invoke_scottie1_mode(); }
     void scottie2_mode() { rsDecoder.invoke_scottie2_mode(); }
     void scottieDX_mode() { rsDecoder.invoke_scottieDX_mode(); }
-    void wrasseSC2_180_mode() { rsDecoder.invoke_wrasseSC2_180_mode(); }
+    void wraaseSC2_180_mode() { rsDecoder.invoke_wraaseSC2_180_mode(); }
     void pd50_mode() { rsDecoder.invoke_pd50_mode(); }
     void pd90_mode() { rsDecoder.invoke_pd90_mode(); }
     void pd120_mode() { rsDecoder.invoke_pd120_mode(); }
@@ -222,9 +222,9 @@ public class Decoder {
                 image.setImageResolution(320, freeRunReserve(256));
                 updateTitle(R.string.action_scottieDX_mode);
                 break;
-            case mode_wrasseSC2_180:
+            case mode_wraaseSC2_180:
                 image.setImageResolution(320, freeRunReserve(256));
-                updateTitle(R.string.action_wrasseSC2_180_mode);
+                updateTitle(R.string.action_wraaseSC2_180_mode);
                 break;
             case mode_pd50:
                 image.setImageResolution(320, freeRunReserve(256));
