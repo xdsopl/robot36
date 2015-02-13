@@ -27,7 +27,7 @@ void toggle_debug() { debug_mode ^= 1; }
 
 void raw_mode()
 {
-    blur_power = -1;
+    blur_power = 0;
     *current_mode = mode_raw;
     current_decoder = decoder_raw;
     freerun_height = maximum_height;

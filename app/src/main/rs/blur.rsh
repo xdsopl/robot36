@@ -23,12 +23,12 @@ limitations under the License.
 
 void incr_blur()
 {
-    blur_power = blur_power < 6 ? blur_power + 1 : blur_power;
+    user_blur = user_blur < 6 ? user_blur + 1 : user_blur;
 }
 
 void decr_blur()
 {
-    blur_power = blur_power >= 0 ? blur_power - 1 : blur_power;
+    user_blur = user_blur >= 0 ? user_blur - 1 : user_blur;
 }
 
 #endif

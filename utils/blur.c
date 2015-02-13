@@ -63,11 +63,14 @@ int main()
 	printf("\tint i = p & buffer_mask;\n");
 	printf("\tint weight_sum = 0;\n");
 	printf("\tint value_sum = 0;\n");
-	printf("\tswitch (blur_power) {\n");
-	for (int i = 0; i < 7; ++i) {
+	printf("\tswitch (blur_power + user_blur) {\n");
+	int max_power = 6;
+	for (int i = 0; i <= max_power; ++i) {
 		printf("\tcase %d:\n", i);
+		if (i == max_power)
+			printf("\tdefault:\n");
 		emit((1 << i) | 1);
 	}
-	printf("\tdefault:\n\t\treturn value_buffer[i];\n\t}\n\treturn 0;\n}\n");
+	printf("\t}\n\treturn 0;\n}\n");
 	return 0;
 }

@@ -5,7 +5,7 @@ static uchar value_blur(int pixel, int begin, int end)
 	int i = p & buffer_mask;
 	int weight_sum = 0;
 	int value_sum = 0;
-	switch (blur_power) {
+	switch (blur_power + user_blur) {
 	case 0:
 		if ((p-1) < begin || end <= (p+1) || (i-1) < 0 || buffer_length <= (i+1)) {
 			if (begin <= (p-1)) {
@@ -741,6 +741,7 @@ static uchar value_blur(int pixel, int begin, int end)
 			8 * value_buffer[i+32] +
 			6 * value_buffer[i+33]) >> 14;
 	case 6:
+	default:
 		if ((p-65) < begin || end <= (p+65) || (i-65) < 0 || buffer_length <= (i+65)) {
 			if (begin <= (p-65)) {
 				weight_sum += 3;
@@ -1399,8 +1400,6 @@ static uchar value_blur(int pixel, int begin, int end)
 			4 * value_buffer[i+63] +
 			3 * value_buffer[i+64] +
 			3 * value_buffer[i+65]) >> 14;
-	default:
-		return value_buffer[i];
 	}
 	return 0;
 }
