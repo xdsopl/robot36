@@ -249,10 +249,8 @@ void decode(int samples) {
     for (int sample = 0; sample < samples; ++sample, ++buffer_pos) {
         int amp = audio_buffer[sample];
         float avg_pow = filter(&avg_power, amp * amp);
-        float avg_amp = min(sqrt(2.0f * avg_pow), 32767.0f);
+        float avg_amp = clamp(sqrt(2.0f * avg_pow), 1.0f, 32767.0f);
         *volume = avg_amp / 32767.0f;
-        if (avg_amp < 16.0f)
-            continue;
         float norm_amp = (127 * amp) / avg_amp;
 
         spectrum_analyzer(norm_amp);
