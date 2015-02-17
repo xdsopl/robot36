@@ -261,11 +261,12 @@ void decode(int samples) {
         float cnt_value = demodulate(&cnt_fmd, cnt_baseband);
         float dat_value = demodulate(&dat_fmd, dat_baseband);
 
-        float cnt_amp = cabs(cnt_baseband);
-        float dat_amp = cabs(dat_baseband);
+        float cnt_pow = dot(cnt_baseband, cnt_baseband);
+        float dat_pow = dot(dat_baseband, dat_baseband);
 
-        int cnt_active = dat_amp < 2.0f * cnt_amp;
-        int dat_active = cnt_amp < 2.0f * dat_amp;
+        int cnt_active = dat_pow < 2.0f * cnt_pow;
+        int dat_active = cnt_pow < 2.0f * dat_pow;
+
         uchar cnt_level = debug_mode && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
         value_buffer[buffer_pos & buffer_mask] = cnt_level | dat_level;
