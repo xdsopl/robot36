@@ -94,7 +94,6 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     const float cnt_bandwidth = 200.0f;
 
     avg_power = ema_cutoff(10.0f, sample_rate);
-    leader_lowpass = ema_cutoff(100.0f, sample_rate);
 
     cnt_ddc = ddc(cnt_carrier, cnt_bandwidth, sample_rate);
     dat_ddc = ddc(dat_carrier, dat_bandwidth, sample_rate);
