@@ -15,47 +15,55 @@
         android:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/action_clear_image"
-        android:title="@string/action_clear_image"
-        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:id="@+id/action_toggle_decoder"
+        android:title="@string/action_toggle_decoder"
+        android:icon="@android:drawable/ic_media_pause"
         android:showAsAction="ifRoom" />
 
-    <item android:id="@+id/action_softer_image" android:title="@string/action_softer_image" />
-    <item android:id="@+id/action_sharper_image" android:title="@string/action_sharper_image" />
+    <group android:id="@+id/group_decoder">
+        <item
+            android:id="@+id/action_clear_image"
+            android:title="@string/action_clear_image"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:showAsAction="ifRoom" />
 
-    <item android:id="@+id/action_toggle_scaling" android:title="@string/action_toggle_scaling" />
-    <item android:id="@+id/action_toggle_debug" android:title="@string/action_toggle_debug" />
-    <item android:id="@+id/action_toggle_auto" android:title="@string/action_toggle_auto" />
-    <item android:id="@+id/action_toggle_analyzer" android:title="@string/action_toggle_analyzer" />
+        <item android:id="@+id/action_softer_image" android:title="@string/action_softer_image" />
+        <item android:id="@+id/action_sharper_image" android:title="@string/action_sharper_image" />
 
-    <item android:id="@+id/action_increase_update_rate" android:title="@string/action_increase_update_rate" />
-    <item android:id="@+id/action_decrease_update_rate" android:title="@string/action_decrease_update_rate" />
+        <item android:id="@+id/action_toggle_scaling" android:title="@string/action_toggle_scaling" />
+        <item android:id="@+id/action_toggle_debug" android:title="@string/action_toggle_debug" />
+        <item android:id="@+id/action_toggle_auto" android:title="@string/action_toggle_auto" />
+        <item android:id="@+id/action_toggle_analyzer" android:title="@string/action_toggle_analyzer" />
 
-    <item android:id="@+id/action_raw_mode" android:title="@string/action_raw_mode" />
+        <item android:id="@+id/action_increase_update_rate" android:title="@string/action_increase_update_rate" />
+        <item android:id="@+id/action_decrease_update_rate" android:title="@string/action_decrease_update_rate" />
 
-    <item android:title="@string/robot_modes"><menu>
-        <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode" />
-        <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode" />
-    </menu></item>
-    <item android:title="@string/pd_modes"><menu>
-        <item android:id="@+id/action_pd50_mode" android:title="@string/action_pd50_mode" />
-        <item android:id="@+id/action_pd90_mode" android:title="@string/action_pd90_mode" />
-        <item android:id="@+id/action_pd120_mode" android:title="@string/action_pd120_mode" />
-        <item android:id="@+id/action_pd160_mode" android:title="@string/action_pd160_mode" />
-        <item android:id="@+id/action_pd180_mode" android:title="@string/action_pd180_mode" />
-        <item android:id="@+id/action_pd240_mode" android:title="@string/action_pd240_mode" />
-        <item android:id="@+id/action_pd290_mode" android:title="@string/action_pd290_mode" />
-    </menu></item>
-    <item android:title="@string/martin_modes"><menu>
-        <item android:id="@+id/action_martin1_mode" android:title="@string/action_martin1_mode" />
-        <item android:id="@+id/action_martin2_mode" android:title="@string/action_martin2_mode" />
-    </menu></item>
-    <item android:title="@string/scottie_modes"><menu>
-        <item android:id="@+id/action_scottie1_mode" android:title="@string/action_scottie1_mode" />
-        <item android:id="@+id/action_scottie2_mode" android:title="@string/action_scottie2_mode" />
-        <item android:id="@+id/action_scottieDX_mode" android:title="@string/action_scottieDX_mode" />
-    </menu></item>
-    <item android:title="@string/wraase_modes"><menu>
-        <item android:id="@+id/action_wraaseSC2_180_mode" android:title="@string/action_wraaseSC2_180_mode" />
-    </menu></item>
+        <item android:id="@+id/action_raw_mode" android:title="@string/action_raw_mode" />
+
+        <item android:title="@string/robot_modes"><menu>
+            <item android:id="@+id/action_robot36_mode" android:title="@string/action_robot36_mode" />
+            <item android:id="@+id/action_robot72_mode" android:title="@string/action_robot72_mode" />
+        </menu></item>
+        <item android:title="@string/pd_modes"><menu>
+            <item android:id="@+id/action_pd50_mode" android:title="@string/action_pd50_mode" />
+            <item android:id="@+id/action_pd90_mode" android:title="@string/action_pd90_mode" />
+            <item android:id="@+id/action_pd120_mode" android:title="@string/action_pd120_mode" />
+            <item android:id="@+id/action_pd160_mode" android:title="@string/action_pd160_mode" />
+            <item android:id="@+id/action_pd180_mode" android:title="@string/action_pd180_mode" />
+            <item android:id="@+id/action_pd240_mode" android:title="@string/action_pd240_mode" />
+            <item android:id="@+id/action_pd290_mode" android:title="@string/action_pd290_mode" />
+        </menu></item>
+        <item android:title="@string/martin_modes"><menu>
+            <item android:id="@+id/action_martin1_mode" android:title="@string/action_martin1_mode" />
+            <item android:id="@+id/action_martin2_mode" android:title="@string/action_martin2_mode" />
+        </menu></item>
+        <item android:title="@string/scottie_modes"><menu>
+            <item android:id="@+id/action_scottie1_mode" android:title="@string/action_scottie1_mode" />
+            <item android:id="@+id/action_scottie2_mode" android:title="@string/action_scottie2_mode" />
+            <item android:id="@+id/action_scottieDX_mode" android:title="@string/action_scottieDX_mode" />
+        </menu></item>
+        <item android:title="@string/wraase_modes"><menu>
+            <item android:id="@+id/action_wraaseSC2_180_mode" android:title="@string/action_wraaseSC2_180_mode" />
+        </menu></item>
+    </group>
 </menu>

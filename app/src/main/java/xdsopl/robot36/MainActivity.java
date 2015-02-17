@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
     private ShareActionProvider share;
     private int notifyID = 1;
     private boolean enableAnalyzer = true;
+    private Menu menu;
 
     private void showNotification() {
         Intent intent = new Intent(this, MainActivity.class);
@@ -123,39 +124,68 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         changeLayoutOrientation(getResources().getConfiguration());
         image = (ImageView)findViewById(R.id.image);
+        manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        startDecoder();
+    }
+
+    protected void stopDecoder() {
+        if (decoder == null)
+            return;
+        decoder.destroy();
+        decoder = null;
+        manager.cancel(notifyID);
+        menu.findItem(R.id.action_toggle_decoder).setIcon(getResources().getDrawable(android.R.drawable.ic_media_play));
+        menu.setGroupEnabled(R.id.group_decoder, false);
+    }
+
+    protected void startDecoder() {
+        if (decoder != null)
+            return;
         decoder = new Decoder(this,
                 (SpectrumView)findViewById(R.id.spectrum),
                 (SpectrumView)findViewById(R.id.spectrogram),
-                image,
+                (ImageView)findViewById(R.id.image),
                 (VUMeterView)findViewById(R.id.meter)
         );
-        manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        decoder.enable_analyzer(enableAnalyzer);
         showNotification();
+        if (menu != null) {
+            menu.findItem(R.id.action_toggle_decoder).setIcon(getResources().getDrawable(android.R.drawable.ic_media_pause));
+            menu.setGroupEnabled(R.id.group_decoder, true);
+        }
+    }
+
+    protected void toggleDecoder() {
+        if (decoder == null)
+            startDecoder();
+        else
+            stopDecoder();
     }
 
     @Override
     protected void onDestroy () {
-        decoder.destroy();
-        decoder = null;
-        manager.cancel(notifyID);
+        stopDecoder();
         super.onDestroy();
     }
 
     @Override
     protected void onPause() {
-        decoder.pause();
+        if (decoder != null)
+            decoder.pause();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        decoder.resume();
+        if (decoder != null)
+            decoder.resume();
         super.onResume();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        this.menu = menu;
         share = (ShareActionProvider)menu.findItem(R.id.menu_item_share).getActionProvider();
         return true;
     }
@@ -183,6 +213,9 @@ public class MainActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_toggle_decoder:
+                toggleDecoder();
+                return true;
             case R.id.action_save_image:
                 storeBitmap(image.bitmap);
                 return true;

@@ -4,6 +4,7 @@
     <string name="decoder_running">"Dekodierer läuft</string>
     <string name="action_save_image">Bild speichern</string>
     <string name="action_clear_image">Bild löschen</string>
+    <string name="action_toggle_decoder">Dekodierer umschalten</string>
     <string name="action_toggle_auto">Automatik umschalten</string>
     <string name="action_toggle_debug">Bildanalyse umschalten</string>
     <string name="action_toggle_analyzer">Analysator umschalten</string>
