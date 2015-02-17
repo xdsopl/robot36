@@ -136,6 +136,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy () {
         decoder.destroy();
+        decoder = null;
         manager.cancel(notifyID);
         super.onDestroy();
     }
