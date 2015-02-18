@@ -264,8 +264,8 @@ void decode(int samples) {
         float cnt_pow = dot(cnt_baseband, cnt_baseband);
         float dat_pow = dot(dat_baseband, dat_baseband);
 
-        int cnt_active = dat_pow < 2.0f * cnt_pow;
-        int dat_active = cnt_pow < 2.0f * dat_pow;
+        int cnt_active = dat_pow < 4.0f * cnt_pow;
+        int dat_active = cnt_pow < 4.0f * dat_pow;
 
         uchar cnt_level = debug_mode && cnt_active ? 127.5f - 127.5f * cnt_value : 0.0f;
         uchar dat_level = dat_active ? 127.5f + 127.5f * dat_value : 0.0f;
