@@ -32,11 +32,13 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ShareActionProvider;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -114,6 +116,9 @@ public class MainActivity extends Activity {
                 intent.putExtra(Intent.EXTRA_STREAM, uri);
                 intent.setType("image/png");
                 share.setShareIntent(intent);
+                Toast toast = Toast.makeText(getApplicationContext(), file.getName(), Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL, 0, 0);
+                toast.show();
             }
         });
     }
