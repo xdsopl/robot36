@@ -254,8 +254,8 @@ public class MainActivity extends Activity {
             case R.id.action_toggle_debug:
                 decoder.toggle_debug();
                 return true;
-            case R.id.action_toggle_auto:
-                decoder.toggle_auto();
+            case R.id.action_auto_mode:
+                decoder.auto_mode();
                 return true;
             case R.id.action_toggle_analyzer:
                 decoder.enable_analyzer(enableAnalyzer ^= true);

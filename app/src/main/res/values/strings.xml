@@ -5,7 +5,6 @@
     <string name="action_save_image">Save Image</string>
     <string name="action_clear_image">Clear Image</string>
     <string name="action_toggle_decoder">Toggle Decoder</string>
-    <string name="action_toggle_auto">Toggle Auto Mode</string>
     <string name="action_toggle_debug">Toggle Debug Mode</string>
     <string name="action_toggle_analyzer">Toggle Analyzer</string>
     <string name="update_rate">Update Rate</string>
@@ -14,6 +13,8 @@
     <string name="action_fast_update_rate">fast</string>
     <string name="action_faster_update_rate">faster</string>
     <string name="action_fastest_update_rate">fastest</string>
+    <string name="action_auto_mode">Auto Mode</string>
+    <string name="select_mode">Select Mode</string>
     <string name="action_raw_mode">Raw Mode</string>
     <string name="action_robot36_mode">Robot36 Mode</string>
     <string name="action_robot72_mode">Robot72 Mode</string>

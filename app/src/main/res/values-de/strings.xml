@@ -5,7 +5,6 @@
     <string name="action_save_image">Bild speichern</string>
     <string name="action_clear_image">Bild löschen</string>
     <string name="action_toggle_decoder">Dekodierer umschalten</string>
-    <string name="action_toggle_auto">Automatik umschalten</string>
     <string name="action_toggle_debug">Bildanalyse umschalten</string>
     <string name="action_toggle_analyzer">Analysator umschalten</string>
     <string name="update_rate">Bildwiederholrate</string>
@@ -14,6 +13,8 @@
     <string name="action_fast_update_rate">schnell</string>
     <string name="action_faster_update_rate">schneller</string>
     <string name="action_fastest_update_rate">am schnellsten</string>
+    <string name="action_auto_mode">Automatik Modus</string>
+    <string name="select_mode">Modus auswählen</string>
     <string name="action_raw_mode">Roh Modus</string>
     <string name="action_robot36_mode">Robot36 Modus</string>
     <string name="action_robot72_mode">Robot72 Modus</string>
@@ -30,7 +31,7 @@
     <string name="action_scottie2_mode">Scottie2 Modus</string>
     <string name="action_scottieDX_mode">ScottieDX Modus</string>
     <string name="action_wraaseSC2_180_mode">WraaseSC2 180 Modus</string>
-    <string name="image_sharpness">Bildschärfe Anpassen</string>
+    <string name="image_sharpness">Bildschärfe anpassen</string>
     <string name="action_sharpest_image">am schärfsten</string>
     <string name="action_sharper_image">schärfer</string>
     <string name="action_sharp_image">scharf</string>

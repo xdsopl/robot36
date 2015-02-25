@@ -22,7 +22,7 @@ limitations under the License.
 #include "exports.rsh"
 
 static int freerun_reserve(int height) { return (height * 3) / 2; }
-void toggle_auto() { automatic_mode_detection ^= 1; }
+void auto_mode(int mode) { automatic_mode_detection = mode; }
 void toggle_debug() { debug_mode ^= 1; }
 
 void raw_mode()

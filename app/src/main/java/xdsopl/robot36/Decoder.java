@@ -162,24 +162,24 @@ public class Decoder {
     void toggle_scaling() { image.intScale ^= true; }
     void adjust_blur(int blur) { rsDecoder.invoke_adjust_blur(blur); }
     void toggle_debug() { rsDecoder.invoke_toggle_debug(); }
-    void toggle_auto() { rsDecoder.invoke_toggle_auto(); }
     void enable_analyzer(boolean enable) { rsDecoder.invoke_enable_analyzer((enableAnalyzer = enable) ? 1 : 0); }
-    void raw_mode() { rsDecoder.invoke_raw_mode(); }
-    void robot36_mode() { rsDecoder.invoke_robot36_mode(); }
-    void robot72_mode() { rsDecoder.invoke_robot72_mode(); }
-    void martin1_mode() { rsDecoder.invoke_martin1_mode(); }
-    void martin2_mode() { rsDecoder.invoke_martin2_mode(); }
-    void scottie1_mode() { rsDecoder.invoke_scottie1_mode(); }
-    void scottie2_mode() { rsDecoder.invoke_scottie2_mode(); }
-    void scottieDX_mode() { rsDecoder.invoke_scottieDX_mode(); }
-    void wraaseSC2_180_mode() { rsDecoder.invoke_wraaseSC2_180_mode(); }
-    void pd50_mode() { rsDecoder.invoke_pd50_mode(); }
-    void pd90_mode() { rsDecoder.invoke_pd90_mode(); }
-    void pd120_mode() { rsDecoder.invoke_pd120_mode(); }
-    void pd160_mode() { rsDecoder.invoke_pd160_mode(); }
-    void pd180_mode() { rsDecoder.invoke_pd180_mode(); }
-    void pd240_mode() { rsDecoder.invoke_pd240_mode(); }
-    void pd290_mode() { rsDecoder.invoke_pd290_mode(); }
+    void auto_mode() { rsDecoder.invoke_auto_mode(1); }
+    void raw_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_raw_mode(); }
+    void robot36_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_robot36_mode(); }
+    void robot72_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_robot72_mode(); }
+    void martin1_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_martin1_mode(); }
+    void martin2_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_martin2_mode(); }
+    void scottie1_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_scottie1_mode(); }
+    void scottie2_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_scottie2_mode(); }
+    void scottieDX_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_scottieDX_mode(); }
+    void wraaseSC2_180_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_wraaseSC2_180_mode(); }
+    void pd50_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd50_mode(); }
+    void pd90_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd90_mode(); }
+    void pd120_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd120_mode(); }
+    void pd160_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd160_mode(); }
+    void pd180_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd180_mode(); }
+    void pd240_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd240_mode(); }
+    void pd290_mode() { rsDecoder.invoke_auto_mode(0); rsDecoder.invoke_pd290_mode(); }
 
     int freeRunReserve(int height) { return (height * 3) / 2; }
     void setUpdateRate(int rate) { updateRate = Math.max(0, Math.min(4, rate)); }
