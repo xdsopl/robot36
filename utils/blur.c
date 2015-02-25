@@ -63,7 +63,7 @@ int main()
 	printf("\tint i = p & buffer_mask;\n");
 	printf("\tint weight_sum = 0;\n");
 	printf("\tint value_sum = 0;\n");
-	printf("\tswitch (blur_power + user_blur) {\n");
+	printf("\tswitch (max(0, blur_power + user_blur)) {\n");
 	int max_power = 6;
 	for (int i = 0; i <= max_power; ++i) {
 		printf("\tcase %d:\n", i);

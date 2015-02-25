@@ -5,7 +5,7 @@ static uchar value_blur(int pixel, int begin, int end)
 	int i = p & buffer_mask;
 	int weight_sum = 0;
 	int value_sum = 0;
-	switch (blur_power + user_blur) {
+	switch (max(0, blur_power + user_blur)) {
 	case 0:
 		if ((p-1) < begin || end <= (p+1) || (i-1) < 0 || buffer_length <= (i+1)) {
 			if (begin <= (p-1)) {

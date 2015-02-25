@@ -26,8 +26,14 @@
     <string name="action_scottie2_mode">Scottie2 Mode</string>
     <string name="action_scottieDX_mode">ScottieDX Mode</string>
     <string name="action_wraaseSC2_180_mode">WraaseSC2 180 Mode</string>
-    <string name="action_softer_image">Softer Image</string>
-    <string name="action_sharper_image">Sharper Image</string>
+    <string name="image_sharpness">Image Sharpness</string>
+    <string name="action_sharpest_image">sharpest</string>
+    <string name="action_sharper_image">sharper</string>
+    <string name="action_sharp_image">sharp</string>
+    <string name="action_neutral_image">neutral</string>
+    <string name="action_soft_image">soft</string>
+    <string name="action_softer_image">softer</string>
+    <string name="action_softest_image">softest</string>
     <string name="action_toggle_scaling">Toggle Scaling</string>
     <string name="decoder_view">Decoder View</string>
     <string name="spectrum_view">Spectrum View</string>

@@ -227,11 +227,26 @@ public class MainActivity extends Activity {
             case R.id.action_clear_image:
                 decoder.clear_image();
                 return true;
-            case R.id.action_softer_image:
-                decoder.softer_image();
+            case R.id.action_sharpest_image:
+                decoder.adjust_blur(-3);
                 return true;
             case R.id.action_sharper_image:
-                decoder.sharper_image();
+                decoder.adjust_blur(-2);
+                return true;
+            case R.id.action_sharp_image:
+                decoder.adjust_blur(-1);
+                return true;
+            case R.id.action_neutral_image:
+                decoder.adjust_blur(0);
+                return true;
+            case R.id.action_soft_image:
+                decoder.adjust_blur(1);
+                return true;
+            case R.id.action_softer_image:
+                decoder.adjust_blur(2);
+                return true;
+            case R.id.action_softest_image:
+                decoder.adjust_blur(3);
                 return true;
             case R.id.action_toggle_scaling:
                 decoder.toggle_scaling();

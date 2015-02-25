@@ -21,14 +21,9 @@ limitations under the License.
 #include "state.rsh"
 #include "blur_generated.rsh"
 
-void incr_blur()
+void adjust_blur(int blur)
 {
-    user_blur = user_blur < 6 ? user_blur + 1 : user_blur;
-}
-
-void decr_blur()
-{
-    user_blur = user_blur >= 0 ? user_blur - 1 : user_blur;
+    user_blur = clamp(blur, -3, 3);
 }
 
 #endif

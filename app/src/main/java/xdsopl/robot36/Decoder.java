@@ -160,8 +160,7 @@ public class Decoder {
 
     void clear_image() { rsDecoder.invoke_reset_buffer(); }
     void toggle_scaling() { image.intScale ^= true; }
-    void softer_image() { rsDecoder.invoke_incr_blur(); }
-    void sharper_image() { rsDecoder.invoke_decr_blur(); }
+    void adjust_blur(int blur) { rsDecoder.invoke_adjust_blur(blur); }
     void toggle_debug() { rsDecoder.invoke_toggle_debug(); }
     void toggle_auto() { rsDecoder.invoke_toggle_auto(); }
     void enable_analyzer(boolean enable) { rsDecoder.invoke_enable_analyzer((enableAnalyzer = enable) ? 1 : 0); }
