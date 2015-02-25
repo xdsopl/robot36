@@ -182,8 +182,7 @@ public class Decoder {
     void pd290_mode() { rsDecoder.invoke_pd290_mode(); }
 
     int freeRunReserve(int height) { return (height * 3) / 2; }
-    void increaseUpdateRate() { updateRate = Math.min(4, updateRate + 1); }
-    void decreaseUpdateRate() { updateRate = Math.max(0, updateRate - 1); }
+    void setUpdateRate(int rate) { updateRate = Math.max(0, Math.min(4, rate)); }
     void updateTitle(int id) { activity.updateTitle(activity.getString(id)); }
 
     void switch_mode(int mode)

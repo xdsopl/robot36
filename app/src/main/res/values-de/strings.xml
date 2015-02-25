@@ -8,8 +8,12 @@
     <string name="action_toggle_auto">Automatik umschalten</string>
     <string name="action_toggle_debug">Bildanalyse umschalten</string>
     <string name="action_toggle_analyzer">Analysator umschalten</string>
-    <string name="action_increase_update_rate">Bildwiederholrate erhöhen</string>
-    <string name="action_decrease_update_rate">Bildwiederholrate verringern</string>
+    <string name="update_rate">Bildwiederholrate</string>
+    <string name="action_slow_update_rate">langsam</string>
+    <string name="action_normal_update_rate">normal</string>
+    <string name="action_fast_update_rate">schnell</string>
+    <string name="action_faster_update_rate">schneller</string>
+    <string name="action_fastest_update_rate">am schnellsten</string>
     <string name="action_raw_mode">Roh Modus</string>
     <string name="action_robot36_mode">Robot36 Modus</string>
     <string name="action_robot72_mode">Robot72 Modus</string>

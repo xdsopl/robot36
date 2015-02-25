@@ -42,8 +42,13 @@
         <item android:id="@+id/action_toggle_auto" android:title="@string/action_toggle_auto" />
         <item android:id="@+id/action_toggle_analyzer" android:title="@string/action_toggle_analyzer" />
 
-        <item android:id="@+id/action_increase_update_rate" android:title="@string/action_increase_update_rate" />
-        <item android:id="@+id/action_decrease_update_rate" android:title="@string/action_decrease_update_rate" />
+        <item android:title="@string/update_rate"><menu>
+            <item android:id="@+id/action_slow_update_rate" android:title="@string/action_slow_update_rate" />
+            <item android:id="@+id/action_normal_update_rate" android:title="@string/action_normal_update_rate" />
+            <item android:id="@+id/action_fast_update_rate" android:title="@string/action_fast_update_rate" />
+            <item android:id="@+id/action_faster_update_rate" android:title="@string/action_faster_update_rate" />
+            <item android:id="@+id/action_fastest_update_rate" android:title="@string/action_fastest_update_rate" />
+        </menu></item>
 
         <item android:id="@+id/action_raw_mode" android:title="@string/action_raw_mode" />
 

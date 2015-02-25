@@ -8,8 +8,12 @@
     <string name="action_toggle_auto">Toggle Auto Mode</string>
     <string name="action_toggle_debug">Toggle Debug Mode</string>
     <string name="action_toggle_analyzer">Toggle Analyzer</string>
-    <string name="action_increase_update_rate">Increase Update Rate</string>
-    <string name="action_decrease_update_rate">Decrease Update Rate</string>
+    <string name="update_rate">Update Rate</string>
+    <string name="action_slow_update_rate">slow</string>
+    <string name="action_normal_update_rate">normal</string>
+    <string name="action_fast_update_rate">fast</string>
+    <string name="action_faster_update_rate">faster</string>
+    <string name="action_fastest_update_rate">fastest</string>
     <string name="action_raw_mode">Raw Mode</string>
     <string name="action_robot36_mode">Robot36 Mode</string>
     <string name="action_robot72_mode">Robot72 Mode</string>
