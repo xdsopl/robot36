@@ -69,7 +69,7 @@ static int scanline_estimator(int sync_level)
             )
         );
 
-        if (min_adev > maximum_abs_dev_20ms)
+        if (min_adev > maximum_absolute_deviaton)
             return -1;
         else if (min_adev == pd50_adev)
             return mode_pd50;
@@ -109,7 +109,7 @@ static int scanline_estimator(int sync_level)
             scottieDX_adev
         );
 
-        if (min_adev > maximum_abs_dev_9ms)
+        if (min_adev > maximum_absolute_deviaton)
             return -1;
         else if (min_adev == robot36_adev)
             return mode_robot36;
@@ -140,7 +140,7 @@ static int scanline_estimator(int sync_level)
             wraaseSC2_180_adev
         );
 
-        if (min_adev > maximum_abs_dev_5ms)
+        if (min_adev > maximum_absolute_deviaton)
             return -1;
         else if (min_adev == martin1_adev)
             return mode_martin1;
