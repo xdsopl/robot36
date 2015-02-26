@@ -284,7 +284,7 @@ void decode(int samples) {
 
         static int reset_on_first_sync;
         if (automatic_mode_detection) {
-            int detected_mode = calibration_detector(dat_quantized, cnt_quantized);
+            int detected_mode = calibration_detector(cnt_quantized);
             if (detected_mode >= 0) {
                 //RS_DEBUG(detected_mode);
                 reset_on_first_sync = 1;

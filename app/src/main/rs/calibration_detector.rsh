@@ -20,81 +20,52 @@ limitations under the License.
 #include "constants.rsh"
 #include "state.rsh"
 
-static int calibration_detected(float dat_quantized, int cnt_quantized)
+static int calibration_detected(int cnt_quantized)
 {
-    static int progress, countdown;
-    static int leader_counter, break_counter;
+    static int ssb_counter;
+    int ssb_level = cnt_quantized == 0;
+    int ssb_pulse = !ssb_level && ssb_counter >= ssb_length;
+    ssb_counter = ssb_level ? ssb_counter + 1 : 0;
 
-    progress = countdown ? progress : 0;
-    countdown -= !!countdown;
+    static int bit_pos, vis_pos, vis_code;
+    static int vis_counter, bit_counter;
 
-    int leader_level = dat_quantized == 0;
-    int leader_pulse = !leader_level && leader_counter >= leader_length;
-    leader_counter = leader_level ? leader_counter + 1 : 0;
-    if (leader_pulse) {
-        if (progress == 2) {
-            progress = 3;
-            countdown = vis_timeout;
-            leader_length = first_leader_length;
-        } else {
-            progress = 1;
-            countdown = break_timeout;
-            leader_length = second_leader_length;
-        }
+    if (ssb_pulse) {
+        vis_code = 0;
+        bit_pos = 0;
+        vis_pos = 2 * bit_length;
+        bit_counter = 0;
+        vis_counter = bit_length;
     }
 
-    int break_level = cnt_quantized == 0;
-    int break_pulse = !break_level && break_counter >= break_length;
-    break_counter = break_level ? break_counter + 1 : 0;
-    if (break_pulse) {
-        if (progress == 1) {
-            progress = 2;
-            countdown = leader_timeout;
-        } else if (progress < 3) {
-            progress = 0;
-            leader_length = first_leader_length;
-        }
+    if (bit_pos >= 8)
+        return -1;
+
+    if (++vis_counter < vis_pos) {
+        bit_counter += cnt_quantized;
+        return -1;
     }
 
-    if (progress == 3) {
-        static int bit_pos, vis_pos, vis_code;
-        static int vis_counter, bit_counter;
-        if (leader_pulse) {
-            bit_pos = 0;
-            vis_pos = bit_length;
-            bit_counter = 0;
-            vis_counter = 0;
-        }
-        if (++vis_counter < vis_pos) {
-            bit_counter += cnt_quantized;
-        } else {
-            if (bit_pos == 0 && 2 * abs(bit_counter) < bit_length) {
-                vis_code = 0;
-            } else if (0 < bit_pos && bit_pos < 9 && 2 * abs(bit_counter) > bit_length) {
-                int bit_val = bit_counter < 0 ? 1 : 0;
-                vis_code |= bit_val << (bit_pos - 1);
-            } else if (bit_pos == 9 /* && 2 * abs(bit_counter) < bit_length */) {
-                progress = 0;
-                countdown = 0;
-                //RS_DEBUG(vis_code);
-                return vis_code;
-            } else {
-                progress = 0;
-                countdown = 0;
-                return -1;
-            }
-            ++bit_pos;
-            bit_counter = cnt_quantized;
-            vis_pos += bit_length;
-        }
+    if (2 * abs(bit_counter) < bit_length) {
+        bit_pos = 8;
+        return -1;
     }
 
-    return -1;
+    int bit_val = bit_counter < 0 ? 1 : 0;
+    bit_counter = cnt_quantized;
+    vis_code |= bit_val << bit_pos;
+    vis_pos += bit_length;
+
+    if (++bit_pos < 8)
+        return -1;
+
+    //RS_DEBUG(vis_code);
+    return vis_code;
 }
 
-static int calibration_detector(int dat_quantized, int cnt_quantized)
+static int calibration_detector(int cnt_quantized)
 {
-    switch (calibration_detected(dat_quantized, cnt_quantized)) {
+    switch (calibration_detected(cnt_quantized)) {
         case 0x88:
             return mode_robot36;
         case 0x0c:

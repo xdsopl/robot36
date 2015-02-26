@@ -76,25 +76,12 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     maximum_abs_dev_20ms = 0.5f * pairwise_minimum_of_scanline_time_distances_20ms * sample_rate;
     maximum_variance = pown(0.0005f * sample_rate, 2);
 
-    const float first_leader_tolerance = 0.3f;
-    const float second_leader_tolerance = 0.9f;
-    const float break_tolerance = 0.5f;
-    const float leader_timeout_tolerance = 1.2f;
-    const float break_timeout_tolerance = 1.8f;
-    const float vis_timeout_tolerance = 1.01f;
-    const float leader_seconds = 0.3f;
-    const float break_seconds = 0.01f;
     const float vis_seconds = 0.3f;
     const float bit_seconds = 0.03f;
-    first_leader_length = first_leader_tolerance * leader_seconds * sample_rate;
-    second_leader_length = second_leader_tolerance * leader_seconds * sample_rate;
-    leader_length = first_leader_length;
-    break_length = break_tolerance * break_seconds * sample_rate;
+    const float ssb_tolerance = 0.9f;
     vis_length = vis_seconds * sample_rate;
     bit_length = bit_seconds * sample_rate;
-    leader_timeout = leader_timeout_tolerance * leader_seconds * sample_rate;
-    break_timeout = break_timeout_tolerance * break_seconds * sample_rate;
-    vis_timeout = vis_timeout_tolerance * vis_seconds * sample_rate;
+    ssb_length = ssb_tolerance * bit_seconds * sample_rate;
 
     const float dat_carrier = 1900.0f;
     const float cnt_carrier = 1200.0f;
