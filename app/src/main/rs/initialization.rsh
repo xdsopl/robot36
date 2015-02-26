@@ -46,6 +46,10 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     buffer_cleared = 0;
     free_running = 1;
     minimum_sync_length = 0.002f * sample_rate;
+    const float sync_len_tolerance = 0.7;
+    min_sync_length_5ms = sync_len_tolerance * 0.005f * sample_rate;
+    min_sync_length_9ms = sync_len_tolerance * 0.009f * sample_rate;
+    min_sync_length_20ms = sync_len_tolerance * 0.020f * sample_rate;
     sync_buildup_length = round((sync_buildup_ms * sample_rate) / 1000.0f);
 
     robot36_scanline_length = round((robot36_scanline_ms * sample_rate) / 1000.0f);
@@ -64,8 +68,12 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     pd240_scanline_length = round((pd240_scanline_ms * sample_rate) / 1000.0f);
     pd290_scanline_length = round((pd290_scanline_ms * sample_rate) / 1000.0f);
 
-    const float pairwise_minimum_of_scanline_time_distances = 0.0079825f;
-    maximum_absolute_deviaton = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;
+    const float pairwise_minimum_of_scanline_time_distances_5ms = 0.219648f;
+    const float pairwise_minimum_of_scanline_time_distances_9ms = 0.022308f;
+    const float pairwise_minimum_of_scanline_time_distances_20ms = 0.050176f;
+    maximum_abs_dev_5ms = 0.5f * pairwise_minimum_of_scanline_time_distances_5ms * sample_rate;
+    maximum_abs_dev_9ms = 0.5f * pairwise_minimum_of_scanline_time_distances_9ms * sample_rate;
+    maximum_abs_dev_20ms = 0.5f * pairwise_minimum_of_scanline_time_distances_20ms * sample_rate;
     maximum_variance = pown(0.0005f * sample_rate, 2);
 
     const float first_leader_tolerance = 0.3f;
