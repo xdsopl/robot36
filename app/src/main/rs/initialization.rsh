@@ -41,16 +41,15 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     hpos = 0;
     prev_sync_pos = sync_pos = 0;
     buffer_pos = 0;
-    sync_counter = 0;
     seperator_counter = 0;
     buffer_cleared = 0;
     free_running = 1;
-    minimum_sync_length = 0.002f * sample_rate;
-    const float sync_len_tolerance = 0.7;
-    min_sync_length_5ms = sync_len_tolerance * 0.005f * sample_rate;
-    min_sync_length_9ms = sync_len_tolerance * 0.009f * sample_rate;
-    min_sync_length_20ms = sync_len_tolerance * 0.020f * sample_rate;
-    sync_buildup_length = round((sync_buildup_ms * sample_rate) / 1000.0f);
+
+    const float sync_tolerance = 0.7;
+    sync_pulse_detector_5ms = init_pulse(sync_tolerance * 5.0f, sync_buildup_ms, sample_rate);
+    sync_pulse_detector_9ms = init_pulse(sync_tolerance * 9.0f, sync_buildup_ms, sample_rate);
+    sync_pulse_detector_20ms = init_pulse(sync_tolerance * 20.0f, sync_buildup_ms, sample_rate);
+    sync_pulse_detector = init_pulse(2.0f, sync_buildup_ms, sample_rate);
 
     robot36_scanline_length = round((robot36_scanline_ms * sample_rate) / 1000.0f);
     robot72_scanline_length = round((robot72_scanline_ms * sample_rate) / 1000.0f);
@@ -72,12 +71,12 @@ void initialize(float rate, int length, int iw, int ih, int sw, int sh, int sgw,
     maximum_absolute_deviaton = 0.5f * pairwise_minimum_of_scanline_time_distances * sample_rate;
     maximum_variance = pown(0.0005f * sample_rate, 2);
 
-    const float vis_seconds = 0.3f;
-    const float bit_seconds = 0.03f;
-    const float ssb_tolerance = 0.9f;
-    vis_length = vis_seconds * sample_rate;
-    bit_length = bit_seconds * sample_rate;
-    ssb_length = ssb_tolerance * bit_seconds * sample_rate;
+    const float vis_ms = 300.0f;
+    const float bit_ms = 30.0f;
+    vis_length = round((vis_ms * sample_rate) / 1000.0f);
+    bit_length = round((bit_ms * sample_rate) / 1000.0f);
+    const float start_bit_tolerance = 0.9f;
+    start_bit_detector = init_pulse(start_bit_tolerance * bit_ms, 0, sample_rate);
 
     const float dat_carrier = 1900.0f;
     const float cnt_carrier = 1200.0f;

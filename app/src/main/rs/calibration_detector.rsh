@@ -19,18 +19,14 @@ limitations under the License.
 
 #include "constants.rsh"
 #include "state.rsh"
+#include "pulse.rsh"
 
 static int calibration_detected(int cnt_quantized)
 {
-    static int ssb_counter;
-    int ssb_level = cnt_quantized == 0;
-    int ssb_pulse = !ssb_level && ssb_counter >= ssb_length;
-    ssb_counter = ssb_level ? ssb_counter + 1 : 0;
-
-    static int bit_pos, vis_pos, vis_code;
+    static int bit_pos = 8, vis_pos, vis_code;
     static int vis_counter, bit_counter;
 
-    if (ssb_pulse) {
+    if (pulse_detected(&start_bit_detector, cnt_quantized == 0)) {
         vis_code = 0;
         bit_pos = 0;
         vis_pos = 2 * bit_length;

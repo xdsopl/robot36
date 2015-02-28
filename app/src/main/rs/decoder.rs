@@ -21,6 +21,7 @@ limitations under the License.
 #include "ema.rsh"
 #include "ddc.rsh"
 #include "fmd.rsh"
+#include "pulse.rsh"
 #include "scanline_estimator.rsh"
 #include "calibration_detector.rsh"
 #include "initialization.rsh"
@@ -39,7 +40,7 @@ void reset_buffer()
     prev_sync_pos = sync_pos = 0;
     buffer_pos = 0;
     seperator_counter = 0;
-    sync_counter = sync_length;
+    fake_pulse(&sync_pulse_detector);
     buffer_cleared = 1;
     for (int i = 0; i < maximum_width * maximum_height; ++i)
         pixel_buffer[i] = rgb(0, 0, 0);
@@ -275,11 +276,10 @@ void decode(int samples) {
         int dat_quantized = round(dat_value);
 
         int sync_level = cnt_active && cnt_quantized == 0;
-        int sync_pulse = !sync_level && sync_counter >= sync_length;
-        sync_counter = sync_level ? sync_counter + 1 : 0;
+        int sync_pulse = pulse_detected(&sync_pulse_detector, sync_level);
         if (sync_pulse) {
             prev_sync_pos = sync_pos;
-            sync_pos = buffer_pos - sync_buildup_length;
+            sync_pos = buffer_pos + trailing_edge_position(&sync_pulse_detector);
         }
 
         static int reset_on_first_sync;

@@ -20,27 +20,24 @@ limitations under the License.
 #include "constants.rsh"
 #include "state.rsh"
 #include "sma.rsh"
+#include "pulse.rsh"
 
 static int scanline_estimator(int sync_level)
 {
-    static int sync_counter;
-    int sync_pulse = !sync_level && sync_counter >= minimum_sync_length;
-    int sync_len = sync_counter;
-    sync_counter = sync_level ? sync_counter + 1 : 0;
-
     static int scanline_counter_5ms, scanline_counter_9ms, scanline_counter_20ms;
     ++scanline_counter_5ms;
     ++scanline_counter_9ms;
     ++scanline_counter_20ms;
 
-    if (!sync_pulse)
-        return -1;
-
     scanline_counter_5ms = scanline_counter_5ms >= buffer_length ? 0 : scanline_counter_5ms;
     scanline_counter_9ms = scanline_counter_9ms >= buffer_length ? 0 : scanline_counter_9ms;
     scanline_counter_20ms = scanline_counter_20ms >= buffer_length ? 0 : scanline_counter_20ms;
 
-    if (sync_len >= min_sync_length_20ms) {
+    int sync_pulse_5ms = pulse_detected(&sync_pulse_detector_5ms, sync_level);
+    int sync_pulse_9ms = pulse_detected(&sync_pulse_detector_9ms, sync_level);
+    int sync_pulse_20ms = pulse_detected(&sync_pulse_detector_20ms, sync_level);
+
+    if (sync_pulse_20ms) {
         static sma_t sma;
         sma_add(&sma, scanline_counter_20ms);
         scanline_counter_20ms = 0;
@@ -85,7 +82,7 @@ static int scanline_estimator(int sync_level)
             return mode_pd240;
         else if (min_adev == pd290_adev)
             return mode_pd290;
-    } else if (sync_len >= min_sync_length_9ms) {
+    } else if (sync_pulse_9ms) {
         static sma_t sma;
         sma_add(&sma, scanline_counter_9ms);
         scanline_counter_9ms = 0;
@@ -121,7 +118,7 @@ static int scanline_estimator(int sync_level)
             return mode_scottie2;
         else if (min_adev == scottieDX_adev)
             return mode_scottieDX;
-    } else if (sync_len >= min_sync_length_5ms) {
+    } else if (sync_pulse_5ms) {
         static sma_t sma;
         sma_add(&sma, scanline_counter_5ms);
         scanline_counter_5ms = 0;

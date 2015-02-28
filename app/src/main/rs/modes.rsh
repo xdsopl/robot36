@@ -33,7 +33,7 @@ void raw_mode()
     freerun_height = maximum_height;
     bitmap_width = maximum_width;
     bitmap_height = maximum_height;
-    sync_length = minimum_sync_length;
+    sync_pulse_detector = init_pulse(2.0f, sync_buildup_ms, sample_rate);
     minimum_length = 0.05f * sample_rate;
     maximum_length = buffer_length;
     scanline_length = maximum_length;
@@ -55,7 +55,7 @@ void robot36_mode()
     const float uv_scan_ms = 44.0f;
     const float seperator_ms = 4.5f;
     seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+    sync_pulse_detector = init_pulse(tolerance * sync_ms, sync_buildup_ms, sample_rate);
 
     float y_begin_ms = sync_porch_ms;
     float y_end_ms = y_begin_ms + y_scan_ms;
@@ -92,7 +92,7 @@ void robot72_mode()
     const float uv_scan_ms = 69.0f;
     const float seperator_ms = 4.5f;
     seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+    sync_pulse_detector = init_pulse(tolerance * sync_ms, sync_buildup_ms, sample_rate);
 
     float y_begin_ms = sync_porch_ms;
     float y_end_ms = y_begin_ms + y_scan_ms;
@@ -132,7 +132,7 @@ static void pd_mode(int mode, int scanline, int blur, float yuv_scan_ms, int wid
     const float tolerance = 0.8f;
     const float sync_ms = 20.0f;
     const float porch_ms = 2.08f;
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+    sync_pulse_detector = init_pulse(tolerance * sync_ms, sync_buildup_ms, sample_rate);
 
     float y_even_begin_ms = porch_ms;
     float y_even_end_ms = y_even_begin_ms + yuv_scan_ms;
@@ -177,7 +177,7 @@ static void martin_mode(int mode, int scanline, int blur, float rgb_scan_ms)
     const float sync_porch_ms = 0.572f;
     const float seperator_ms = 0.572f;
     seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+    sync_pulse_detector = init_pulse(tolerance * sync_ms, sync_buildup_ms, sample_rate);
 
     float g_begin_ms = sync_porch_ms;
     float g_end_ms = g_begin_ms + rgb_scan_ms;
@@ -213,7 +213,7 @@ static void scottie_mode(int mode, int scanline, int blur, float rgb_scan_ms)
     const float sync_porch_ms = 1.5f;
     const float seperator_ms = 1.5f;
     seperator_length = round((seperator_ms * sample_rate) / 1000.0f);
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+    sync_pulse_detector = init_pulse(tolerance * sync_ms, sync_buildup_ms, sample_rate);
 
     float r_begin_ms = sync_porch_ms;
     float r_end_ms = r_begin_ms + rgb_scan_ms;
@@ -249,7 +249,7 @@ void wraaseSC2_180_mode()
     const float sync_ms = 5.5225f;
     const float sync_porch_ms = 0.5f;
     const float rgb_scan_ms = 235.0f;
-    sync_length = tolerance * (sync_ms * sample_rate) / 1000.0f;
+    sync_pulse_detector = init_pulse(tolerance * sync_ms, sync_buildup_ms, sample_rate);
 
     float r_begin_ms = sync_porch_ms;
     float r_end_ms = r_begin_ms + rgb_scan_ms;
