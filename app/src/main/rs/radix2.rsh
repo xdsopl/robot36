@@ -42,11 +42,11 @@ static void radix2(complex_t *out, float *in, int N, int S, int L)
     for (int k = 0; k < N / 2; ++k) {
         int ke = k;
         int ko = k + N / 2;
-        complex_t even = out[ke];
-        complex_t odd = out[ko];
         complex_t w = radix2_z[k << L];
-        out[ke] = even + cmul(w, odd);
-        out[ko] = even - cmul(w, odd);
+        complex_t even = out[ke];
+        complex_t odd = cmul(w, out[ko]);
+        out[ke] = even + odd;
+        out[ko] = even - odd;
     }
 }
 
