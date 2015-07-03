@@ -22,18 +22,20 @@ limitations under the License.
 
 static void radix2(complex_t *out, float *in, int N, int S, int L)
 {
-    // we only need 4 <= N FFTs
+    // we only need 4 <= N forward FFTs
     if (N == 4) {
-            float a = in[0] + in[2 * S];
-            float b = in[0] - in[2 * S];
-            float c = in[S] + in[3 * S];
-            float d = in[S] - in[3 * S];
-            complex_t e = d * radix2_z[1 << L];
-            out[0] = complex(a + c, 0.0f);
-            out[1] = complex(b, 0.0f) + e;
-            out[2] = complex(a - c, 0.0f);
-            out[3] = complex(b, 0.0f) - e;
-            return;
+        float in0 = in[0];
+        float in1 = in[S];
+        float in2 = in[2 * S];
+        float in3 = in[3 * S];
+        float a = in0 + in2;
+        float b = in0 - in2;
+        float c = in1 + in3;
+        out[0] = complex(a + c, 0.0f);
+        out[1] = complex(b, in3 - in1);
+        out[2] = complex(a - c, 0.0f);
+        out[3] = complex(b, in1 - in3);
+        return;
     }
     radix2(out, in, N / 2, 2 * S, L + 1);
     radix2(out + N / 2, in + S, N / 2, 2 * S, L + 1);
