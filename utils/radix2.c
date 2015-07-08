@@ -27,7 +27,7 @@ int main()
 	printf("static const complex_t radix2_z[%d] = {\n", N / 2);
 	for (int n = 0; n < N / 2; n++) {
 		complex double z = cexp(dir * I * n * 2.0 * M_PI / N);
-		printf("\t{ %g, %g }%s\n", creal(z), cimag(z), n < (N/2-1) ? "," : "");
+		printf("\t{ %a, %a }%s\n", creal(z), cimag(z), n < (N/2-1) ? "," : "");
 	}
 	printf("};\n");
 	return 0;

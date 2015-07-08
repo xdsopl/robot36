@@ -34,7 +34,7 @@ int main()
 	for (int n = 0; n < N; n++)
 		sum += gauss(n, N|1, o);
 	for (int n = 0; n < N; n++) {
-		printf("\t%g%s\n", gauss(n, N|1, o) / sum, n < (N-1) ? "," : "");
+		printf("\t%a%s\n", gauss(n, N|1, o) / sum, n < (N-1) ? "," : "");
 	}
 	printf("};\n");
 	return 0;
