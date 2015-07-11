@@ -34,6 +34,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -136,14 +137,25 @@ public class MainActivity extends Activity {
         startDecoder();
     }
 
+    private void updateMenuButtons() {
+        if (menu != null) {
+            if (decoder != null) {
+                menu.findItem(R.id.action_toggle_decoder).setIcon(ContextCompat.getDrawable(this, android.R.drawable.ic_media_pause));
+                menu.setGroupEnabled(R.id.group_decoder, true);
+            } else {
+                menu.findItem(R.id.action_toggle_decoder).setIcon(ContextCompat.getDrawable(this, android.R.drawable.ic_media_play));
+                menu.setGroupEnabled(R.id.group_decoder, false);
+            }
+        }
+    }
+
     protected void stopDecoder() {
         if (decoder == null)
             return;
         decoder.destroy();
         decoder = null;
         manager.cancel(notifyID);
-        menu.findItem(R.id.action_toggle_decoder).setIcon(getResources().getDrawable(android.R.drawable.ic_media_play));
-        menu.setGroupEnabled(R.id.group_decoder, false);
+        updateMenuButtons();
     }
 
     private Intent createEmailIntent(final String subject, final String text) {
@@ -180,16 +192,12 @@ public class MainActivity extends Activity {
                     (ImageView) findViewById(R.id.image),
                     (VUMeterView) findViewById(R.id.meter)
             );
+            decoder.enable_analyzer(enableAnalyzer);
+            showNotification();
         } catch (Exception e) {
             showErrorMessage(getString(R.string.decoder_error), e.getMessage(), Log.getStackTraceString(e));
-            return;
         }
-        decoder.enable_analyzer(enableAnalyzer);
-        showNotification();
-        if (menu != null) {
-            menu.findItem(R.id.action_toggle_decoder).setIcon(getResources().getDrawable(android.R.drawable.ic_media_pause));
-            menu.setGroupEnabled(R.id.group_decoder, true);
-        }
+        updateMenuButtons();
     }
 
     protected void toggleDecoder() {
@@ -223,10 +231,7 @@ public class MainActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         this.menu = menu;
-        if (decoder != null) {
-            menu.findItem(R.id.action_toggle_decoder).setIcon(getResources().getDrawable(android.R.drawable.ic_media_pause));
-            menu.setGroupEnabled(R.id.group_decoder, true);
-        }
+        updateMenuButtons();
         share = (ShareActionProvider)menu.findItem(R.id.menu_item_share).getActionProvider();
         return true;
     }
