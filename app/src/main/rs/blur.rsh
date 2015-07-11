@@ -23,7 +23,7 @@ limitations under the License.
 
 void adjust_blur(int blur)
 {
-    user_blur = clamp(blur, -3, 3);
+    user_blur = min(max(blur, -3), 3);
 }
 
 #endif
