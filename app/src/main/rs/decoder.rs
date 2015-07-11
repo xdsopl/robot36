@@ -16,6 +16,7 @@ limitations under the License.
 
 #pragma version(1)
 #pragma rs java_package_name(xdsopl.robot36)
+#pragma rs_fp_relaxed
 
 #include "complex.rsh"
 #include "ema.rsh"
