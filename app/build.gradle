@@ -8,8 +8,8 @@ android {
         applicationId "xdsopl.robot36"
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 29
-        versionName "1.28"
+        versionCode 30
+        versionName "1.29"
         renderscriptTargetApi 18
         renderscriptSupportModeEnabled true
     }
