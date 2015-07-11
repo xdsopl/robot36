@@ -2,25 +2,26 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity">
-    <item
-        android:id="@+id/menu_item_share"
-        android:showAsAction="always"
-        android:title="@string/action_share"
-        android:actionProviderClass="android.widget.ShareActionProvider" />
-
-    <item
-        android:id="@+id/action_save_image"
-        android:title="@string/action_save_image"
-        android:icon="@android:drawable/ic_menu_save"
-        android:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_toggle_decoder"
         android:title="@string/action_toggle_decoder"
-        android:icon="@android:drawable/ic_media_pause"
+        android:icon="@android:drawable/ic_media_play"
         android:showAsAction="ifRoom" />
 
-    <group android:id="@+id/group_decoder">
+    <group android:id="@+id/group_decoder" android:enabled="false">
+        <item
+            android:id="@+id/menu_item_share"
+            android:showAsAction="always"
+            android:title="@string/action_share"
+            android:actionProviderClass="android.widget.ShareActionProvider" />
+
+        <item
+            android:id="@+id/action_save_image"
+            android:title="@string/action_save_image"
+            android:icon="@android:drawable/ic_menu_save"
+            android:showAsAction="ifRoom" />
+
         <item
             android:id="@+id/action_clear_image"
             android:title="@string/action_clear_image"

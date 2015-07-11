@@ -50,4 +50,10 @@
     <string name="martin_modes">Martin Modes</string>
     <string name="scottie_modes">Scottie Modes</string>
     <string name="wraase_modes">Wraase Modes</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_send_email">Send Email</string>
+    <string name="email_subject">[BUG] Robot36 - SSTV Image Decoder</string>
+    <string name="chooser_title">Send Bug Report:</string>
+    <string name="email_address">xdsopl@googlemail.com</string>
+    <string name="decoder_error">Decoder error</string>
 </resources>

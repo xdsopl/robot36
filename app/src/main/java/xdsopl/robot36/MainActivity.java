@@ -18,11 +18,13 @@ limitations under the License.
 package xdsopl.robot36;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -143,15 +145,51 @@ public class MainActivity extends Activity {
         menu.setGroupEnabled(R.id.group_decoder, false);
     }
 
+    private Intent createEmailIntent(final String subject, final String text) {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/email");
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{ getString(R.string.email_address) });
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        return intent;
+    }
+
+    private void showErrorMessage(final String title, final String shortText, final String longText) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title);
+        builder.setMessage(shortText);
+        builder.setNeutralButton(getString(R.string.btn_ok), null);
+        builder.setPositiveButton(getString(R.string.btn_send_email), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = createEmailIntent(getString(R.string.email_subject), longText);
+                startActivity(Intent.createChooser(intent, getString(R.string.chooser_title)));
+            }
+        });
+        builder.show();
+    }
+
+    private String createMessage(Exception ex) {
+        String message = ex.getMessage() + "\n";
+        for (StackTraceElement el : ex.getStackTrace())
+            message += "\n" + el.toString();
+        return message;
+    }
+
     protected void startDecoder() {
         if (decoder != null)
             return;
-        decoder = new Decoder(this,
-                (SpectrumView)findViewById(R.id.spectrum),
-                (SpectrumView)findViewById(R.id.spectrogram),
-                (ImageView)findViewById(R.id.image),
-                (VUMeterView)findViewById(R.id.meter)
-        );
+        try {
+            decoder = new Decoder(this,
+                    (SpectrumView) findViewById(R.id.spectrum),
+                    (SpectrumView) findViewById(R.id.spectrogram),
+                    (ImageView) findViewById(R.id.image),
+                    (VUMeterView) findViewById(R.id.meter)
+            );
+        } catch (Exception e) {
+            showErrorMessage(getString(R.string.decoder_error), e.getMessage(), createMessage(e));
+            return;
+        }
         decoder.enable_analyzer(enableAnalyzer);
         showNotification();
         if (menu != null) {
@@ -191,6 +229,10 @@ public class MainActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         this.menu = menu;
+        if (decoder != null) {
+            menu.findItem(R.id.action_toggle_decoder).setIcon(getResources().getDrawable(android.R.drawable.ic_media_pause));
+            menu.setGroupEnabled(R.id.group_decoder, true);
+        }
         share = (ShareActionProvider)menu.findItem(R.id.menu_item_share).getActionProvider();
         return true;
     }

@@ -50,4 +50,8 @@
     <string name="martin_modes">Martin Modi</string>
     <string name="scottie_modes">Scottie Modi</string>
     <string name="wraase_modes">Wraase Modi</string>
+    <string name="btn_ok">Ok</string>
+    <string name="btn_send_email">Email senden</string>
+    <string name="chooser_title">Fehlermeldung senden:</string>
+    <string name="decoder_error">Dekodierer Fehler</string>
 </resources>

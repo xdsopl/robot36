@@ -101,7 +101,7 @@ public class Decoder {
         }
     };
 
-    public Decoder(MainActivity activity, SpectrumView spectrum, SpectrumView spectrogram, ImageView image, VUMeterView meter) {
+    public Decoder(MainActivity activity, SpectrumView spectrum, SpectrumView spectrogram, ImageView image, VUMeterView meter) throws Exception {
         this.image = image;
         this.spectrogram = spectrogram;
         this.spectrum = spectrum;
@@ -112,6 +112,8 @@ public class Decoder {
         spectrogramBuffer = new int[spectrogram.bitmap.getWidth() * spectrogram.bitmap.getHeight()];
 
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
+        if (bufferSizeInBytes <= 0)
+            throw new Exception("Unable to open audio with " + sampleRate + "Hz samplerate");
         int bufferSizeInSamples = bufferSizeInBytes / 2;
         int framesPerSecond = Math.max(1, sampleRate / bufferSizeInSamples);
         audioBuffer = new short[framesPerSecond * bufferSizeInSamples];
