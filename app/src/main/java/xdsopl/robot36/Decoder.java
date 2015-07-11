@@ -113,13 +113,17 @@ public class Decoder {
 
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
         if (bufferSizeInBytes <= 0)
-            throw new Exception("Unable to open audio with " + sampleRate + "Hz samplerate");
+            throw new Exception("Unable to open audio with " + sampleRate + "Hz samplerate.");
         int bufferSizeInSamples = bufferSizeInBytes / 2;
         int framesPerSecond = Math.max(1, sampleRate / bufferSizeInSamples);
         audioBuffer = new short[framesPerSecond * bufferSizeInSamples];
         audio = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, audioBuffer.length * 2);
         audio.startRecording();
-
+        if (audio.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+            audio.stop();
+            audio.release();
+            throw new Exception("Unable to start recording.\nMaybe another app is recording?");
+        }
         int minValueBufferLength = 2 * sampleRate;
         int valueBufferLength = Integer.highestOneBit(minValueBufferLength);
         if (minValueBufferLength > valueBufferLength)
