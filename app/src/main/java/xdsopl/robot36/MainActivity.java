@@ -34,6 +34,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -169,13 +170,6 @@ public class MainActivity extends Activity {
         builder.show();
     }
 
-    private String createMessage(Exception ex) {
-        String message = ex.getMessage() + "\n";
-        for (StackTraceElement el : ex.getStackTrace())
-            message += "\n" + el.toString();
-        return message;
-    }
-
     protected void startDecoder() {
         if (decoder != null)
             return;
@@ -187,7 +181,7 @@ public class MainActivity extends Activity {
                     (VUMeterView) findViewById(R.id.meter)
             );
         } catch (Exception e) {
-            showErrorMessage(getString(R.string.decoder_error), e.getMessage(), createMessage(e));
+            showErrorMessage(getString(R.string.decoder_error), e.getMessage(), Log.getStackTraceString(e));
             return;
         }
         decoder.enable_analyzer(enableAnalyzer);
