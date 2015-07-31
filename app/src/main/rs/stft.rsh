@@ -136,7 +136,7 @@ static void spectrum_analyzer(int amplitude)
         for (int i = 0; i < stft_N; ++i)
             input[i&(radix2_N-1)] += stft_w[i] * buffer[(i+n)&(stft_N-1)];
         // yep, were wasting 2x performance
-        radix2(output, input, radix2_N, 1, 0);
+        radix2(output, input, radix2_N, 1);
         for (int i = 0; i < radix2_N; ++i)
             input[i] = 0.0f;
         for (int j = spectrogram_height - 1; 0 < j; --j)
