@@ -30,5 +30,20 @@ int main()
 		printf("\t{ %a, %a }%s\n", creal(z), cimag(z), n < (N/2-1) ? "," : "");
 	}
 	printf("};\n");
+	printf("static inline void dit4(complex_t *out, float *in)\n{\n");
+	printf("\tfwd4(out, out + 1, out + 2, out + 3, in[0], in[%i], in[%i], in[%i]);\n}\n", N / 4, N / 2, 3 * N / 4);
+	for (int n = 4, s = N / 8; n < N; n *= 2, s /= 2) {
+		printf("static void ");
+		if (n < N / 2)
+			printf("dit%i", n * 2);
+		else
+			printf("forward");
+		printf("(complex_t *out, float *in)\n{\n");
+		printf("\tdit%i(out, in);\n", n);
+		printf("\tdit%i(out + %i, in + %i);\n", n, n, s);
+		printf("\tfor (int k0 = 0, k1 = %i, l1 = 0; k0 < %i; ++k0, ++k1, l1 += %i)\n", n, n, s);
+		printf("\t\tdft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));\n");
+		printf("}\n");
+	}
 	return 0;
 }

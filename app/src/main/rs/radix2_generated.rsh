@@ -258,3 +258,56 @@ static const complex_t radix2_z[256] = {
 	{ -0x1.ffd886084cd0dp-1, -0x1.92155f7a36689p-6 },
 	{ -0x1.fff62169b92dbp-1, -0x1.921d1fcdec7b3p-7 }
 };
+static inline void dit4(complex_t *out, float *in)
+{
+	fwd4(out, out + 1, out + 2, out + 3, in[0], in[128], in[256], in[384]);
+}
+static void dit8(complex_t *out, float *in)
+{
+	dit4(out, in);
+	dit4(out + 4, in + 64);
+	for (int k0 = 0, k1 = 4, l1 = 0; k0 < 4; ++k0, ++k1, l1 += 64)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}
+static void dit16(complex_t *out, float *in)
+{
+	dit8(out, in);
+	dit8(out + 8, in + 32);
+	for (int k0 = 0, k1 = 8, l1 = 0; k0 < 8; ++k0, ++k1, l1 += 32)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}
+static void dit32(complex_t *out, float *in)
+{
+	dit16(out, in);
+	dit16(out + 16, in + 16);
+	for (int k0 = 0, k1 = 16, l1 = 0; k0 < 16; ++k0, ++k1, l1 += 16)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}
+static void dit64(complex_t *out, float *in)
+{
+	dit32(out, in);
+	dit32(out + 32, in + 8);
+	for (int k0 = 0, k1 = 32, l1 = 0; k0 < 32; ++k0, ++k1, l1 += 8)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}
+static void dit128(complex_t *out, float *in)
+{
+	dit64(out, in);
+	dit64(out + 64, in + 4);
+	for (int k0 = 0, k1 = 64, l1 = 0; k0 < 64; ++k0, ++k1, l1 += 4)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}
+static void dit256(complex_t *out, float *in)
+{
+	dit128(out, in);
+	dit128(out + 128, in + 2);
+	for (int k0 = 0, k1 = 128, l1 = 0; k0 < 128; ++k0, ++k1, l1 += 2)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}
+static void forward(complex_t *out, float *in)
+{
+	dit256(out, in);
+	dit256(out + 256, in + 1);
+	for (int k0 = 0, k1 = 256, l1 = 0; k0 < 256; ++k0, ++k1, l1 += 1)
+		dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
+}

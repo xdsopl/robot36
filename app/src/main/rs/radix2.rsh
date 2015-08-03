@@ -18,7 +18,6 @@ limitations under the License.
 #define RADIX2_RSH
 
 #include "complex.rsh"
-#include "radix2_generated.rsh"
 
 static inline void dft2(complex_t *out0, complex_t *out1, complex_t in0, complex_t in1)
 {
@@ -38,17 +37,6 @@ static inline void fwd4(complex_t *out0, complex_t *out1, complex_t *out2, compl
         *out3 = complex(b, in1 - in3);
 }
 
-static void radix2(complex_t *out, float *in, int N, int S)
-{
-    // we only need 4 <= N forward FFTs
-    if (N == 4) {
-        fwd4(out, out + 1, out + 2, out + 3, in[0], in[S], in[2 * S], in[3 * S]);
-        return;
-    }
-    radix2(out, in, N / 2, 2 * S);
-    radix2(out + N / 2, in + S, N / 2, 2 * S);
-    for (int k0 = 0, k1 = N / 2, l1 = 0; k0 < N / 2; ++k0, ++k1, l1 += S)
-        dft2(out + k0, out + k1, out[k0], cmul(radix2_z[l1], out[k1]));
-}
+#include "radix2_generated.rsh"
 
 #endif
