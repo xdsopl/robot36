@@ -20,9 +20,11 @@ import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.support.v8.renderscript.Allocation;
 import android.support.v8.renderscript.Element;
 import android.support.v8.renderscript.RenderScript;
+import android.util.Log;
 
 public class Decoder {
     private boolean drawImage = true, quitThread = false;
@@ -36,7 +38,8 @@ public class Decoder {
     private final int audioSource = MediaRecorder.AudioSource.MIC;
     private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
     private final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
-    private final int sampleRate = 44100;
+    private final int[] sampleRates = { 44100, 48000, 22050, 16000, 11025, 8000 };
+    private final int sampleRate;
     private final int maxHeight = freeRunReserve(616);
     private final int maxWidth = 800;
     private final short[] audioBuffer;
@@ -111,13 +114,33 @@ public class Decoder {
         spectrumBuffer = new int[spectrum.bitmap.getWidth() * spectrum.bitmap.getHeight()];
         spectrogramBuffer = new int[spectrogram.bitmap.getWidth() * spectrogram.bitmap.getHeight()];
 
-        int bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
-        if (bufferSizeInBytes <= 0)
-            throw new Exception("Unable to open audio with " + sampleRate + "Hz samplerate.");
-        int bufferSizeInSamples = bufferSizeInBytes / 2;
-        int framesPerSecond = Math.max(1, sampleRate / bufferSizeInSamples);
-        audioBuffer = new short[framesPerSecond * bufferSizeInSamples];
-        audio = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, audioBuffer.length * 2);
+        short[] tmpBuffer = null;
+        AudioRecord tmpAudio = null;
+        int tmpRate = -1;
+        for (int testRate : sampleRates) {
+            int bufferSizeInBytes = AudioRecord.getMinBufferSize(testRate, channelConfig, audioFormat);
+            if (bufferSizeInBytes <= 0)
+                continue;
+            int bufferSizeInSamples = bufferSizeInBytes / 2;
+            int framesPerSecond = Math.max(1, testRate / bufferSizeInSamples);
+            tmpBuffer = new short[framesPerSecond * bufferSizeInSamples];
+            try {
+                tmpAudio = new AudioRecord(audioSource, testRate, channelConfig, audioFormat, tmpBuffer.length * 2);
+                if (tmpAudio.getState() == AudioRecord.STATE_INITIALIZED) {
+                    tmpRate = testRate;
+                    break;
+                }
+                tmpAudio.release();
+            } catch (IllegalArgumentException ignore) {
+            }
+            tmpAudio = null;
+            tmpBuffer = null;
+        }
+        if (tmpAudio == null)
+            throw new Exception("Unable to open audio.\nPlease send a bug report.");
+        sampleRate = tmpRate;
+        audioBuffer = tmpBuffer;
+        audio = tmpAudio;
         audio.startRecording();
         if (audio.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
             audio.stop();
