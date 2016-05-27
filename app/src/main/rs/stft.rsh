@@ -102,7 +102,7 @@ static void draw_line(int x0, int y0, int x1, int y1)
 
 static void spectrum_analyzer(int amplitude)
 {
-    const int M = 7;
+    int M = (sample_rate + 3000) / 6000;
     static int n, m;
     static int buffer[stft_N];
     static float input[radix2_N];
@@ -110,25 +110,26 @@ static void spectrum_analyzer(int amplitude)
 
     if (disable_analyzer)
         return;
-
+    if (M > 1) {
 #if 1
-    const int order = 5;
-    const int gain = pown(M, order);
-    static cic_t cascade[order];
-    int tmp = cic_int_cascade(cascade, amplitude, order);
-    if (++m < M)
-        return;
-    m = 0;
-    amplitude = cic_comb_cascade(cascade, tmp, order) / gain;
+        const int order = 5;
+        const int gain = pown(M, order);
+        static cic_t cascade[order];
+        int tmp = cic_int_cascade(cascade, amplitude, order);
+        if (++m < M)
+            return;
+        m = 0;
+        amplitude = cic_comb_cascade(cascade, tmp, order) / gain;
 #else
-    static int sum;
-    sum += amplitude;
-    if (++m < M)
-        return;
-    m = 0;
-    amplitude = sum / M;
-    sum = 0;
+        static int sum;
+        sum += amplitude;
+        if (++m < M)
+            return;
+        m = 0;
+        amplitude = sum / M;
+        sum = 0;
 #endif
+    }
 
     buffer[n] = amplitude;
     if (!(++n&(radix2_N-1))) {
