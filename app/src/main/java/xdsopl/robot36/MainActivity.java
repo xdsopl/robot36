@@ -17,6 +17,7 @@ limitations under the License.
 
 package xdsopl.robot36;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
@@ -26,6 +27,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -34,6 +36,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -49,7 +52,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends Activity {
     private Decoder decoder;
@@ -58,6 +63,7 @@ public class MainActivity extends Activity {
     private NotificationManager manager;
     private ShareActionProvider share;
     private int notifyID = 1;
+    private int permissionsID = 2;
     private boolean enableAnalyzer = true;
     private Menu menu;
 
@@ -184,8 +190,32 @@ public class MainActivity extends Activity {
         builder.show();
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        if (requestCode != permissionsID)
+            return;
+        for (int result : grantResults)
+            if (result != PackageManager.PERMISSION_GRANTED)
+                return;
+        startDecoder();
+    }
+
+    private boolean permissionsGranted() {
+        List<String> permissions = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.RECORD_AUDIO);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (permissions.isEmpty())
+            return true;
+        ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), permissionsID);
+        return false;
+    }
+
     protected void startDecoder() {
         if (decoder != null)
+            return;
+        if (!permissionsGranted())
             return;
         try {
             decoder = new Decoder(this,
@@ -196,10 +226,10 @@ public class MainActivity extends Activity {
             );
             decoder.enable_analyzer(enableAnalyzer);
             showNotification();
+            updateMenuButtons();
         } catch (Exception e) {
             showErrorMessage(getString(R.string.decoder_error), e.getMessage(), Log.getStackTraceString(e));
         }
-        updateMenuButtons();
     }
 
     protected void toggleDecoder() {
