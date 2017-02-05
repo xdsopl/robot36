@@ -191,6 +191,14 @@ public class MainActivity extends Activity {
         builder.show();
     }
 
+    private void showPrivacyPolicy() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.privacy_policy));
+        builder.setMessage(getString(R.string.privacy_policy_text));
+        builder.setNeutralButton(getString(R.string.btn_ok), null);
+        builder.show();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         if (requestCode != permissionsID)
@@ -397,6 +405,9 @@ public class MainActivity extends Activity {
                 return true;
             case R.id.action_pd290_mode:
                 decoder.pd290_mode();
+                return true;
+            case R.id.action_privacy_policy:
+                showPrivacyPolicy();
                 return true;
         }
         return super.onOptionsItemSelected(item);

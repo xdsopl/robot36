@@ -54,4 +54,10 @@
     <string name="btn_send_email">Send Email</string>
     <string name="chooser_title">Send Bug Report:</string>
     <string name="decoder_error">Decoder error</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="privacy_policy_text">To be able to decode SSTV encoded images the app needs access to the microphone.
+Having access to the microphone is considered to be a sensitive permission and you have the right to know what the app does with that access:
+The data recorded from the microphone is only used to fed the SSTV decoder, VU meter and the spectrum analyzer for visualization of its frequency content.
+The app uses a very small temporary buffer in volatile memory and constantly overwrites this buffer with new data from the microphone.
+The resulting images from the SSTV decoder is the only data that gets stored in persistent storage on your Android device.</string>
 </resources>

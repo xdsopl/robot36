@@ -54,4 +54,10 @@
     <string name="btn_send_email">Email senden</string>
     <string name="chooser_title">Fehlermeldung senden:</string>
     <string name="decoder_error">Dekodierer Fehler</string>
+    <string name="privacy_policy">Datenschutz-Bestimmungen</string>
+    <string name="privacy_policy_text">Um SSTV-kodierte Bilder dekodieren zu können, braucht diese App Zugriff auf das Mikrofon.
+Der Zugriff auf das Mikrofon gilt als eine sensible Berechtigung und Sie haben das Recht zu wissen, was die App mit diesem Zugriff macht:
+Die vom Mikrofon aufgenommenen Daten werden nur zur Speisung des SSTV-Dekodierers, des Aussteuerungsmessers und des Spektrumanalysators zur Visualisierung seines Frequenzinhalts verwendet.
+Die App verwendet einen sehr kleinen temporären Puffer im flüchtigen Speicher und überschreibt diesen Puffer ständig mit neuen Daten aus dem Mikrofon.
+Die resultierenden Bilder aus dem SSTV-Dekodierer sind die einzigen Daten, die im persistenten Speicher auf Ihrem Android-Gerät gespeichert werden.</string>
 </resources>

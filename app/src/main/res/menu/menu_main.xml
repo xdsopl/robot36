@@ -81,4 +81,5 @@
         <item android:id="@+id/action_toggle_scaling" android:title="@string/action_toggle_scaling" />
         <item android:id="@+id/action_toggle_analyzer" android:title="@string/action_toggle_analyzer" />
     </group>
+    <item android:id="@+id/action_privacy_policy" android:title="@string/privacy_policy" />
 </menu>
