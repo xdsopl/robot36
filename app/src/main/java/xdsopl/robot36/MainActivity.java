@@ -18,7 +18,6 @@ limitations under the License.
 package xdsopl.robot36;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -39,13 +38,15 @@ import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.ShareActionProvider;
 import android.widget.Toast;
 
 import java.io.File;
@@ -56,7 +57,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     private Decoder decoder;
     private ImageView image;
     private Bitmap bitmap;
@@ -273,7 +274,8 @@ public class MainActivity extends Activity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         this.menu = menu;
         updateMenuButtons();
-        share = (ShareActionProvider)menu.findItem(R.id.menu_item_share).getActionProvider();
+        MenuItem item = menu.findItem(R.id.menu_item_share);
+        share = (ShareActionProvider)MenuItemCompat.getActionProvider(item);
         return true;
     }
 
