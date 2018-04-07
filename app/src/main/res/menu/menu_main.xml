@@ -8,7 +8,7 @@
         android:id="@+id/action_toggle_decoder"
         android:title="@string/action_toggle_decoder"
         android:icon="@android:drawable/ic_media_play"
-        support:showAsAction="ifRoom" />
+        support:showAsAction="always" />
 
     <group android:id="@+id/group_decoder" android:enabled="false">
         <item
@@ -21,13 +21,13 @@
             android:id="@+id/action_save_image"
             android:title="@string/action_save_image"
             android:icon="@android:drawable/ic_menu_save"
-            support:showAsAction="ifRoom" />
+            support:showAsAction="always" />
 
         <item
             android:id="@+id/action_clear_image"
             android:title="@string/action_clear_image"
             android:icon="@android:drawable/ic_menu_close_clear_cancel"
-            support:showAsAction="ifRoom" />
+            support:showAsAction="always" />
 
         <item android:title="@string/image_sharpness"><menu>
             <item android:id="@+id/action_sharpest_image" android:title="@string/action_sharpest_image" />
