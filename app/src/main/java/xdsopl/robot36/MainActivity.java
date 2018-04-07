@@ -19,6 +19,7 @@ package xdsopl.robot36;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
@@ -65,13 +66,22 @@ public class MainActivity extends AppCompatActivity {
     private ShareActionProvider share;
     private int notifyID = 1;
     private int permissionsID = 2;
+    private static final String channelID = "Robot36";
     private boolean enableAnalyzer = true;
     private Menu menu;
 
     private void showNotification() {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pending = PendingIntent.getActivity(this, 0, intent, 0);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "Robot36")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = manager.getNotificationChannel(channelID);
+            if (channel == null) {
+                channel = new NotificationChannel(channelID, getString(R.string.app_name), NotificationManager.IMPORTANCE_LOW);
+                channel.setDescription(getString(R.string.decoder_running));
+                manager.createNotificationChannel(channel);
+            }
+        }
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelID)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
             .setContentTitle(getString(R.string.app_name))
