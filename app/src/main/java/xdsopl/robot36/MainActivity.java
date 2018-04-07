@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private void showNotification() {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pending = PendingIntent.getActivity(this, 0, intent, 0);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "Robot36")
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
             .setContentTitle(getString(R.string.app_name))
