@@ -43,7 +43,10 @@ static int sma_mean(sma_t *sma)
 
 static int sma_variance(sma_t *sma)
 {
-    return min(0x7fffffff, (sma_N * sma->sum_x2 - sma->sum_x * sma->sum_x) / (sma_N * (sma_N - 1)));
+    int64_t var = (sma_N * sma->sum_x2 - sma->sum_x * sma->sum_x) / (sma_N * (sma_N - 1));
+    if (var > 0x7fffffff)
+        var = 0x7fffffff;
+    return var;
 }
 
 #endif
