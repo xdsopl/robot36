@@ -15,7 +15,7 @@
             android:id="@+id/menu_item_share"
             support:showAsAction="always"
             android:title="@string/action_share"
-            support:actionProviderClass="android.support.v7.widget.ShareActionProvider" />
+            support:actionProviderClass="androidx.appcompat.widget.ShareActionProvider" />
 
         <item
             android:id="@+id/action_save_image"
