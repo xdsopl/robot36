@@ -35,6 +35,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -109,36 +110,67 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 Date date = new Date();
-                String name = new SimpleDateFormat("yyyyMMdd_HHmmss_").format(date);
-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-                if (!dir.exists())
-                    dir.mkdirs();
-                File file;
-                FileOutputStream stream;
-                try {
-                    file = File.createTempFile(name, ".png", dir);
-                    stream = new FileOutputStream(file);
-                } catch (IOException ignore) {
-                    return;
-                }
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                try {
-                    stream.close();
-                } catch (IOException ignore) {
-                    return;
-                }
+                String name = new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
                 String title = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
                 ContentValues values = new ContentValues();
-                values.put(MediaStore.Images.ImageColumns.DATA, file.toString());
+                File dir;
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                    dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                    if (!dir.exists())
+                        dir.mkdirs();
+                    File file;
+                    try {
+                        file = File.createTempFile(name + "_", ".png", dir);
+                        name = file.getName();
+                    } catch (IOException ignore) {
+                        return;
+                    }
+                    FileOutputStream stream;
+                    try {
+                        stream = new FileOutputStream(file);
+                    } catch (IOException ignore) {
+                        return;
+                    }
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    try {
+                        stream.close();
+                    } catch (IOException ignore) {
+                        return;
+                    }
+                    values.put(MediaStore.Images.ImageColumns.DATA, file.toString());
+                } else {
+                    name += ".png";
+                    values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+                    values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/");
+                    values.put(MediaStore.Images.Media.IS_PENDING, 1);
+                }
                 values.put(MediaStore.Images.ImageColumns.TITLE, title);
                 values.put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/png");
                 ContentResolver resolver = getContentResolver();
                 Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    FileOutputStream stream;
+                    try {
+                        ParcelFileDescriptor descriptor = getContentResolver().openFileDescriptor(uri,"w");
+                        stream = new FileOutputStream(descriptor.getFileDescriptor());
+                    } catch (IOException ignore) {
+                        return;
+                    }
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    try {
+                        stream.close();
+                    } catch (IOException ignore) {
+                        return;
+                    }
+                    values.clear();
+                    values.put(MediaStore.Images.Media.IS_PENDING, 0);
+                    resolver.update(uri, values, null, null);
+                }
                 Intent intent = new Intent(Intent.ACTION_SEND);
                 intent.putExtra(Intent.EXTRA_STREAM, uri);
                 intent.setType("image/png");
                 share.setShareIntent(intent);
-                Toast toast = Toast.makeText(getApplicationContext(), file.getName(), Toast.LENGTH_SHORT);
+                Toast toast = Toast.makeText(getApplicationContext(), name, Toast.LENGTH_SHORT);
                 toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL, 0, 0);
                 toast.show();
             }
