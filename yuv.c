@@ -18,7 +18,7 @@ uint8_t yuv_clamp(float x)
 uint8_t srgb(float linear)
 {
 	float v = fminf(fmaxf(linear, 0.0f), 1.0f);
-	float K0 = 0.03928f;
+	float K0 = 0.04045f;
 	float a = 0.055f;
 	float phi = 12.92f;
 	float gamma = 2.4f;
@@ -29,7 +29,7 @@ uint8_t srgb(float linear)
 float linear(uint8_t srgb)
 {
 	float v = srgb / 255.0f;
-	float K0 = 0.03928f;
+	float K0 = 0.04045f;
 	float a = 0.055f;
 	float phi = 12.92f;
 	float gamma = 2.4f;
