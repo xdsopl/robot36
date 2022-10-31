@@ -343,116 +343,151 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_toggle_decoder:
-                toggleDecoder();
-                return true;
-            case R.id.action_save_image:
-                storeBitmap(image.bitmap);
-                return true;
-            case R.id.action_clear_image:
-                decoder.clear_image();
-                return true;
-            case R.id.action_sharpest_image:
-                decoder.adjust_blur(-3);
-                return true;
-            case R.id.action_sharper_image:
-                decoder.adjust_blur(-2);
-                return true;
-            case R.id.action_sharp_image:
-                decoder.adjust_blur(-1);
-                return true;
-            case R.id.action_neutral_image:
-                decoder.adjust_blur(0);
-                return true;
-            case R.id.action_soft_image:
-                decoder.adjust_blur(1);
-                return true;
-            case R.id.action_softer_image:
-                decoder.adjust_blur(2);
-                return true;
-            case R.id.action_softest_image:
-                decoder.adjust_blur(3);
-                return true;
-            case R.id.action_toggle_scaling:
-                decoder.toggle_scaling();
-                return true;
-            case R.id.action_toggle_debug:
-                decoder.toggle_debug();
-                return true;
-            case R.id.action_auto_mode:
-                decoder.auto_mode();
-                return true;
-            case R.id.action_toggle_analyzer:
-                decoder.enable_analyzer(enableAnalyzer ^= true);
-                changeLayoutOrientation(getResources().getConfiguration());
-                return true;
-            case R.id.action_slow_update_rate:
-                decoder.setUpdateRate(0);
-                return true;
-            case R.id.action_normal_update_rate:
-                decoder.setUpdateRate(1);
-                return true;
-            case R.id.action_fast_update_rate:
-                decoder.setUpdateRate(2);
-                return true;
-            case R.id.action_faster_update_rate:
-                decoder.setUpdateRate(3);
-                return true;
-            case R.id.action_fastest_update_rate:
-                decoder.setUpdateRate(4);
-                return true;
-            case R.id.action_raw_mode:
-                decoder.raw_mode();
-                return true;
-            case R.id.action_robot36_mode:
-                decoder.robot36_mode();
-                return true;
-            case R.id.action_robot72_mode:
-                decoder.robot72_mode();
-                return true;
-            case R.id.action_martin1_mode:
-                decoder.martin1_mode();
-                return true;
-            case R.id.action_martin2_mode:
-                decoder.martin2_mode();
-                return true;
-            case R.id.action_scottie1_mode:
-                decoder.scottie1_mode();
-                return true;
-            case R.id.action_scottie2_mode:
-                decoder.scottie2_mode();
-                return true;
-            case R.id.action_scottieDX_mode:
-                decoder.scottieDX_mode();
-                return true;
-            case R.id.action_wraaseSC2_180_mode:
-                decoder.wraaseSC2_180_mode();
-                return true;
-            case R.id.action_pd50_mode:
-                decoder.pd50_mode();
-                return true;
-            case R.id.action_pd90_mode:
-                decoder.pd90_mode();
-                return true;
-            case R.id.action_pd120_mode:
-                decoder.pd120_mode();
-                return true;
-            case R.id.action_pd160_mode:
-                decoder.pd160_mode();
-                return true;
-            case R.id.action_pd180_mode:
-                decoder.pd180_mode();
-                return true;
-            case R.id.action_pd240_mode:
-                decoder.pd240_mode();
-                return true;
-            case R.id.action_pd290_mode:
-                decoder.pd290_mode();
-                return true;
-            case R.id.action_privacy_policy:
-                showPrivacyPolicy();
-                return true;
+        int id = item.getItemId();
+        if (id == R.id.action_toggle_decoder) {
+            toggleDecoder();
+            return true;
+        }
+        if (id == R.id.action_save_image) {
+            storeBitmap(image.bitmap);
+            return true;
+        }
+        if (id == R.id.action_clear_image) {
+            decoder.clear_image();
+            return true;
+        }
+        if (id == R.id.action_sharpest_image) {
+            decoder.adjust_blur(-3);
+            return true;
+        }
+        if (id == R.id.action_sharper_image) {
+            decoder.adjust_blur(-2);
+            return true;
+        }
+        if (id == R.id.action_sharp_image) {
+            decoder.adjust_blur(-1);
+            return true;
+        }
+        if (id == R.id.action_neutral_image) {
+            decoder.adjust_blur(0);
+            return true;
+        }
+        if (id == R.id.action_soft_image) {
+            decoder.adjust_blur(1);
+            return true;
+        }
+        if (id == R.id.action_softer_image) {
+            decoder.adjust_blur(2);
+            return true;
+        }
+        if (id == R.id.action_softest_image) {
+            decoder.adjust_blur(3);
+            return true;
+        }
+        if (id == R.id.action_toggle_scaling) {
+            decoder.toggle_scaling();
+            return true;
+        }
+        if (id == R.id.action_toggle_debug) {
+            decoder.toggle_debug();
+            return true;
+        }
+        if (id == R.id.action_auto_mode) {
+            decoder.auto_mode();
+            return true;
+        }
+        if (id == R.id.action_toggle_analyzer) {
+            decoder.enable_analyzer(enableAnalyzer ^= true);
+            changeLayoutOrientation(getResources().getConfiguration());
+            return true;
+        }
+        if (id == R.id.action_slow_update_rate) {
+            decoder.setUpdateRate(0);
+            return true;
+        }
+        if (id == R.id.action_normal_update_rate) {
+            decoder.setUpdateRate(1);
+            return true;
+        }
+        if (id == R.id.action_fast_update_rate) {
+            decoder.setUpdateRate(2);
+            return true;
+        }
+        if (id == R.id.action_faster_update_rate) {
+            decoder.setUpdateRate(3);
+            return true;
+        }
+        if (id == R.id.action_fastest_update_rate) {
+            decoder.setUpdateRate(4);
+            return true;
+        }
+        if (id == R.id.action_raw_mode) {
+            decoder.raw_mode();
+            return true;
+        }
+        if (id == R.id.action_robot36_mode) {
+            decoder.robot36_mode();
+            return true;
+        }
+        if (id == R.id.action_robot72_mode) {
+            decoder.robot72_mode();
+            return true;
+        }
+        if (id == R.id.action_martin1_mode) {
+            decoder.martin1_mode();
+            return true;
+        }
+        if (id == R.id.action_martin2_mode) {
+            decoder.martin2_mode();
+            return true;
+        }
+        if (id == R.id.action_scottie1_mode) {
+            decoder.scottie1_mode();
+            return true;
+        }
+        if (id == R.id.action_scottie2_mode) {
+            decoder.scottie2_mode();
+            return true;
+        }
+        if (id == R.id.action_scottieDX_mode) {
+            decoder.scottieDX_mode();
+            return true;
+        }
+        if (id == R.id.action_wraaseSC2_180_mode) {
+            decoder.wraaseSC2_180_mode();
+            return true;
+        }
+        if (id == R.id.action_pd50_mode) {
+            decoder.pd50_mode();
+            return true;
+        }
+        if (id == R.id.action_pd90_mode) {
+            decoder.pd90_mode();
+            return true;
+        }
+        if (id == R.id.action_pd120_mode) {
+            decoder.pd120_mode();
+            return true;
+        }
+        if (id == R.id.action_pd160_mode) {
+            decoder.pd160_mode();
+            return true;
+        }
+        if (id == R.id.action_pd180_mode) {
+            decoder.pd180_mode();
+            return true;
+        }
+        if (id == R.id.action_pd240_mode) {
+            decoder.pd240_mode();
+            return true;
+        }
+        if (id == R.id.action_pd290_mode) {
+            decoder.pd290_mode();
+            return true;
+        }
+        if (id == R.id.action_privacy_policy) {
+            showPrivacyPolicy();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
