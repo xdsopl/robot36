@@ -1,12 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    buildToolsVersion "29.0.2"
-    compileSdkVersion 29
+    compileSdkVersion 32
     defaultConfig {
         applicationId "xdsopl.robot36"
-        minSdkVersion 16
-        targetSdkVersion 29
+        minSdkVersion 21
+        targetSdkVersion 32
         versionCode 45
         versionName "1.44"
         renderscriptTargetApi 21
@@ -23,5 +22,5 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
 }
