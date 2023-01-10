@@ -18,6 +18,7 @@ limitations under the License.
 package xdsopl.robot36;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -36,13 +37,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.MenuItemCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.ShareActionProvider;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -64,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
     private Bitmap bitmap;
     private NotificationManager manager;
     private ShareActionProvider share;
-    private int notifyID = 1;
-    private int permissionsID = 2;
+    private final int notifyID = 1;
+    private final int permissionsID = 2;
     private static final String channelID = "Robot36";
     private boolean enableAnalyzer = true;
     private Menu menu;
@@ -97,85 +99,79 @@ public class MainActivity extends AppCompatActivity {
     void updateTitle(final String newTitle)
     {
         if (getTitle() != newTitle) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    setTitle(newTitle);
-                }
-            });
+            runOnUiThread(() -> setTitle(newTitle));
         }
     }
 
     void storeBitmap(Bitmap image) {
         bitmap = image;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Date date = new Date();
-                String name = new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
-                String title = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
-                ContentValues values = new ContentValues();
-                File dir;
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                    dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-                    if (!dir.exists())
-                        dir.mkdirs();
-                    File file;
-                    try {
-                        file = File.createTempFile(name + "_", ".png", dir);
-                        name = file.getName();
-                    } catch (IOException ignore) {
-                        return;
-                    }
-                    FileOutputStream stream;
-                    try {
-                        stream = new FileOutputStream(file);
-                    } catch (IOException ignore) {
-                        return;
-                    }
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                    try {
-                        stream.close();
-                    } catch (IOException ignore) {
-                        return;
-                    }
-                    values.put(MediaStore.Images.ImageColumns.DATA, file.toString());
-                } else {
-                    name += ".png";
-                    values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
-                    values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/");
-                    values.put(MediaStore.Images.Media.IS_PENDING, 1);
+        runOnUiThread(() -> {
+            Date date = new Date();
+            @SuppressLint("SimpleDateFormat") String name = new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
+            @SuppressLint("SimpleDateFormat") String title = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+            ContentValues values = new ContentValues();
+            File dir;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                if (!dir.exists())
+                    //noinspection ResultOfMethodCallIgnored
+                    dir.mkdirs();
+                File file;
+                try {
+                    file = File.createTempFile(name + "_", ".png", dir);
+                    name = file.getName();
+                } catch (IOException ignore) {
+                    return;
                 }
-                values.put(MediaStore.Images.ImageColumns.TITLE, title);
-                values.put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/png");
-                ContentResolver resolver = getContentResolver();
-                Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    FileOutputStream stream;
-                    try {
-                        ParcelFileDescriptor descriptor = getContentResolver().openFileDescriptor(uri,"w");
-                        stream = new FileOutputStream(descriptor.getFileDescriptor());
-                    } catch (IOException ignore) {
-                        return;
-                    }
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                    try {
-                        stream.close();
-                    } catch (IOException ignore) {
-                        return;
-                    }
-                    values.clear();
-                    values.put(MediaStore.Images.Media.IS_PENDING, 0);
-                    resolver.update(uri, values, null, null);
+                FileOutputStream stream;
+                try {
+                    stream = new FileOutputStream(file);
+                } catch (IOException ignore) {
+                    return;
                 }
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.putExtra(Intent.EXTRA_STREAM, uri);
-                intent.setType("image/png");
-                share.setShareIntent(intent);
-                Toast toast = Toast.makeText(getApplicationContext(), name, Toast.LENGTH_SHORT);
-                toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL, 0, 0);
-                toast.show();
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                try {
+                    stream.close();
+                } catch (IOException ignore) {
+                    return;
+                }
+                values.put(MediaStore.Images.ImageColumns.DATA, file.toString());
+            } else {
+                name += ".png";
+                values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/");
+                values.put(MediaStore.Images.Media.IS_PENDING, 1);
             }
+            values.put(MediaStore.Images.ImageColumns.TITLE, title);
+            values.put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/png");
+            ContentResolver resolver = getContentResolver();
+            Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                FileOutputStream stream;
+                try {
+                    ParcelFileDescriptor descriptor = getContentResolver().openFileDescriptor(uri,"w");
+                    stream = new FileOutputStream(descriptor.getFileDescriptor());
+                    descriptor.close();
+                } catch (IOException ignore) {
+                    return;
+                }
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                try {
+                    stream.close();
+                } catch (IOException ignore) {
+                    return;
+                }
+                values.clear();
+                values.put(MediaStore.Images.Media.IS_PENDING, 0);
+                resolver.update(uri, values, null, null);
+            }
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            intent.setType("image/png");
+            share.setShareIntent(intent);
+            Toast toast = Toast.makeText(getApplicationContext(), name, Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL, 0, 0);
+            toast.show();
         });
     }
 
@@ -184,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         changeLayoutOrientation(getResources().getConfiguration());
-        image = (ImageView)findViewById(R.id.image);
+        image = findViewById(R.id.image);
         manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         startDecoder();
     }
@@ -210,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
         updateMenuButtons();
     }
 
-    private void showErrorMessage(final String title, final String shortText, final String longText) {
+    private void showErrorMessage(final String title, final String shortText) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
         builder.setMessage(shortText);
@@ -227,7 +223,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode != permissionsID)
             return;
         for (int result : grantResults)
@@ -244,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         if (permissions.isEmpty())
             return true;
-        ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), permissionsID);
+        ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), permissionsID);
         return false;
     }
 
@@ -255,16 +252,16 @@ public class MainActivity extends AppCompatActivity {
             return;
         try {
             decoder = new Decoder(this,
-                    (SpectrumView) findViewById(R.id.spectrum),
-                    (SpectrumView) findViewById(R.id.spectrogram),
-                    (ImageView) findViewById(R.id.image),
-                    (VUMeterView) findViewById(R.id.meter)
+                    findViewById(R.id.spectrum),
+                    findViewById(R.id.spectrogram),
+                    findViewById(R.id.image),
+                    findViewById(R.id.meter)
             );
             decoder.enable_analyzer(enableAnalyzer);
             showNotification();
             updateMenuButtons();
         } catch (Exception e) {
-            showErrorMessage(getString(R.string.decoder_error), e.getMessage(), Log.getStackTraceString(e));
+            showErrorMessage(getString(R.string.decoder_error), e.getMessage());
         }
     }
 
@@ -306,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration config) {
+    public void onConfigurationChanged(@NonNull Configuration config) {
         super.onConfigurationChanged(config);
         changeLayoutOrientation(config);
     }

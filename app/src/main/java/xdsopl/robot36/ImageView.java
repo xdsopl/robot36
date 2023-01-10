@@ -55,7 +55,7 @@ public class ImageView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void setPixels(int pixels[]) {
+    public void setPixels(int[] pixels) {
         synchronized (holder) {
             bitmap.setPixels(pixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
         }
