@@ -25,7 +25,6 @@ import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -211,29 +210,11 @@ public class MainActivity extends AppCompatActivity {
         updateMenuButtons();
     }
 
-    private Intent createEmailIntent(final String subject, final String text) {
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("text/email");
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{ getString(R.string.email_address) });
-        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
-        intent.putExtra(Intent.EXTRA_TEXT, text);
-        return intent;
-    }
-
     private void showErrorMessage(final String title, final String shortText, final String longText) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
         builder.setMessage(shortText);
         builder.setNeutralButton(getString(R.string.btn_ok), null);
-        builder.setPositiveButton(getString(R.string.btn_send_email), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String version = " " + BuildConfig.VERSION_NAME;
-                String device = " (" + Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL + " " + Build.VERSION.RELEASE + ")";
-                Intent intent = createEmailIntent(getString(R.string.email_subject) + version + device, longText);
-                startActivity(Intent.createChooser(intent, getString(R.string.chooser_title)));
-            }
-        });
         builder.show();
     }
 
