@@ -147,17 +147,18 @@ public class MainActivity extends AppCompatActivity {
             ContentResolver resolver = getContentResolver();
             Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ParcelFileDescriptor descriptor;
                 FileOutputStream stream;
                 try {
-                    ParcelFileDescriptor descriptor = getContentResolver().openFileDescriptor(uri,"w");
+                    descriptor = getContentResolver().openFileDescriptor(uri,"w");
                     stream = new FileOutputStream(descriptor.getFileDescriptor());
-                    descriptor.close();
                 } catch (IOException ignore) {
                     return;
                 }
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 try {
                     stream.close();
+                    descriptor.close();
                 } catch (IOException ignore) {
                     return;
                 }
