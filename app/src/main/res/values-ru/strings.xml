@@ -3,28 +3,28 @@
 	<string name="store_scope">Сохранить экран</string>
 	<string name="auto_mode">Автоматический режим</string>
 	<string name="force_mode">Принудительный режим</string>
-	<string name="listening">Прослушивание</string>
+	<string name="listening">Слушаю</string>
 	<string name="audio_settings">Настройки аудио</string>
 	<string name="sample_rate">Частота дискретизации</string>
 	<string name="channel_select">Выбор канала</string>
-	<string name="channel_default">По умолчанию</string>
+	<string name="channel_default">По-умолчанию</string>
 	<string name="channel_first">Первый</string>
 	<string name="channel_second">Второй</string>
-	<string name="channel_summation">Суммирование</string>
-	<string name="channel_analytic">Аналитический</string>
+	<string name="channel_summation">Суммарный</string>
+	<string name="channel_analytic">Анализ</string>
 	<string name="audio_source">Источник аудио</string>
-	<string name="source_default">По умолчанию</string>
+	<string name="source_default">По-умолчанию</string>
 	<string name="source_microphone">Микрофон</string>
-	<string name="source_camcorder">Видеокамера</string>
+	<string name="source_camcorder">Камера</string>
 	<string name="source_voice_recognition">Распознавание голоса</string>
 	<string name="source_unprocessed">Необработанный</string>
-	<string name="audio_init_failed">Инициализация аудио не удалась</string>
-	<string name="audio_setup_failed">Настройка аудио не удалась</string>
-	<string name="audio_permission_denied">Отказано в разрешении на аудио</string>
+	<string name="audio_init_failed">Ошибка инициализации аудио</string>
+	<string name="audio_setup_failed">Ошибка настройки аудио</string>
+	<string name="audio_permission_denied">Аудио - отказано в доступе</string>
 	<string name="audio_recording_error">Ошибка записи аудио</string>
-	<string name="creating_picture_directory_failed">Создание каталога для изображения не удалось</string>
-	<string name="creating_picture_file_failed">Создание файла изображения не удалось</string>
-	<string name="storing_picture_failed">Сохранение изображения не удалось</string>
+	<string name="creating_picture_directory_failed">Ошибка создания каталога для изображений</string>
+	<string name="creating_picture_file_failed">Ошибка создания файла изображения</string>
+	<string name="storing_picture_failed">Ошибка сохранения изображения</string>
 	<string name="scope_description">Декодированное изображение SSTV</string>
 	<string name="freq_plot_description">График частот</string>
 	<string name="peak_meter_description">Пиковый уровень аудиосигнала</string>
@@ -36,23 +36,23 @@
 	<string name="privacy_policy_text"><![CDATA[
 <p><h1>Политика конфиденциальности</h1></p>
 <p><h5>Доступ к микрофону</h5>
-Это приложение требует доступа к микрофону вашего устройства для декодирования сигналов медленного сканирования телевидения (SSTV).
+Это приложение требует доступ к микрофону вашего устройства для декодирования сигналов телевидения с медленной развёрткой (SSTV).
 Микрофон записывает аудио, содержащее передачу SSTV.
 </p>
 <p><h5>Обработка данных</h5>
 Приложение использует небольшой временный буфер в памяти для обработки аудиоданных в реальном времени.
 Этот буфер постоянно перезаписывается новыми данными по мере продвижения декодирования.
-Приложение <b>не</b> сохраняет необработанное аудио, записанное с микрофона.
-На устройстве сохраняются только <b>декодированные изображения</b>, полученные в результате процесса SSTV.
+Приложение <b>не сохраняет</b> необработанное аудио, записанное с микрофона.
+На устройстве сохраняются <b>только изображения</b>, полученные в результате декодирования сигнала SSTV.
 </p>
 ]]></string>
 	<string name="about">О приложении Robot36</string>
 	<string name="about_text"><![CDATA[
 <p><h1>Robot36 %1$s</h1>Авторские права 2024 Ahmet Inan</p>
 <p>Пожалуйста, ознакомьтесь с ОТКАЗОМ ОТ ОТВЕТСТВЕННОСТИ внизу этой страницы</p>
-<p><h5>Описание</h5>Декодирует изображения телевидения медленного сканирования из аудио</p>
+<p><h5>Описание</h5>Декодирует изображения телевидения с медленной развёрткой из аудиосигнала</p>
 <p><h5>Реализация</h5><a href="https://github.com/xdsopl/robot36">Robot36 на GitHub</a><br />Лицензия BSD Zero Clause</p>
-<p><h5>Спецификации режима</h5><a href="http://www.barberdsp.com/downloads/Dayton%%20Paper.pdf">Dayton Paper</a><br />автор JL Barber - 2000</p>
+<p><h5>Спецификации режимов</h5><a href="http://www.barberdsp.com/downloads/Dayton%%20Paper.pdf">Dayton Paper</a><br />автор JL Barber - 2000</p>
 <p><h5>ОТКАЗ ОТ ОТВЕТСТВЕННОСТИ</h5>THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</p>
 ]]></string>
 </resources>
