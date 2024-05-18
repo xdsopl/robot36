@@ -3,7 +3,7 @@
 	<string name="store_scope">Сохранить экран</string>
 	<string name="auto_mode">Автоматический режим</string>
 	<string name="force_mode">Принудительный режим</string>
-	<string name="raw_mode">Необработанный режим</string>
+	<string name="raw_mode">Необработанный</string>
 	<string name="listening">Слушаю</string>
 	<string name="audio_settings">Настройки аудио</string>
 	<string name="sample_rate">Частота дискретизации</string>
