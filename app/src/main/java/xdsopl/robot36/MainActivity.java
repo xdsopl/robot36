@@ -424,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
 		final int defaultSampleRate = 44100;
 		final int defaultChannelSelect = 0;
 		final int defaultAudioSource = MediaRecorder.AudioSource.MIC;
-		final int defaultAudioFormat = AudioFormat.ENCODING_PCM_FLOAT;
+		final int defaultAudioFormat = AudioFormat.ENCODING_PCM_16BIT;
 		final boolean defaultAutoSave = true;
 		final String defaultLanguage = "system";
 		if (state == null) {
