@@ -693,6 +693,10 @@ public class MainActivity extends AppCompatActivity {
 			setLanguage("uk");
 			return true;
 		}
+		if (id == R.id.action_latin_american_spanish) {
+			setLanguage("es-r419");
+			return true;
+		}
 		return super.onOptionsItemSelected(item);
 	}
 
