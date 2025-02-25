@@ -220,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
 				double highest = Math.log(1);
 				double range = highest - lowest;
 				for (int i = 0; i < stride; ++i)
-					freqPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i]) - lowest) / range);
+					freqPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + 14]) - lowest) / range);
 				System.arraycopy(freqPlotBuffer.pixels, line, freqPlotBuffer.pixels, line + stride * (freqPlotBuffer.height / 2), stride);
 				freqPlotBuffer.line = (freqPlotBuffer.line + 1) % (freqPlotBuffer.height / 2);
 			}
