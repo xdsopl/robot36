@@ -34,8 +34,10 @@
 	<string name="creating_picture_file_failed">Tworzenie pliku obrazu nie powiodło się</string>
 	<string name="storing_picture_failed">Zapisywanie obrazu nie powiodło się</string>
 	<string name="scope_description">Zdekodowano obraz SSTV</string>
-	<string name="freq_plot_description">Wykres częstotliwości</string>
 	<string name="peak_meter_description">Szczytowy poziom sygnału audio</string>
+	<string name="waterfall_plot">Wykres wodospadowy</string>
+	<string name="frequency_plot">Wykres częstotliwości</string>
+	<string name="spectrogram">Spektrogram</string>
 	<string name="auto_save">Automatyczne zapisywanie</string>
 	<string name="night_mode">Tryb nocny</string>
 	<string name="enable">Włącz</string>

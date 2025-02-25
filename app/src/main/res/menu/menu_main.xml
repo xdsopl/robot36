@@ -209,6 +209,23 @@
 				</menu>
 			</item>
 			<item
+				android:icon="@drawable/baseline_water_24"
+				android:title="@string/waterfall_plot"
+				app:iconTint="@color/tint">
+				<menu>
+					<group android:checkableBehavior="single">
+						<item
+							android:id="@+id/action_show_spectrogram"
+							android:title="@string/spectrogram"
+							app:iconTint="@color/tint" />
+						<item
+							android:id="@+id/action_show_frequency_plot"
+							android:title="@string/frequency_plot"
+							app:iconTint="@color/tint" />
+					</group>
+				</menu>
+			</item>
+			<item
 				android:icon="@drawable/baseline_auto_mode_24"
 				android:title="@string/auto_save"
 				app:iconTint="@color/tint">

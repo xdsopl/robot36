@@ -34,8 +34,10 @@
 	<string name="creating_picture_file_failed">创建图片文件出错</string>
 	<string name="storing_picture_failed">写入图像数据失败</string>
 	<string name="scope_description">解码的SSTV图像</string>
-	<string name="freq_plot_description">频率图</string>
 	<string name="peak_meter_description">音频峰值信号水平</string>
+	<string name="waterfall_plot">瀑布图</string>
+	<string name="frequency_plot">频率图</string>
+	<string name="spectrogram">频谱图</string>
 	<string name="auto_save">自动保存</string>
 	<string name="night_mode">夜间模式</string>
 	<string name="enable">开启</string>

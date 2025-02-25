@@ -64,9 +64,9 @@ public class MainActivity extends AppCompatActivity {
 	private Bitmap scopeBitmap;
 	private PixelBuffer scopeBuffer;
 	private ImageView scopeView;
-	private Bitmap freqPlotBitmap;
-	private PixelBuffer freqPlotBuffer;
-	private ImageView freqPlotView;
+	private Bitmap waterfallPlotBitmap;
+	private PixelBuffer waterfallPlotBuffer;
+	private ImageView waterfallPlotView;
 	private Bitmap peakMeterBitmap;
 	private PixelBuffer peakMeterBuffer;
 	private ImageView peakMeterView;
@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
 	private int thinColor;
 	private int tintColor;
 	private boolean autoSave;
+	private boolean showSpectrogram;
 
 	private void setStatus(int id) {
 		setTitle(id);
@@ -139,9 +140,11 @@ public class MainActivity extends AppCompatActivity {
 					recordBuffer[i] = .000030517578125f * shortBuffer[i];
 			}
 			processPeakMeter();
-			processSpectrogram();
+			if (showSpectrogram)
+				processSpectrogram();
 			boolean newLines = decoder.process(recordBuffer, recordChannel);
-			//processFreqPlot();
+			if (!showSpectrogram)
+				processFreqPlot();
 			if (newLines) {
 				processScope();
 				processImage();
@@ -214,50 +217,50 @@ public class MainActivity extends AppCompatActivity {
 			}
 			if (stft.push(input)) {
 				process = true;
-				int stride = freqPlotBuffer.width;
-				int line = stride * freqPlotBuffer.line;
+				int stride = waterfallPlotBuffer.width;
+				int line = stride * waterfallPlotBuffer.line;
 				double lowest = Math.log(1e-9);
 				double highest = Math.log(1);
 				double range = highest - lowest;
 				for (int i = 0; i < stride; ++i)
-					freqPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + 14]) - lowest) / range);
-				System.arraycopy(freqPlotBuffer.pixels, line, freqPlotBuffer.pixels, line + stride * (freqPlotBuffer.height / 2), stride);
-				freqPlotBuffer.line = (freqPlotBuffer.line + 1) % (freqPlotBuffer.height / 2);
+					waterfallPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + 14]) - lowest) / range);
+				System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
+				waterfallPlotBuffer.line = (waterfallPlotBuffer.line + 1) % (waterfallPlotBuffer.height / 2);
 			}
 		}
 		if (process) {
-			int width = freqPlotBitmap.getWidth();
-			int height = freqPlotBitmap.getHeight();
-			int stride = freqPlotBuffer.width;
-			int offset = stride * (freqPlotBuffer.line + freqPlotBuffer.height / 2 - height);
-			freqPlotBitmap.setPixels(freqPlotBuffer.pixels, offset, stride, 0, 0, width, height);
-			freqPlotView.invalidate();
+			int width = waterfallPlotBitmap.getWidth();
+			int height = waterfallPlotBitmap.getHeight();
+			int stride = waterfallPlotBuffer.width;
+			int offset = stride * (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - height);
+			waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
+			waterfallPlotView.invalidate();
 		}
 	}
 
 	private void processFreqPlot() {
-		int width = freqPlotBitmap.getWidth();
-		int height = freqPlotBitmap.getHeight();
-		int stride = freqPlotBuffer.width;
-		int line = stride * freqPlotBuffer.line;
+		int width = waterfallPlotBitmap.getWidth();
+		int height = waterfallPlotBitmap.getHeight();
+		int stride = waterfallPlotBuffer.width;
+		int line = stride * waterfallPlotBuffer.line;
 		int channels = recordChannel > 0 ? 2 : 1;
 		int samples = recordBuffer.length / channels;
 		int spread = 2;
-		Arrays.fill(freqPlotBuffer.pixels, line, line + stride, 0);
+		Arrays.fill(waterfallPlotBuffer.pixels, line, line + stride, 0);
 		for (int i = 0; i < samples; ++i) {
 			int x = Math.round((recordBuffer[i] + 2.5f) * 0.25f * stride);
 			if (x >= spread && x < stride - spread)
 				for (int j = -spread; j <= spread; ++j)
-					freqPlotBuffer.pixels[line + x + j] += 1 + spread * spread - j * j;
+					waterfallPlotBuffer.pixels[line + x + j] += 1 + spread * spread - j * j;
 		}
 		int factor = 960 / samples;
 		for (int i = 0; i < stride; ++i)
-			freqPlotBuffer.pixels[line + i] = 0x00FFFFFF & fgColor | Math.min(factor * freqPlotBuffer.pixels[line + i], 255) << 24;
-		System.arraycopy(freqPlotBuffer.pixels, line, freqPlotBuffer.pixels, line + stride * (freqPlotBuffer.height / 2), stride);
-		freqPlotBuffer.line = (freqPlotBuffer.line + 1) % (freqPlotBuffer.height / 2);
-		int offset = stride * (freqPlotBuffer.line + freqPlotBuffer.height / 2 - height);
-		freqPlotBitmap.setPixels(freqPlotBuffer.pixels, offset, stride, 0, 0, width, height);
-		freqPlotView.invalidate();
+			waterfallPlotBuffer.pixels[line + i] = 0x00FFFFFF & fgColor | Math.min(factor * waterfallPlotBuffer.pixels[line + i], 255) << 24;
+		System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
+		waterfallPlotBuffer.line = (waterfallPlotBuffer.line + 1) % (waterfallPlotBuffer.height / 2);
+		int offset = stride * (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - height);
+		waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
+		waterfallPlotView.invalidate();
 	}
 
 	private void processScope() {
@@ -379,6 +382,20 @@ public class MainActivity extends AppCompatActivity {
 		initAudioRecord();
 	}
 
+	private void setShowSpectrogram(boolean newShowSpectrogram) {
+		if (showSpectrogram == newShowSpectrogram)
+			return;
+		showSpectrogram = newShowSpectrogram;
+		updateWaterfallPlotMenu();
+	}
+
+	private void updateWaterfallPlotMenu() {
+		if (showSpectrogram)
+			menu.findItem(R.id.action_show_spectrogram).setChecked(true);
+		else
+			menu.findItem(R.id.action_show_frequency_plot).setChecked(true);
+	}
+
 	private void setAutoSave(boolean newAutoSave) {
 		if (autoSave == newAutoSave)
 			return;
@@ -477,6 +494,7 @@ public class MainActivity extends AppCompatActivity {
 		state.putInt("audioSource", audioSource);
 		state.putInt("audioFormat", audioFormat);
 		state.putBoolean("autoSave", autoSave);
+		state.putBoolean("showSpectrogram", showSpectrogram);
 		state.putString("language", language);
 		super.onSaveInstanceState(state);
 	}
@@ -490,6 +508,7 @@ public class MainActivity extends AppCompatActivity {
 		edit.putInt("audioSource", audioSource);
 		edit.putInt("audioFormat", audioFormat);
 		edit.putBoolean("autoSave", autoSave);
+		edit.putBoolean("showSpectrogram", showSpectrogram);
 		edit.putString("language", language);
 		edit.apply();
 	}
@@ -501,6 +520,7 @@ public class MainActivity extends AppCompatActivity {
 		final int defaultAudioSource = MediaRecorder.AudioSource.MIC;
 		final int defaultAudioFormat = AudioFormat.ENCODING_PCM_16BIT;
 		final boolean defaultAutoSave = true;
+		final boolean defaultShowSpectrogram = true;
 		final String defaultLanguage = "system";
 		if (state == null) {
 			SharedPreferences pref = getPreferences(Context.MODE_PRIVATE);
@@ -510,6 +530,7 @@ public class MainActivity extends AppCompatActivity {
 			audioSource = pref.getInt("audioSource", defaultAudioSource);
 			audioFormat = pref.getInt("audioFormat", defaultAudioFormat);
 			autoSave = pref.getBoolean("autoSave", defaultAutoSave);
+			showSpectrogram = pref.getBoolean("showSpectrogram", defaultShowSpectrogram);
 			language = pref.getString("language", defaultLanguage);
 		} else {
 			AppCompatDelegate.setDefaultNightMode(state.getInt("nightMode", AppCompatDelegate.getDefaultNightMode()));
@@ -518,6 +539,7 @@ public class MainActivity extends AppCompatActivity {
 			audioSource = state.getInt("audioSource", defaultAudioSource);
 			audioFormat = state.getInt("audioFormat", defaultAudioFormat);
 			autoSave = state.getBoolean("autoSave", defaultAutoSave);
+			showSpectrogram = state.getBoolean("showSpectrogram", defaultShowSpectrogram);
 			language = state.getString("language", defaultLanguage);
 		}
 		super.onCreate(state);
@@ -530,12 +552,12 @@ public class MainActivity extends AppCompatActivity {
 		thinColor = getColor(R.color.thin);
 		tintColor = getColor(R.color.tint);
 		scopeBuffer = new PixelBuffer(640, 2 * 1280);
-		freqPlotBuffer = new PixelBuffer(256, 2 * 256);
+		waterfallPlotBuffer = new PixelBuffer(256, 2 * 256);
 		peakMeterBuffer = new PixelBuffer(1, 16);
 		imageBuffer = new PixelBuffer(800, 616);
 		input = new Complex();
 		createScope(config);
-		createFreqPlot(config);
+		createWaterfallPlot(config);
 		createPeakMeter();
 		List<String> permissions = new ArrayList<>();
 		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -566,6 +588,7 @@ public class MainActivity extends AppCompatActivity {
 		updateRecordChannelMenu();
 		updateAudioSourceMenu();
 		updateAudioFormatMenu();
+		updateWaterfallPlotMenu();
 		updateAutoSaveMenu();
 		return true;
 	}
@@ -717,6 +740,14 @@ public class MainActivity extends AppCompatActivity {
 			setAudioFormat(AudioFormat.ENCODING_PCM_16BIT);
 			return true;
 		}
+		if (id == R.id.action_show_spectrogram) {
+			setShowSpectrogram(true);
+			return true;
+		}
+		if (id == R.id.action_show_frequency_plot) {
+			setShowSpectrogram(false);
+			return true;
+		}
 		if (id == R.id.action_enable_auto_save) {
 			setAutoSave(true);
 			return true;
@@ -793,11 +824,11 @@ public class MainActivity extends AppCompatActivity {
 	private void createScope(Configuration config) {
 		int screenWidthDp = config.screenWidthDp;
 		int screenHeightDp = config.screenHeightDp;
-		int freqPlotHeightDp = 64;
+		int waterfallPlotHeightDp = 64;
 		if (config.orientation == Configuration.ORIENTATION_LANDSCAPE)
 			screenWidthDp /= 2;
 		else
-			screenHeightDp -= freqPlotHeightDp;
+			screenHeightDp -= waterfallPlotHeightDp;
 		int actionBarHeightDp = 64;
 		screenHeightDp -= actionBarHeightDp;
 		int width = scopeBuffer.width;
@@ -811,18 +842,18 @@ public class MainActivity extends AppCompatActivity {
 		scopeView.setImageBitmap(scopeBitmap);
 	}
 
-	private void createFreqPlot(Configuration config) {
-		int width = freqPlotBuffer.width;
-		int height = freqPlotBuffer.height / 2;
+	private void createWaterfallPlot(Configuration config) {
+		int width = waterfallPlotBuffer.width;
+		int height = waterfallPlotBuffer.height / 2;
 		if (config.orientation != Configuration.ORIENTATION_LANDSCAPE)
 			height /= 4;
-		freqPlotBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-		int stride = freqPlotBuffer.width;
-		int offset = stride * (freqPlotBuffer.line + freqPlotBuffer.height / 2 - height);
-		freqPlotBitmap.setPixels(freqPlotBuffer.pixels, offset, stride, 0, 0, width, height);
-		freqPlotView = findViewById(R.id.freq_plot);
-		freqPlotView.setScaleType(ImageView.ScaleType.FIT_XY);
-		freqPlotView.setImageBitmap(freqPlotBitmap);
+		waterfallPlotBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		int stride = waterfallPlotBuffer.width;
+		int offset = stride * (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - height);
+		waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
+		waterfallPlotView = findViewById(R.id.waterfall_plot);
+		waterfallPlotView.setScaleType(ImageView.ScaleType.FIT_XY);
+		waterfallPlotView.setImageBitmap(waterfallPlotBitmap);
 	}
 
 	private void createPeakMeter() {
@@ -839,7 +870,7 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(config.orientation == Configuration.ORIENTATION_LANDSCAPE ? R.layout.activity_main_land : R.layout.activity_main);
 		handleInsets();
 		createScope(config);
-		createFreqPlot(config);
+		createWaterfallPlot(config);
 		createPeakMeter();
 	}
 

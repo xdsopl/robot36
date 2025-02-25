@@ -34,8 +34,10 @@
 	<string name="creating_picture_file_failed">Помилка створення файлу зображення</string>
 	<string name="storing_picture_failed">Помилка збереження зображення</string>
 	<string name="scope_description">Декодоване зображення SSTV</string>
-	<string name="freq_plot_description">Графік частот</string>
 	<string name="peak_meter_description">Піковий рівень аудіосигналу</string>
+	<string name="waterfall_plot">Графік водоспаду</string>
+	<string name="frequency_plot">Графік частот</string>
+	<string name="spectrogram">Спектрограма</string>
 	<string name="auto_save">Автозбереження</string>
 	<string name="night_mode">Нічний режим</string>
 	<string name="enable">Увімкнути</string>

@@ -69,8 +69,10 @@
 	<string name="creating_picture_file_failed">Creating picture file failed</string>
 	<string name="storing_picture_failed">Storing picture failed</string>
 	<string name="scope_description">Decoded SSTV picture</string>
-	<string name="freq_plot_description">Frequency plot</string>
 	<string name="peak_meter_description">Peak audio signal level</string>
+	<string name="waterfall_plot">Waterfall plot</string>
+	<string name="frequency_plot">Frequency plot</string>
+	<string name="spectrogram">Spectrogram</string>
 	<string name="auto_save">Auto Save</string>
 	<string name="night_mode">Night Mode</string>
 	<string name="enable">Enable</string>

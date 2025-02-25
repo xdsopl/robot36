@@ -34,8 +34,10 @@
 	<string name="creating_picture_file_failed">Fallo en crear imagen</string>
 	<string name="storing_picture_failed">Fallo en guardar imagen</string>
 	<string name="scope_description">Imagen SSTV decodificada</string>
-	<string name="freq_plot_description">Gráfico de frecuencia</string>
 	<string name="peak_meter_description">Nivel de señal de audio máximo</string>
+	<string name="waterfall_plot">Gráfico de cascada</string>
+	<string name="frequency_plot">Gráfico de frecuencia</string>
+	<string name="spectrogram">Espectrograma</string>
 	<string name="auto_save">Guardado automático</string>
 	<string name="night_mode">Modo nocturno</string>
 	<string name="enable">Habilitar</string>

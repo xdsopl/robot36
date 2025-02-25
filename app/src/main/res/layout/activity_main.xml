@@ -13,16 +13,16 @@
 		android:layout_width="0dp"
 		android:layout_height="0dp"
 		android:contentDescription="@string/scope_description"
-		app:layout_constraintBottom_toTopOf="@+id/freq_plot"
+		app:layout_constraintBottom_toTopOf="@+id/waterfall_plot"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent" />
 
 	<ImageView
-		android:id="@+id/freq_plot"
+		android:id="@+id/waterfall_plot"
 		android:layout_width="0dp"
 		android:layout_height="64dp"
-		android:contentDescription="@string/freq_plot_description"
+		android:contentDescription="@string/waterfall_plot"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toStartOf="@+id/peak_meter"
 		app:layout_constraintStart_toStartOf="parent"
@@ -35,6 +35,6 @@
 		android:contentDescription="@string/peak_meter_description"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toEndOf="@+id/freq_plot"
+		app:layout_constraintStart_toEndOf="@+id/waterfall_plot"
 		app:layout_constraintTop_toBottomOf="@+id/scope" />
 </androidx.constraintlayout.widget.ConstraintLayout>
