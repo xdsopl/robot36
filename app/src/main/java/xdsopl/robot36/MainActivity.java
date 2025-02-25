@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
 	private PixelBuffer peakMeterBuffer;
 	private ImageView peakMeterView;
 	private PixelBuffer imageBuffer;
+	private ShortTimeFourierTransform stft;
 	private short[] shortBuffer;
 	private float[] recordBuffer;
 	private AudioRecord audioRecord;
@@ -78,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
 	private Menu menu;
 	private String currentMode;
 	private String language;
+	private Complex input;
 	private int recordRate;
 	private int recordChannel;
 	private int audioSource;
@@ -137,8 +139,9 @@ public class MainActivity extends AppCompatActivity {
 					recordBuffer[i] = .000030517578125f * shortBuffer[i];
 			}
 			processPeakMeter();
+			processSpectrogram();
 			boolean newLines = decoder.process(recordBuffer, recordChannel);
-			processFreqPlot();
+			//processFreqPlot();
 			if (newLines) {
 				processScope();
 				processImage();
@@ -159,6 +162,77 @@ public class MainActivity extends AppCompatActivity {
 		Arrays.fill(peakMeterBuffer.pixels, peak, pixels, tintColor);
 		peakMeterBitmap.setPixels(peakMeterBuffer.pixels, 0, peakMeterBuffer.width, 0, 0, peakMeterBuffer.width, peakMeterBuffer.height);
 		peakMeterView.invalidate();
+	}
+
+	private double clamp(double x) {
+		return Math.min(Math.max(x, 0), 1);
+	}
+
+	private int argb(double a, double r, double g, double b) {
+		a = clamp(a);
+		r = clamp(r);
+		g = clamp(g);
+		b = clamp(b);
+		r *= a;
+		g *= a;
+		b *= a;
+		r = Math.sqrt(r);
+		g = Math.sqrt(g);
+		b = Math.sqrt(b);
+		int A = (int) Math.rint(255 * a);
+		int R = (int) Math.rint(255 * r);
+		int G = (int) Math.rint(255 * g);
+		int B = (int) Math.rint(255 * b);
+		return (A << 24) | (R << 16) | (G << 8) | B;
+	}
+
+	private int rainbow(double v) {
+		v = clamp(v);
+		double t = 4 * v - 2;
+		return argb(4 * v, t, 1 - Math.abs(t), -t);
+	}
+
+	private void processSpectrogram() {
+		boolean process = false;
+		int channels = recordChannel > 0 ? 2 : 1;
+		for (int j = 0; j < recordBuffer.length / channels; ++j) {
+			switch (recordChannel) {
+				case 1:
+					input.set(recordBuffer[2 * j]);
+					break;
+				case 2:
+					input.set(recordBuffer[2 * j + 1]);
+					break;
+				case 3:
+					input.set(recordBuffer[2 * j] + recordBuffer[2 * j + 1]);
+					break;
+				case 4:
+					input.set(recordBuffer[2 * j], recordBuffer[2 * j + 1]);
+					break;
+				default:
+					input.set(recordBuffer[j]);
+			}
+			if (stft.push(input)) {
+				process = true;
+				int stride = freqPlotBuffer.width;
+				int line = stride * freqPlotBuffer.line;
+				double lowest = Math.log(0.000001);
+				double highest = Math.log(1);
+				double range = highest - lowest;
+				for (int i = 0; i < stride; ++i)
+					freqPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i]) - lowest) / range);
+				System.arraycopy(freqPlotBuffer.pixels, line, freqPlotBuffer.pixels, line + stride * (freqPlotBuffer.height / 2), stride);
+				freqPlotBuffer.line = (freqPlotBuffer.line + 1) % (freqPlotBuffer.height / 2);
+			}
+		}
+		if (process) {
+			int width = freqPlotBitmap.getWidth();
+			int height = freqPlotBitmap.getHeight();
+			int stride = freqPlotBuffer.width;
+			int offset = stride * (freqPlotBuffer.line + freqPlotBuffer.height / 2 - height);
+			freqPlotBitmap.setPixels(freqPlotBuffer.pixels, offset, stride, 0, 0, width, height);
+			freqPlotView.invalidate();
+		}
 	}
 
 	private void processFreqPlot() {
@@ -238,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
 				if (rateChanged) {
 					decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), recordRate);
 					decoder.setMode(currentMode);
+					stft = new ShortTimeFourierTransform(recordRate / 10, 3);
 				}
 				startListening();
 			} else {
@@ -458,6 +533,7 @@ public class MainActivity extends AppCompatActivity {
 		freqPlotBuffer = new PixelBuffer(256, 2 * 256);
 		peakMeterBuffer = new PixelBuffer(1, 16);
 		imageBuffer = new PixelBuffer(800, 616);
+		input = new Complex();
 		createScope(config);
 		createFreqPlot(config);
 		createPeakMeter();
