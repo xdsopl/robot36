@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
 				process = true;
 				int stride = freqPlotBuffer.width;
 				int line = stride * freqPlotBuffer.line;
-				double lowest = Math.log(0.000001);
+				double lowest = Math.log(1e-9);
 				double highest = Math.log(1);
 				double range = highest - lowest;
 				for (int i = 0; i < stride; ++i)
