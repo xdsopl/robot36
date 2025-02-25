@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="language">мова</string>
+	<string name="language">Мова</string>
 	<string name="share">Поділитися</string>
 	<string name="more_options">Більше</string>
 	<string name="store_scope">Зберегти екран</string>
