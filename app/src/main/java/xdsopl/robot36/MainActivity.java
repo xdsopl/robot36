@@ -218,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
 			if (stft.push(input)) {
 				process = true;
 				int stride = waterfallPlotBuffer.width;
+				waterfallPlotBuffer.line = (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - 1) % (waterfallPlotBuffer.height / 2);
 				int line = stride * waterfallPlotBuffer.line;
 				double lowest = Math.log(1e-9);
 				double highest = Math.log(1);
@@ -225,14 +226,13 @@ public class MainActivity extends AppCompatActivity {
 				for (int i = 0; i < stride; ++i)
 					waterfallPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + 14]) - lowest) / range);
 				System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
-				waterfallPlotBuffer.line = (waterfallPlotBuffer.line + 1) % (waterfallPlotBuffer.height / 2);
 			}
 		}
 		if (process) {
 			int width = waterfallPlotBitmap.getWidth();
 			int height = waterfallPlotBitmap.getHeight();
 			int stride = waterfallPlotBuffer.width;
-			int offset = stride * (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - height);
+			int offset = stride * waterfallPlotBuffer.line;
 			waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
 			waterfallPlotView.invalidate();
 		}
@@ -242,6 +242,7 @@ public class MainActivity extends AppCompatActivity {
 		int width = waterfallPlotBitmap.getWidth();
 		int height = waterfallPlotBitmap.getHeight();
 		int stride = waterfallPlotBuffer.width;
+		waterfallPlotBuffer.line = (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - 1) % (waterfallPlotBuffer.height / 2);
 		int line = stride * waterfallPlotBuffer.line;
 		int channels = recordChannel > 0 ? 2 : 1;
 		int samples = recordBuffer.length / channels;
@@ -257,8 +258,7 @@ public class MainActivity extends AppCompatActivity {
 		for (int i = 0; i < stride; ++i)
 			waterfallPlotBuffer.pixels[line + i] = 0x00FFFFFF & fgColor | Math.min(factor * waterfallPlotBuffer.pixels[line + i], 255) << 24;
 		System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
-		waterfallPlotBuffer.line = (waterfallPlotBuffer.line + 1) % (waterfallPlotBuffer.height / 2);
-		int offset = stride * (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - height);
+		int offset = stride * waterfallPlotBuffer.line;
 		waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
 		waterfallPlotView.invalidate();
 	}
@@ -849,7 +849,7 @@ public class MainActivity extends AppCompatActivity {
 			height /= 4;
 		waterfallPlotBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		int stride = waterfallPlotBuffer.width;
-		int offset = stride * (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - height);
+		int offset = stride * waterfallPlotBuffer.line;
 		waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
 		waterfallPlotView = findViewById(R.id.waterfall_plot);
 		waterfallPlotView.setScaleType(ImageView.ScaleType.FIT_XY);
