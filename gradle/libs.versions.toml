@@ -1,12 +1,12 @@
 [versions]
-agp = "8.8.1"
+agp = "8.9.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
-activity = "1.10.0"
-constraintlayout = "2.2.0"
+activity = "1.10.1"
+constraintlayout = "2.2.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
