@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="language">Langue</string>
+	<string name="share">Partager</string>
+	<string name="more_options">Plus d'options</string>
+	<string name="store_scope">Enregistrer la plage the fréquences</string>
+	<string name="toggle_mode">Changer de mode</string>
+	<string name="auto_mode">Mode automatique</string>
+	<string name="lock_mode">Mode verrouillé</string>
+	<string name="raw_mode">Mode brut</string>
+	<string name="listening">Écoute</string>
+	<string name="audio_settings">Paramètres audio</string>
+	<string name="sample_rate">Fréquence d'échantillonnage</string>
+	<string name="channel_select">Sélection du canal</string>
+	<string name="channel_default">Par défaut</string>
+	<string name="channel_first">Premier</string>
+	<string name="channel_second">Deuxième</string>
+	<string name="channel_summation">Somme</string>
+	<string name="channel_analytic">Analytique</string>
+	<string name="audio_source">Source audio</string>
+	<string name="source_default">Par défaut</string>
+	<string name="source_microphone">Microphone</string>
+	<string name="source_camcorder">Caméscope</string>
+	<string name="source_voice_recognition">Reconnaissance vocale</string>
+	<string name="source_unprocessed">Non traité</string>
+	<string name="audio_format">Format audio</string>
+	<string name="fixed_point">Virgule fixe</string>
+	<string name="floating_point">Virgule flottante</string>
+	<string name="audio_init_failed">Échec de l'initialisation audio</string>
+	<string name="audio_setup_failed">Échec de la configuration audio</string>
+	<string name="audio_permission_denied">Permission audio refusée</string>
+	<string name="audio_recording_error">Erreur d'enregistrement audio</string>
+	<string name="creating_picture_directory_failed">Échec de la création du dossier d'images</string>
+	<string name="creating_picture_file_failed">Échec de la création du fichier image</string>
+	<string name="storing_picture_failed">Échec de l'enregistrement de l'image</string>
+	<string name="scope_description">Image SSTV décodée</string>
+	<string name="peak_meter_description">Niveau de signal audio de crête</string>
+	<string name="waterfall_plot">Graphique en cascade</string>
+	<string name="frequency_plot">Graphique de fréquence</string>
+	<string name="spectrogram">Spectrogramme</string>
+	<string name="auto_save">Sauvegarde automatique</string>
+	<string name="night_mode">Mode nuit</string>
+	<string name="enable">Activer</string>
+	<string name="disable">Désactiver</string>
+	<string name="close">Fermer</string>
+	<string name="privacy_policy">Politique de confidentialité</string>
+	<string name="privacy_policy_text"><![CDATA[
+<p><h1>Politique de confidentialité</h1></p>
+<p><h5>Accès au microphone</h5>
+Cette application nécessite l'accès au microphone de votre appareil pour décoder les signaux de télévision à balayage lent (SSTV).
+Le microphone capture l'audio contenant la transmission SSTV.
+</p>
+<p><h5>Gestion des données</h5>
+L'application utilise un petit tampon temporaire en mémoire pour traiter les données audio en temps réel.
+Ce tampon est constamment réécrit avec de nouvelles données au fur et à mesure que le décodage progresse.
+L'application ne stocke pas les données audio brutes capturées par le microphone.
+Seules les images décodées résultant du processus SSTV sont enregistrées sur le votre appareil.
+</p>
+]]></string>
+	<string name="about">À propos de Robot36</string>
+	<string name="about_text"><![CDATA[
+<p><h1>Robot36 %1$s</h1>Copyright 2024 Ahmet Inan</p>
+<p>Veuillez lire la CLAUSE DE NON-RESPONSABILITÉ en bas de cette page</p>
+<p><h5>Description</h5>Décode les images de télévision à balayage lent à partir de l'audio</p>
+<p><h5>Implémentation</h5><a href="https://github.com/xdsopl/robot36">Robot36 sur GitHub</a><br />Licence BSD Zero Clause</p>
+<p><h5>Spécifications des modes</h5><a href="http://www.barberdsp.com/downloads/Dayton%%20Paper.pdf">Dayton Paper</a><br />par JL Barber - 2000</p>
+<p><h5>CLAUSE DE NON-RESPONSABILITÉ</h5>%2$s</p>
+]]></string>
+</resources>
