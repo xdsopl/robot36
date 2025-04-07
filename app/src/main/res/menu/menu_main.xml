@@ -273,6 +273,9 @@
 					<item
 						android:id="@+id/action_latin_american_spanish"
 						android:title="@string/latin_american_spanish" />
+					<item
+						android:id="@+id/action_french"
+						android:title="@string/french" />
 				</menu>
 			</item>
 			<item

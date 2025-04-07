@@ -804,6 +804,10 @@ public class MainActivity extends AppCompatActivity {
 			setLanguage("es-r419");
 			return true;
 		}
+		if (id == R.id.action_french) {
+			setLanguage("fr");
+			return true;
+		}
 		return super.onOptionsItemSelected(item);
 	}
 
