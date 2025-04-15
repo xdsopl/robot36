@@ -26,3 +26,21 @@ Because the electret mic input is high-impedance and AC-coupled, the transformer
 * Secondary side: 100 Ω resistor across the winding for damping and attenuation
 * DC blocking capacitor: 2.2 µF film capacitor (anything between 1 µF and 100 µF works; avoid values below 1 µF to keep low-frequency SSTV content intact)
 * Microphone sensing resistor: 2.2 kΩ between the first ring and sleeve (values near 2 kΩ are fine)
+
+### Schematic
+```
+ [Line IN] O---[R1]---+||+---+---|C1|---+---O [Ring 1]
+                      S||S   |          |
+                  T1: S||S  [R2]       [R3]
+                      S||S   |          |
+[Line GND] O----------+||+---+----------+---O [Sleeve]
+```
+Explanation of Symbols:
+
+* [R1]: 2.2 kΩ series resistor (primary side attenuation)
+* T1: 1:1 audio transformer
+* [C1]: 2.2 µF capacitor (DC blocking)
+* [R2]: 100 Ω damping resistor (across secondary)
+* [R3]: 2.2 kΩ MIC detect resistor (between MIC and GND)
+* [Line IN], [Line GND]: input from radio/sound card
+* [Ring 1], [Sleeve]: TRRS plug connections to smartphone
