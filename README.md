@@ -4,7 +4,7 @@
 ## Audio Line-Level to Microphone-Level Converter
 Decoding SSTV signals is more reliable with a clean input. Using a direct cable connection instead of acoustic coupling avoids echo, distortion, and environmental noise.
 
-Most smartphones use TRRS connectors for headsets. In these connectors, the sleeve and the second ring (next to the sleeve) serve dual roles: depending on the standard, one is the microphone input and the other is ground. The tip and second ring carry the left and right audio channels.
+Most smartphones use TRRS connectors for headsets. In these connectors, the sleeve and the second ring (next to the sleeve) serve dual roles: depending on the standard, one is the microphone input and the other is ground. The tip and first ring carry the left and right audio channels.
 
 When a TRS plug is inserted into a TRRS jack, the sleeve and second ring are shorted together. This allows regular stereo headphones (without a microphone) to work correctly.
 
