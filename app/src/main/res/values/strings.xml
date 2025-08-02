@@ -44,6 +44,7 @@
 	<string name="auto_mode">Auto Mode</string>
 	<string name="lock_mode">Lock Mode</string>
 	<string name="raw_mode">Raw Mode</string>
+	<string name="hffax_mode">HF Fax Mode</string>
 	<string name="listening">Listening</string>
 	<string name="audio_settings">Audio Settings</string>
 	<string name="sample_rate">Sample Rate</string>

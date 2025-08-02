@@ -103,6 +103,11 @@
 						android:title="@string/raw_mode"
 						app:iconTint="@color/tint" />
 					<item
+						android:id="@+id/action_force_hffax_mode"
+						android:icon="@drawable/baseline_image_not_supported_24"
+						android:title="@string/hffax_mode"
+						app:iconTint="@color/tint" />
+					<item
 						android:id="@+id/action_auto_mode"
 						android:icon="@drawable/baseline_auto_mode_24"
 						android:title="@string/auto_mode"
