@@ -551,7 +551,7 @@ public class MainActivity extends AppCompatActivity {
 		fgColor = getColor(R.color.fg);
 		thinColor = getColor(R.color.thin);
 		tintColor = getColor(R.color.tint);
-		scopeBuffer = new PixelBuffer(640, 2 * 1280);
+		scopeBuffer = new PixelBuffer(640 * 2, 2 * 1280 * 2);
 		waterfallPlotBuffer = new PixelBuffer(256, 2 * 256);
 		peakMeterBuffer = new PixelBuffer(1, 16);
 		imageBuffer = new PixelBuffer(800, 616);
@@ -826,7 +826,11 @@ public class MainActivity extends AppCompatActivity {
 		int height = scopeBuffer.height / 2;
 		int stride = scopeBuffer.width;
 		int offset = stride * scopeBuffer.line;
-		storeBitmap(Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888));
+		Bitmap bmp = Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888);
+		if (currentMode == null || !currentMode.equals("HF Fax")) {
+			bmp = Bitmap.createScaledBitmap(bmp, width / 2, height / 2, true);
+		}
+		storeBitmap(bmp);
 	}
 
 	private void createScope(Configuration config) {
