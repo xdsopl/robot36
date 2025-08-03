@@ -66,7 +66,7 @@ public class Demodulator {
 		double centerFrequency = (lowestFrequency + highestFrequency) / 2;
 		baseBandOscillator = new Phasor(-centerFrequency, sampleRate);
 		double syncPulseFrequency = 1200;
-		syncPulseFrequencyValue = (float) ((syncPulseFrequency - centerFrequency) * 2 / scanLineBandwidth);
+		syncPulseFrequencyValue = (float) ((syncPulseFrequency - centerFrequency) * 2 / scanLineBandwidth); //converts to range from -1 to 1
 		syncPulseFrequencyTolerance = (float) (50 * 2 / scanLineBandwidth);
 		double syncPorchFrequency = 1500;
 		double syncHighFrequency = (syncPulseFrequency + syncPorchFrequency) / 2;
@@ -77,6 +77,9 @@ public class Demodulator {
 		baseBand = new Complex();
 	}
 
+	/**
+	 * @return true if sync pulse detected
+	 */
 	public boolean process(float[] buffer, int channelSelect) {
 		boolean syncPulseDetected = false;
 		int channels = channelSelect > 0 ? 2 : 1;

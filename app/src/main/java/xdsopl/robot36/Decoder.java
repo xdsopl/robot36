@@ -405,6 +405,9 @@ public class Decoder {
 		return true;
 	}
 
+	/**
+	@return true if new lines present
+	 */
 	public boolean process(float[] recordBuffer, int channelSelect) {
 		boolean syncPulseDetected = demodulator.process(recordBuffer, channelSelect);
 		int syncPulseIndex = currentSample + demodulator.syncPulseOffset;
