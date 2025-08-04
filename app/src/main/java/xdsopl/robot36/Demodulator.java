@@ -33,9 +33,11 @@ public class Demodulator {
 	public int syncPulseOffset;
 	public float frequencyOffset;
 
+	public static final double syncPulseFrequency = 1200;
+	public static final double blackFrequency = 1500;
+	public static final double whiteFrequency = 2300;
+
 	Demodulator(int sampleRate) {
-		double blackFrequency = 1500;
-		double whiteFrequency = 2300;
 		double scanLineBandwidth = whiteFrequency - blackFrequency;
 		frequencyModulation = new FrequencyModulation(scanLineBandwidth, sampleRate);
 		double syncPulse5msSeconds = 0.005;
@@ -65,7 +67,6 @@ public class Demodulator {
 			baseBandLowPass.taps[i] = (float) (kaiser.window(2.0, i, baseBandLowPass.length) * Filter.lowPass(cutoffFrequency, sampleRate, i, baseBandLowPass.length));
 		double centerFrequency = (lowestFrequency + highestFrequency) / 2;
 		baseBandOscillator = new Phasor(-centerFrequency, sampleRate);
-		double syncPulseFrequency = 1200;
 		syncPulseFrequencyValue = (float) ((syncPulseFrequency - centerFrequency) * 2 / scanLineBandwidth); //converts to range from -1 to 1
 		syncPulseFrequencyTolerance = (float) (50 * 2 / scanLineBandwidth);
 		double syncPorchFrequency = 1500;
