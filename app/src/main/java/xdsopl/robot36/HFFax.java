@@ -32,12 +32,12 @@ public class HFFax implements Mode {
 
     @Override
     public int getWidth() {
-        return -1;
+        return 1808;
     }
 
     @Override
     public int getHeight() {
-        return -1;
+        return 1200;
     }
 
     @Override
