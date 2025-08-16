@@ -104,8 +104,9 @@ public class HFFax extends BaseMode {
             int color = ColorConverter.GRAY(scratchBuffer[position]);
             pixelBuffer.pixels[i] = color;
 
-            cumulated[i] *= 0.99f; //decay old data
-            cumulated[i] += Color.luminance(color);
+            //accumulate recent values, forget old
+            float decay = 0.99f;
+            cumulated[i] = cumulated[i] * decay + Color.luminance(color) * (1 - decay);
         }
 
         //try to detect "sync": thick white margin
