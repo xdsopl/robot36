@@ -1,6 +1,6 @@
 package xdsopl.robot36;
 
-public class HFFax implements Mode {
+public class HFFax extends BaseMode {
     private final ExponentialMovingAverage lowPassFilter;
     private final int smallPictureMaxSamples;
     private final int mediumPictureMaxSamples;

@@ -6,7 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
-public class Robot_72_Color implements Mode {
+public class Robot_72_Color extends BaseMode {
 	private final ExponentialMovingAverage lowPassFilter;
 	private final int horizontalPixels;
 	private final int verticalPixels;
