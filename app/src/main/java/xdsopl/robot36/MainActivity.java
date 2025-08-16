@@ -15,9 +15,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -846,27 +844,10 @@ public class MainActivity extends AppCompatActivity {
 		int stride = scopeBuffer.width;
 		int offset = stride * scopeBuffer.line;
 		Bitmap bmp = Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888);
-		if (decoder != null && decoder.currentMode.getName().equals("HF Fax")) {
-			Mode mode = decoder.currentMode;
-			int shift = mode.getEstimatedHorizontalShift();
-			if (shift > 0) {
-				Bitmap bmpMutable = Bitmap.createBitmap(mode.getWidth(), bmp.getHeight(), Bitmap.Config.ARGB_8888);
-				Canvas canvas = new Canvas(bmpMutable);
-				canvas.drawBitmap(
-						bmp,
-						new Rect(0, 0, shift, bmp.getHeight()),
-						new Rect(mode.getWidth() - shift, 0, mode.getWidth(), bmp.getHeight()),
-						null);
-				canvas.drawBitmap(
-						bmp,
-						new Rect(shift, 0, mode.getWidth(), bmp.getHeight()),
-						new Rect(0, 1, mode.getWidth() - shift, bmp.getHeight() + 1),
-						null);
 
-				bmp = bmpMutable;
-			}
-		} else {
-			bmp = Bitmap.createScaledBitmap(bmp, width / 3, height / 3, true);
+		if (decoder != null)
+		{
+			bmp = decoder.currentMode.postProcessScopeImage(bmp);
 		}
 
 		storeBitmap(bmp);

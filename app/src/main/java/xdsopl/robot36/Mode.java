@@ -6,6 +6,8 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
+import android.graphics.Bitmap;
+
 public interface Mode {
 	/**
 	 * @return mode name
@@ -46,6 +48,11 @@ public interface Mode {
 	 * @return number of pixels of horizontal shift based on recent data, nonzero for HF Fax
 	 */
 	int getEstimatedHorizontalShift();
+
+	/**
+	 * Adjust scope image before saving
+	 */
+	Bitmap postProcessScopeImage(Bitmap bmp);
 
 	/**
 	 * Reset internal state.
