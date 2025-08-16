@@ -45,11 +45,6 @@ public interface Mode {
 	int getScanLineSamples();
 
 	/**
-	 * @return number of pixels of horizontal shift based on recent data, nonzero for HF Fax
-	 */
-	int getEstimatedHorizontalShift();
-
-	/**
 	 * Adjust scope image before saving
 	 */
 	Bitmap postProcessScopeImage(Bitmap bmp);

@@ -62,29 +62,23 @@ public class HFFax extends BaseMode {
     }
 
     @Override
-    public int getEstimatedHorizontalShift() {
-        return horizontalShift;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
     public Bitmap postProcessScopeImage(Bitmap bmp) {
-        int shift = getEstimatedHorizontalShift();
-        if (shift > 0) {
+        if (horizontalShift > 0) {
             Bitmap bmpMutable = Bitmap.createBitmap(getWidth(), bmp.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bmpMutable);
             canvas.drawBitmap(
                     bmp,
-                    new Rect(0, 0, shift, bmp.getHeight()),
-                    new Rect(getWidth() - shift, 0, getWidth(), bmp.getHeight()),
+                    new Rect(0, 0, horizontalShift, bmp.getHeight()),
+                    new Rect(getWidth() - horizontalShift, 0, getWidth(), bmp.getHeight()),
                     null);
             canvas.drawBitmap(
                     bmp,
-                    new Rect(shift, 0, getWidth(), bmp.getHeight()),
-                    new Rect(0, 1, getWidth() - shift, bmp.getHeight() + 1),
+                    new Rect(horizontalShift, 0, getWidth(), bmp.getHeight()),
+                    new Rect(0, 1, getWidth() - horizontalShift, bmp.getHeight() + 1),
                     null);
 
             return bmpMutable;
