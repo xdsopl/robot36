@@ -43,6 +43,11 @@ public interface Mode {
 	int getScanLineSamples();
 
 	/**
+	 * @return number of pixels of horizontal shift based on recent data, nonzero for HF Fax
+	 */
+	int getEstimatedHorizontalShift();
+
+	/**
 	 * Reset internal state.
 	 */
 	void reset();

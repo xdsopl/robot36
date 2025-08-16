@@ -15,6 +15,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -846,6 +847,19 @@ public class MainActivity extends AppCompatActivity {
 		Bitmap bmp = Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888);
 		if (currentMode == null || !currentMode.equals("HF Fax")) {
 			bmp = Bitmap.createScaledBitmap(bmp, width / 3, height / 3, true);
+		} else {
+			Mode mode = decoder.currentMode;
+			int shift = mode.getEstimatedHorizontalShift();
+			if (shift > 0) {
+				Bitmap part1 = Bitmap.createBitmap(bmp, 0, 0, shift, bmp.getHeight());
+				Bitmap part2 = Bitmap.createBitmap(bmp, shift, 0, mode.getWidth() - shift, bmp.getHeight());
+
+				Bitmap bmpMutable = Bitmap.createBitmap(mode.getWidth(), bmp.getHeight(), Bitmap.Config.ARGB_8888);
+				Canvas canvas = new android.graphics.Canvas(bmpMutable);
+				canvas.drawBitmap(part2, 0, 1, null);
+				canvas.drawBitmap(part1, mode.getWidth() - shift, 0, null);
+				bmp = bmpMutable;
+			}
 		}
 		storeBitmap(bmp);
 	}

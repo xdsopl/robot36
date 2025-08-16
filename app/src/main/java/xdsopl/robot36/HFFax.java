@@ -1,19 +1,21 @@
 package xdsopl.robot36;
 
+import android.graphics.Color;
+
 public class HFFax extends BaseMode {
     private final ExponentialMovingAverage lowPassFilter;
-    private final int smallPictureMaxSamples;
-    private final int mediumPictureMaxSamples;
     private final String name;
 
     private final int sr;
 
+    private final float[] cumulated;
+    private int horizontalShift = 0;
+
     HFFax(String name, int sampleRate) {
         this.name = name;
-        smallPictureMaxSamples = (int) Math.round(0.125 * sampleRate);
-        mediumPictureMaxSamples = (int) Math.round(0.175 * sampleRate);
         lowPassFilter = new ExponentialMovingAverage();
         this.sr = sampleRate;
+        cumulated = new float[getWidth()];
     }
 
     private float freqToLevel(float frequency, float offset) {
@@ -56,6 +58,11 @@ public class HFFax extends BaseMode {
     }
 
     @Override
+    public int getEstimatedHorizontalShift() {
+        return horizontalShift;
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -63,22 +70,38 @@ public class HFFax extends BaseMode {
     public boolean decodeScanLine(PixelBuffer pixelBuffer, float[] scratchBuffer, float[] scanLineBuffer, int scopeBufferWidth, int syncPulseIndex, int scanLineSamples, float frequencyOffset) {
         if (syncPulseIndex < 0 || syncPulseIndex + scanLineSamples > scanLineBuffer.length)
             return false;
-        int horizontalPixels = scopeBufferWidth;
-        if (scanLineSamples < smallPictureMaxSamples)
-            horizontalPixels /= 2;
-        if (scanLineSamples < mediumPictureMaxSamples)
-            horizontalPixels /= 2;
+        int horizontalPixels = getWidth();
         lowPassFilter.cutoff(horizontalPixels, 2 * scanLineSamples, 2);
         lowPassFilter.reset();
         for (int i = 0; i < scanLineSamples; ++i)
-            scratchBuffer[i] = lowPassFilter.avg(scanLineBuffer[syncPulseIndex + i]);
+            scratchBuffer[i] = lowPassFilter.avg(scanLineBuffer[i]);
         lowPassFilter.reset();
         for (int i = scanLineSamples - 1; i >= 0; --i)
             scratchBuffer[i] = freqToLevel(lowPassFilter.avg(scratchBuffer[i]), frequencyOffset);
         for (int i = 0; i < horizontalPixels; ++i) {
             int position = (i * scanLineSamples) / horizontalPixels;
-            pixelBuffer.pixels[i] = ColorConverter.GRAY(scratchBuffer[position]);
+            int color = ColorConverter.GRAY(scratchBuffer[position]);
+            pixelBuffer.pixels[i] = color;
+
+            cumulated[i] *= 0.99f; //decay old data
+            cumulated[i] += Color.luminance(color);
         }
+
+        //try to detect "sync": thick white margin
+        int bestIndex = 0;
+        float bestValue = 0;
+        for (int x = 0; x < getWidth(); ++x)
+        {
+            float val = cumulated[x];
+            if (val > bestValue)
+            {
+                bestIndex = x;
+                bestValue = val;
+            }
+        }
+
+        horizontalShift = bestIndex;
+
         pixelBuffer.width = horizontalPixels;
         pixelBuffer.height = 1;
         return true;
