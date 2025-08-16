@@ -33,7 +33,7 @@ public interface Mode {
 	int getBegin();
 
 	/**
-	 * @return number of samples from start of scanline to sync pulse??? nonzero for Scottie only?
+	 * @return number of samples from start of first scanline to first sync pulse?, nonzero for Scottie
 	 */
 	int getFirstSyncPulseIndex();
 
@@ -56,7 +56,7 @@ public interface Mode {
 	 * @param pixelBuffer buffer to store decoded pixels
 	 * @param scratchBuffer buffer for temporary data
 	 * @param scanLineBuffer raw samples to be decoded, can contain more than one scanline
-	 * @param scopeBufferWidth ??? used in RawDecoder, initializes width?
+	 * @param scopeBufferWidth used in RawDecoder, initializes width?
 	 * @param syncPulseIndex number of samples from array start to sync pulse
 	 * @param scanLineSamples number of samples per scanline
 	 * @param frequencyOffset correction of frequency of expected vs actual sync pulse (normalized to range (-1, 1))

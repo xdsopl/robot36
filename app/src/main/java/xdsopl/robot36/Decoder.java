@@ -354,6 +354,12 @@ public class Decoder {
 		return true;
 	}
 
+	/**
+	 * @param freqOffs offsets from expected sync frequency
+	 * @param pulses positions of sync pulses
+	 * @param lines lengths of scan lines
+	 * @param index position of latest sync pulse
+	 */
 	private boolean processSyncPulse(ArrayList<Mode> modes, float[] freqOffs, int[] pulses, int[] lines, int index) {
 		for (int i = 1; i < pulses.length; ++i)
 			pulses[i - 1] = pulses[i];

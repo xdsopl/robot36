@@ -2,19 +2,20 @@ package xdsopl.robot36;
 
 import android.graphics.Color;
 
+/**
+ * HF Fax, IOC 576, 120 lines per minute
+ */
 public class HFFax extends BaseMode {
     private final ExponentialMovingAverage lowPassFilter;
     private final String name;
-
-    private final int sr;
-
+    private final int sampleRate;
     private final float[] cumulated;
     private int horizontalShift = 0;
 
     HFFax(String name, int sampleRate) {
         this.name = name;
         lowPassFilter = new ExponentialMovingAverage();
-        this.sr = sampleRate;
+        this.sampleRate = sampleRate;
         cumulated = new float[getWidth()];
     }
 
@@ -54,7 +55,7 @@ public class HFFax extends BaseMode {
 
     @Override
     public int getScanLineSamples() {
-        return sr / 2;
+        return sampleRate / 2;
     }
 
     @Override

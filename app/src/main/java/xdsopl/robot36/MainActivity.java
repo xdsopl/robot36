@@ -631,7 +631,7 @@ public class MainActivity extends AppCompatActivity {
 			return true;
 		}
 		if (id == R.id.action_force_hffax_mode) {
-			setMode("HF Fax");
+			setMode(R.string.hf_fax);
 			return true;
 		}
 		if (id == R.id.action_force_robot36_color) {

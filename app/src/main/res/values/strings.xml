@@ -21,6 +21,7 @@
 	<string name="scottie2" translatable="false">Scottie 2</string>
 	<string name="scottie_dx" translatable="false">Scottie DX</string>
 	<string name="wraase_sc2_180" translatable="false">Wraase SC2–180</string>
+	<string name="hf_fax" translatable="false">HF Fax</string>
 	<string name="rate_8000" translatable="false">8 kHz</string>
 	<string name="rate_16000" translatable="false">16 kHz</string>
 	<string name="rate_32000" translatable="false">32 kHz</string>
@@ -44,7 +45,6 @@
 	<string name="auto_mode">Auto Mode</string>
 	<string name="lock_mode">Lock Mode</string>
 	<string name="raw_mode">Raw Mode</string>
-	<string name="hffax_mode">HF Fax Mode</string>
 	<string name="listening">Listening</string>
 	<string name="audio_settings">Audio Settings</string>
 	<string name="sample_rate">Sample Rate</string>
