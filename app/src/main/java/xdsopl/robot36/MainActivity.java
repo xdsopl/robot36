@@ -44,7 +44,6 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.ShareActionProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.os.LocaleListCompat;
 import androidx.core.view.MenuItemCompat;
@@ -238,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
 				for (int freq: markerFrequencies) {
 					int marker = freq / binWidthHz - lowestBin;
 					waterfallPlotBuffer.pixels[line + marker - 1] = Color.BLACK;
-					waterfallPlotBuffer.pixels[line + marker] = ColorUtils.blendARGB(waterfallPlotBuffer.pixels[line + marker], Color.GREEN, 0.8f);
+					waterfallPlotBuffer.pixels[line + marker] = ColorConverter.blend(waterfallPlotBuffer.pixels[line + marker], Color.GREEN, 0.8f);
 					waterfallPlotBuffer.pixels[line + marker + 1] = Color.BLACK;
 				}
 
