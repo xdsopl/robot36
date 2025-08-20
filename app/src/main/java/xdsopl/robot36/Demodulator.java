@@ -13,6 +13,8 @@ public class Demodulator {
 	private final SchmittTrigger syncPulseTrigger;
 	private final Phasor baseBandOscillator;
 	private final Delay syncPulseValueDelay;
+	private final double scanLineBandwidth;
+	private final double centerFrequency;
 	private final float syncPulseFrequencyValue;
 	private final float syncPulseFrequencyTolerance;
 	private final int syncPulse5msMinSamples;
@@ -38,7 +40,7 @@ public class Demodulator {
 	public static final double whiteFrequency = 2300;
 
 	Demodulator(int sampleRate) {
-		double scanLineBandwidth = whiteFrequency - blackFrequency;
+		scanLineBandwidth = whiteFrequency - blackFrequency;
 		frequencyModulation = new FrequencyModulation(scanLineBandwidth, sampleRate);
 		double syncPulse5msSeconds = 0.005;
 		double syncPulse9msSeconds = 0.009;
@@ -65,17 +67,21 @@ public class Demodulator {
 		Kaiser kaiser = new Kaiser();
 		for (int i = 0; i < baseBandLowPass.length; ++i)
 			baseBandLowPass.taps[i] = (float) (kaiser.window(2.0, i, baseBandLowPass.length) * Filter.lowPass(cutoffFrequency, sampleRate, i, baseBandLowPass.length));
-		double centerFrequency = (lowestFrequency + highestFrequency) / 2;
+		centerFrequency = (lowestFrequency + highestFrequency) / 2;
 		baseBandOscillator = new Phasor(-centerFrequency, sampleRate);
-		syncPulseFrequencyValue = (float) ((syncPulseFrequency - centerFrequency) * 2 / scanLineBandwidth); //converts to range from -1 to 1
+		syncPulseFrequencyValue = (float) normalizeFrequency(syncPulseFrequency);
 		syncPulseFrequencyTolerance = (float) (50 * 2 / scanLineBandwidth);
 		double syncPorchFrequency = 1500;
 		double syncHighFrequency = (syncPulseFrequency + syncPorchFrequency) / 2;
 		double syncLowFrequency = (syncPulseFrequency + syncHighFrequency) / 2;
-		double syncLowValue = (syncLowFrequency - centerFrequency) * 2 / scanLineBandwidth;
-		double syncHighValue = (syncHighFrequency - centerFrequency) * 2 / scanLineBandwidth;
+		double syncLowValue = normalizeFrequency(syncLowFrequency);
+		double syncHighValue = normalizeFrequency(syncHighFrequency);
 		syncPulseTrigger = new SchmittTrigger((float) syncLowValue, (float) syncHighValue);
 		baseBand = new Complex();
+	}
+
+	private double normalizeFrequency(double frequency) {
+		return (frequency - centerFrequency) * 2 / scanLineBandwidth;
 	}
 
 	/**
