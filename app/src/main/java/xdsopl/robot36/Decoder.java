@@ -411,10 +411,8 @@ public class Decoder {
 		return true;
 	}
 
-	/**
-	@return true if new lines present
-	 */
 	public boolean process(float[] recordBuffer, int channelSelect) {
+		boolean newLinesPresent = false;
 		boolean syncPulseDetected = demodulator.process(recordBuffer, channelSelect);
 		int syncPulseIndex = currentSample + demodulator.syncPulseOffset;
 		int channels = channelSelect > 0 ? 2 : 1;
@@ -428,25 +426,28 @@ public class Decoder {
 		if (syncPulseDetected) {
 			switch (demodulator.syncPulseWidth) {
 				case FiveMilliSeconds:
-					return processSyncPulse(syncPulse5msModes, last5msFrequencyOffsets, last5msSyncPulses, last5msScanLines, syncPulseIndex);
+					newLinesPresent = processSyncPulse(syncPulse5msModes, last5msFrequencyOffsets, last5msSyncPulses, last5msScanLines, syncPulseIndex);
+					break;
 				case NineMilliSeconds:
 					leaderBreakIndex = syncPulseIndex;
-					return processSyncPulse(syncPulse9msModes, last9msFrequencyOffsets, last9msSyncPulses, last9msScanLines, syncPulseIndex);
+					newLinesPresent = processSyncPulse(syncPulse9msModes, last9msFrequencyOffsets, last9msSyncPulses, last9msScanLines, syncPulseIndex);
+					break;
 				case TwentyMilliSeconds:
 					leaderBreakIndex = syncPulseIndex;
-					return processSyncPulse(syncPulse20msModes, last20msFrequencyOffsets, last20msSyncPulses, last20msScanLines, syncPulseIndex);
+					newLinesPresent = processSyncPulse(syncPulse20msModes, last20msFrequencyOffsets, last20msSyncPulses, last20msScanLines, syncPulseIndex);
+					break;
 				default:
-					return false;
+					break;
 			}
-		}
-		if (handleHeader())
-			return true;
-		if (currentSample > lastSyncPulseIndex + (currentScanLineSamples * 5) / 4) {
+		} else if (handleHeader()) {
+			newLinesPresent = true;
+		} else if (currentSample > lastSyncPulseIndex + (currentScanLineSamples * 5) / 4) {
 			copyLines(currentMode.decodeScanLine(pixelBuffer, scratchBuffer, scanLineBuffer, scopeBuffer.width, lastSyncPulseIndex, currentScanLineSamples, lastFrequencyOffset));
 			lastSyncPulseIndex += currentScanLineSamples;
-			return true;
+			newLinesPresent = true;
 		}
-		return false;
+
+		return newLinesPresent;
 	}
 
 	public void setMode(String name) {
