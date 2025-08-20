@@ -15,8 +15,8 @@ public class HFFax extends BaseMode {
 	private final float[] cumulated;
 	private int horizontalShift = 0;
 
-	HFFax(String name, int sampleRate) {
-		this.name = name;
+	HFFax(int sampleRate) {
+		this.name = "HF Fax";
 		lowPassFilter = new ExponentialMovingAverage();
 		this.sampleRate = sampleRate;
 		cumulated = new float[getWidth()];

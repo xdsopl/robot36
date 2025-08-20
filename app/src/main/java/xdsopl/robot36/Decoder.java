@@ -96,7 +96,7 @@ public class Decoder {
 		double scanLineToleranceSeconds = 0.001;
 		scanLineToleranceSamples = (int) Math.round(scanLineToleranceSeconds * sampleRate);
 		rawMode = new RawDecoder(rawName, sampleRate);
-		hfFaxMode = new HFFax("HF Fax", sampleRate);
+		hfFaxMode = new HFFax(sampleRate);
 		Mode robot36 = new Robot_36_Color(sampleRate);
 		currentMode = robot36;
 		currentScanLineSamples = robot36.getScanLineSamples();
