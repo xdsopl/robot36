@@ -29,7 +29,7 @@ public class RawDecoder extends BaseMode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return -1;
 	}
 
@@ -44,7 +44,7 @@ public class RawDecoder extends BaseMode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return 0;
 	}
 
@@ -59,7 +59,7 @@ public class RawDecoder extends BaseMode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 	}
 
 	@Override

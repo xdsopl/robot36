@@ -9,59 +9,26 @@ package xdsopl.robot36;
 import android.graphics.Bitmap;
 
 public interface Mode {
-	/**
-	 * @return mode name
-	 */
 	String getName();
 
-	/**
-	 * @return VIS code
-	 */
-	int getCode();
+	int getVISCode();
 
-	/**
-	 * @return image width
-	 */
 	int getWidth();
 
-	/**
-	 * @return image height
-	 */
 	int getHeight();
 
-	/**
-	 * @return number of samples from sync pulse to start of image data
-	 */
-	int getBegin();
+	int getFirstPixelSampleIndex();
 
-	/**
-	 * @return number of samples from start of first scanline to first sync pulse?, nonzero for Scottie
-	 */
 	int getFirstSyncPulseIndex();
 
-	/**
-	 * @return number of samples in a scanline
-	 */
 	int getScanLineSamples();
 
-	/**
-	 * Adjust scope image before saving
-	 */
 	Bitmap postProcessScopeImage(Bitmap bmp);
 
-	/**
-	 * Reset internal state.
-	 */
-	void reset();
+	void resetState();
 
 	/**
-	 * @param pixelBuffer buffer to store decoded pixels
-	 * @param scratchBuffer buffer for temporary data
-	 * @param scanLineBuffer raw samples to be decoded, can contain more than one scanline
-	 * @param scopeBufferWidth used in RawDecoder, initializes width?
-	 * @param syncPulseIndex number of samples from array start to sync pulse
-	 * @param scanLineSamples number of samples per scanline
-	 * @param frequencyOffset correction of frequency of expected vs actual sync pulse (normalized to range (-1, 1))
+	 * @param frequencyOffset normalized correction of frequency (expected vs actual)
 	 * @return true if scanline was decoded
 	 */
 	boolean decodeScanLine(PixelBuffer pixelBuffer, float[] scratchBuffer, float[] scanLineBuffer, int scopeBufferWidth, int syncPulseIndex, int scanLineSamples, float frequencyOffset);

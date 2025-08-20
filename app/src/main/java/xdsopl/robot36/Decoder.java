@@ -159,7 +159,7 @@ public class Decoder {
 
 	private Mode findMode(ArrayList<Mode> modes, int code) {
 		for (Mode mode : modes)
-			if (mode.getCode() == code)
+			if (mode.getVISCode() == code)
 				return mode;
 		return null;
 	}
@@ -334,7 +334,7 @@ public class Decoder {
 		}
 		if (lockMode && mode != currentMode)
 			return false;
-		mode.reset();
+		mode.resetState();
 		imageBuffer.width = mode.getWidth();
 		imageBuffer.height = mode.getHeight();
 		imageBuffer.line = 0;
@@ -348,7 +348,7 @@ public class Decoder {
 		for (int i = 0; i < pulses.length; ++i)
 			pulses[i] = oldestSyncPulseIndex + i * currentScanLineSamples;
 		Arrays.fill(lines, currentScanLineSamples);
-		shiftSamples(lastSyncPulseIndex + mode.getBegin());
+		shiftSamples(lastSyncPulseIndex + mode.getFirstPixelSampleIndex());
 		drawLines(0xff00ff00, 8);
 		drawLines(0xff000000, 10);
 		return true;
@@ -407,7 +407,7 @@ public class Decoder {
 		lastSyncPulseIndex = pulses[pulses.length - 1];
 		currentScanLineSamples = scanLineSamples;
 		lastFrequencyOffset = frequencyOffset;
-		shiftSamples(lastSyncPulseIndex + currentMode.getBegin());
+		shiftSamples(lastSyncPulseIndex + currentMode.getFirstPixelSampleIndex());
 		return true;
 	}
 

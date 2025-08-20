@@ -56,7 +56,7 @@ public class PaulDon extends BaseMode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return code;
 	}
 
@@ -71,7 +71,7 @@ public class PaulDon extends BaseMode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -86,7 +86,7 @@ public class PaulDon extends BaseMode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 	}
 
 	@Override

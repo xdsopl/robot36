@@ -59,7 +59,7 @@ public class Robot_36_Color extends BaseMode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return 8;
 	}
 
@@ -74,7 +74,7 @@ public class Robot_36_Color extends BaseMode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -89,7 +89,7 @@ public class Robot_36_Color extends BaseMode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 		lastEven = false;
 	}
 

@@ -63,7 +63,7 @@ public class Robot_72_Color extends BaseMode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return 12;
 	}
 
@@ -78,7 +78,7 @@ public class Robot_72_Color extends BaseMode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -93,7 +93,7 @@ public class Robot_72_Color extends BaseMode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 	}
 
 	@Override
