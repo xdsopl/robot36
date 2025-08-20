@@ -89,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
 	private int tintColor;
 	private boolean autoSave;
 	private boolean showSpectrogram;
+	private final int binWidthHz = 10;
+	private final int[] freqMarkers = { 1100, 1300, 1500, 2300 };
 
 	private void setStatus(int id) {
 		setTitle(id);
@@ -223,8 +225,12 @@ public class MainActivity extends AppCompatActivity {
 				double lowest = Math.log(1e-9);
 				double highest = Math.log(1);
 				double range = highest - lowest;
+				int minFreq = 140;
+				int minBin = minFreq / binWidthHz;
 				for (int i = 0; i < stride; ++i)
-					waterfallPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + 14]) - lowest) / range);
+					waterfallPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + minBin]) - lowest) / range);
+				for (int freq : freqMarkers)
+					waterfallPlotBuffer.pixels[line + (freq - minFreq) / binWidthHz] = fgColor;
 				System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
 			}
 		}
@@ -315,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
 				if (rateChanged) {
 					decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), recordRate);
 					decoder.setMode(currentMode);
-					stft = new ShortTimeFourierTransform(recordRate / 10, 3);
+					stft = new ShortTimeFourierTransform(recordRate / binWidthHz, 3);
 				}
 				startListening();
 			} else {
