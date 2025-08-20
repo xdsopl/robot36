@@ -319,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
 		int sampleSize = audioFormat == AudioFormat.ENCODING_PCM_FLOAT ? 4 : 2;
 		int frameSize = sampleSize * channelCount;
 		int readsPerSecond = 50;
-		int bufferSize = Integer.highestOneBit(recordRate) * frameSize * 4;
+		int bufferSize = Integer.highestOneBit(recordRate) * frameSize;
 		int frameCount = recordRate / readsPerSecond;
 		int bufferCount = frameCount * channelCount;
 		recordBuffer = new float[bufferCount];
@@ -568,7 +568,7 @@ public class MainActivity extends AppCompatActivity {
 		fgColor = getColor(R.color.fg);
 		thinColor = getColor(R.color.thin);
 		tintColor = getColor(R.color.tint);
-		scopeBuffer = new PixelBuffer(640 * 3, 2 * 1280 * 3);
+		scopeBuffer = new PixelBuffer(640, 2 * 1280);
 		waterfallPlotBuffer = new PixelBuffer(256, 2 * 256);
 		peakMeterBuffer = new PixelBuffer(1, 16);
 		imageBuffer = new PixelBuffer(800, 616);
