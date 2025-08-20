@@ -47,12 +47,6 @@ public class Robot_72_Color extends BaseMode {
 		lowPassFilter = new ExponentialMovingAverage();
 	}
 
-	/**
-	 * FIXME same in other modes (copy&paste)
-	 * @param frequency frequency, range (-1,1)
-	 * @param offset correction, range (-1,1)
-	 * @return pixel value, range (0,1)
-	 */
 	private float freqToLevel(float frequency, float offset) {
 		return 0.5f * (frequency - offset + 1.f);
 	}
