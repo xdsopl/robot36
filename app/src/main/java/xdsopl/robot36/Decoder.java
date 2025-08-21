@@ -55,7 +55,7 @@ public class Decoder {
 		this.scopeBuffer = scopeBuffer;
 		this.imageBuffer = imageBuffer;
 		imageBuffer.line = -1;
-		pixelBuffer = new PixelBuffer(2000, 2);
+		pixelBuffer = new PixelBuffer(800, 2);
 		demodulator = new Demodulator(sampleRate);
 		double pulseFilterSeconds = 0.0025;
 		int pulseFilterSamples = (int) Math.round(pulseFilterSeconds * sampleRate) | 1;
