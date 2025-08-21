@@ -84,9 +84,6 @@ public class Demodulator {
 		return (frequency - centerFrequency) * 2 / scanLineBandwidth;
 	}
 
-	/**
-	 * @return true if sync pulse detected
-	 */
 	public boolean process(float[] buffer, int channelSelect) {
 		boolean syncPulseDetected = false;
 		int channels = channelSelect > 0 ? 2 : 1;

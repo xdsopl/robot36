@@ -354,29 +354,23 @@ public class Decoder {
 		return true;
 	}
 
-	/**
-	 * @param freqOffs offsets from expected sync frequency
-	 * @param pulses positions of sync pulses
-	 * @param lines lengths of scan lines
-	 * @param index position of latest sync pulse
-	 */
-	private boolean processSyncPulse(ArrayList<Mode> modes, float[] freqOffs, int[] pulses, int[] lines, int index) {
-		for (int i = 1; i < pulses.length; ++i)
-			pulses[i - 1] = pulses[i];
-		pulses[pulses.length - 1] = index;
-		for (int i = 1; i < lines.length; ++i)
-			lines[i - 1] = lines[i];
-		lines[lines.length - 1] = pulses[pulses.length - 1] - pulses[pulses.length - 2];
+	private boolean processSyncPulse(ArrayList<Mode> modes, float[] freqOffs, int[] syncIndexes, int[] lineLengths, int latestSyncIndex) {
+		for (int i = 1; i < syncIndexes.length; ++i)
+			syncIndexes[i - 1] = syncIndexes[i];
+		syncIndexes[syncIndexes.length - 1] = latestSyncIndex;
+		for (int i = 1; i < lineLengths.length; ++i)
+			lineLengths[i - 1] = lineLengths[i];
+		lineLengths[lineLengths.length - 1] = syncIndexes[syncIndexes.length - 1] - syncIndexes[syncIndexes.length - 2];
 		for (int i = 1; i < freqOffs.length; ++i)
 			freqOffs[i - 1] = freqOffs[i];
-		freqOffs[pulses.length - 1] = demodulator.frequencyOffset;
-		if (lines[0] == 0)
+		freqOffs[syncIndexes.length - 1] = demodulator.frequencyOffset;
+		if (lineLengths[0] == 0)
 			return false;
-		double mean = scanLineMean(lines);
+		double mean = scanLineMean(lineLengths);
 		int scanLineSamples = (int) Math.round(mean);
 		if (scanLineSamples < scanLineMinSamples || scanLineSamples > scratchBuffer.length)
 			return false;
-		if (scanLineStdDev(lines, mean) > scanLineToleranceSamples)
+		if (scanLineStdDev(lineLengths, mean) > scanLineToleranceSamples)
 			return false;
 		boolean pictureChanged = false;
 		if (lockMode || imageBuffer.line >= 0 && imageBuffer.line < imageBuffer.height) {
@@ -387,7 +381,7 @@ public class Decoder {
 			currentMode = detectMode(modes, scanLineSamples);
 			pictureChanged = currentMode != prevMode
 				|| Math.abs(currentScanLineSamples - scanLineSamples) > scanLineToleranceSamples
-				|| Math.abs(lastSyncPulseIndex + scanLineSamples - pulses[pulses.length - 1]) > syncPulseToleranceSamples;
+				|| Math.abs(lastSyncPulseIndex + scanLineSamples - syncIndexes[syncIndexes.length - 1]) > syncPulseToleranceSamples;
 		}
 		if (pictureChanged) {
 			drawLines(0xff000000, 10);
@@ -395,16 +389,16 @@ public class Decoder {
 			drawLines(0xff000000, 10);
 		}
 		float frequencyOffset = (float) frequencyOffsetMean(freqOffs);
-		if (pulses[0] >= scanLineSamples && pictureChanged) {
-			int endPulse = pulses[0];
+		if (syncIndexes[0] >= scanLineSamples && pictureChanged) {
+			int endPulse = syncIndexes[0];
 			int extrapolate = endPulse / scanLineSamples;
 			int firstPulse = endPulse - extrapolate * scanLineSamples;
 			for (int pulseIndex = firstPulse; pulseIndex < endPulse; pulseIndex += scanLineSamples)
 				copyLines(currentMode.decodeScanLine(pixelBuffer, scratchBuffer, scanLineBuffer, scopeBuffer.width, pulseIndex, scanLineSamples, frequencyOffset));
 		}
-		for (int i = pictureChanged ? 0 : lines.length - 1; i < lines.length; ++i)
-			copyLines(currentMode.decodeScanLine(pixelBuffer, scratchBuffer, scanLineBuffer, scopeBuffer.width, pulses[i], lines[i], frequencyOffset));
-		lastSyncPulseIndex = pulses[pulses.length - 1];
+		for (int i = pictureChanged ? 0 : lineLengths.length - 1; i < lineLengths.length; ++i)
+			copyLines(currentMode.decodeScanLine(pixelBuffer, scratchBuffer, scanLineBuffer, scopeBuffer.width, syncIndexes[i], lineLengths[i], frequencyOffset));
+		lastSyncPulseIndex = syncIndexes[syncIndexes.length - 1];
 		currentScanLineSamples = scanLineSamples;
 		lastFrequencyOffset = frequencyOffset;
 		shiftSamples(lastSyncPulseIndex + currentMode.getFirstPixelSampleIndex());
