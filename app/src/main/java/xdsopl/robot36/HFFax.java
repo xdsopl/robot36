@@ -38,7 +38,7 @@ public class HFFax extends BaseMode {
 
 	@Override
 	public int getWidth() {
-		return 1808;
+		return 640;
 	}
 
 	@Override
@@ -67,24 +67,24 @@ public class HFFax extends BaseMode {
 
 	@Override
 	public Bitmap postProcessScopeImage(Bitmap bmp) {
+		int realWidth = 1808;
+		int realHorizontalShift = horizontalShift * realWidth / getWidth();
+		Bitmap bmpMutable = Bitmap.createBitmap(realWidth, bmp.getHeight(), Bitmap.Config.ARGB_8888);
+		Canvas canvas = new Canvas(bmpMutable);
 		if (horizontalShift > 0) {
-			Bitmap bmpMutable = Bitmap.createBitmap(getWidth(), bmp.getHeight(), Bitmap.Config.ARGB_8888);
-			Canvas canvas = new Canvas(bmpMutable);
 			canvas.drawBitmap(
 					bmp,
 					new Rect(0, 0, horizontalShift, bmp.getHeight()),
-					new Rect(getWidth() - horizontalShift, 0, getWidth(), bmp.getHeight()),
+					new Rect(realWidth - realHorizontalShift, 0, realWidth, bmp.getHeight()),
 					null);
-			canvas.drawBitmap(
-					bmp,
-					new Rect(horizontalShift, 0, getWidth(), bmp.getHeight()),
-					new Rect(0, 1, getWidth() - horizontalShift, bmp.getHeight() + 1),
-					null);
-
-			return bmpMutable;
 		}
+		canvas.drawBitmap(
+				bmp,
+				new Rect(horizontalShift, 0, getWidth(), bmp.getHeight()),
+				new Rect(0, 1, realWidth - realHorizontalShift, bmp.getHeight() + 1),
+				null);
 
-		return bmp;
+		return bmpMutable;
 	}
 
 	@Override
