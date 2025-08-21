@@ -15,7 +15,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -44,7 +43,6 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.ShareActionProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.os.LocaleListCompat;
 import androidx.core.view.MenuItemCompat;
@@ -74,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
 	private ImageView peakMeterView;
 	private PixelBuffer imageBuffer;
 	private ShortTimeFourierTransform stft;
-	private final int binWidthHz = 10;
 	private short[] shortBuffer;
 	private float[] recordBuffer;
 	private AudioRecord audioRecord;
@@ -92,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
 	private int tintColor;
 	private boolean autoSave;
 	private boolean showSpectrogram;
+	private final int binWidthHz = 10;
+	private final int[] freqMarkers = { 1100, 1300, 1500, 2300 };
 
 	private void setStatus(int id) {
 		setTitle(id);
@@ -226,22 +225,12 @@ public class MainActivity extends AppCompatActivity {
 				double lowest = Math.log(1e-9);
 				double highest = Math.log(1);
 				double range = highest - lowest;
-				int lowestBin = 14;
+				int minFreq = 140;
+				int minBin = minFreq / binWidthHz;
 				for (int i = 0; i < stride; ++i)
-					waterfallPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + lowestBin]) - lowest) / range);
-
-				int[] markerFrequencies = new int[] {
-						(int)Demodulator.syncPulseFrequency,
-						(int)Demodulator.blackFrequency,
-						(int)Demodulator.whiteFrequency,
-				};
-				for (int freq: markerFrequencies) {
-					int marker = freq / binWidthHz - lowestBin;
-					waterfallPlotBuffer.pixels[line + marker - 1] = Color.BLACK;
-					waterfallPlotBuffer.pixels[line + marker] = ColorUtils.blendARGB(waterfallPlotBuffer.pixels[line + marker], Color.GREEN, 0.8f);
-					waterfallPlotBuffer.pixels[line + marker + 1] = Color.BLACK;
-				}
-
+					waterfallPlotBuffer.pixels[line + i] = rainbow((Math.log(stft.power[i + minBin]) - lowest) / range);
+				for (int freq : freqMarkers)
+					waterfallPlotBuffer.pixels[line + (freq - minFreq) / binWidthHz] = fgColor;
 				System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
 			}
 		}
