@@ -51,7 +51,7 @@ public class RGBDecoder implements Mode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return code;
 	}
 
@@ -66,7 +66,7 @@ public class RGBDecoder implements Mode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -81,7 +81,7 @@ public class RGBDecoder implements Mode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 	}
 
 	@Override
