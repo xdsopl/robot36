@@ -38,6 +38,7 @@ public class Decoder {
 	private final int visCodeBitSamples;
 	private final int visCodeSamples;
 	private final Mode rawMode;
+	private final Mode hfFaxMode;
 	private final ArrayList<Mode> syncPulse5msModes;
 	private final ArrayList<Mode> syncPulse9msModes;
 	private final ArrayList<Mode> syncPulse20msModes;
@@ -95,6 +96,7 @@ public class Decoder {
 		double scanLineToleranceSeconds = 0.001;
 		scanLineToleranceSamples = (int) Math.round(scanLineToleranceSeconds * sampleRate);
 		rawMode = new RawDecoder(rawName, sampleRate);
+		hfFaxMode = new HFFax(sampleRate);
 		Mode robot36 = new Robot_36_Color(sampleRate);
 		currentMode = robot36;
 		currentScanLineSamples = robot36.getScanLineSamples();
@@ -454,6 +456,8 @@ public class Decoder {
 			mode = findMode(syncPulse9msModes, name);
 		if (mode == null)
 			mode = findMode(syncPulse20msModes, name);
+		if (mode == null && hfFaxMode.getName().equals(name))
+			mode = hfFaxMode;
 		if (mode == currentMode) {
 			lockMode = true;
 			return;

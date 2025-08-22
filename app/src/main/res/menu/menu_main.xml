@@ -98,6 +98,9 @@
 						</menu>
 					</item>
 					<item
+						android:id="@+id/action_force_hffax_mode"
+						android:title="@string/hf_fax" />
+					<item
 						android:id="@+id/action_force_raw_mode"
 						android:icon="@drawable/baseline_image_not_supported_24"
 						android:title="@string/raw_mode"
