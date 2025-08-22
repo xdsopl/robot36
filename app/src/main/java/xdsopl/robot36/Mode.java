@@ -6,6 +6,8 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
+import android.graphics.Bitmap;
+
 public interface Mode {
 	String getName();
 
@@ -20,6 +22,8 @@ public interface Mode {
 	int getFirstSyncPulseIndex();
 
 	int getScanLineSamples();
+
+	Bitmap postProcessScopeImage(Bitmap bmp);
 
 	void resetState();
 

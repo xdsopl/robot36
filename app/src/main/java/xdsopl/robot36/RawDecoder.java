@@ -6,7 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
-public class RawDecoder implements Mode {
+public class RawDecoder extends BaseMode {
 	private final ExponentialMovingAverage lowPassFilter;
 	private final int smallPictureMaxSamples;
 	private final int mediumPictureMaxSamples;

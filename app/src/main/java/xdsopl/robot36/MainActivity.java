@@ -828,7 +828,14 @@ public class MainActivity extends AppCompatActivity {
 		int height = scopeBuffer.height / 2;
 		int stride = scopeBuffer.width;
 		int offset = stride * scopeBuffer.line;
-		storeBitmap(Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888));
+		Bitmap bmp = Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888);
+
+		if (decoder != null)
+		{
+			bmp = decoder.currentMode.postProcessScopeImage(bmp);
+		}
+
+		storeBitmap(bmp);
 	}
 
 	private void createScope(Configuration config) {
