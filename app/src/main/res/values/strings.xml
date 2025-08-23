@@ -21,6 +21,7 @@
 	<string name="scottie2" translatable="false">Scottie 2</string>
 	<string name="scottie_dx" translatable="false">Scottie DX</string>
 	<string name="wraase_sc2_180" translatable="false">Wraase SC2–180</string>
+	<string name="hf_fax" translatable="false">HF Fax</string>
 	<string name="rate_8000" translatable="false">8 kHz</string>
 	<string name="rate_16000" translatable="false">16 kHz</string>
 	<string name="rate_32000" translatable="false">32 kHz</string>

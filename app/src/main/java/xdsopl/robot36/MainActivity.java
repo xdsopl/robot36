@@ -618,6 +618,10 @@ public class MainActivity extends AppCompatActivity {
 			setMode(R.string.raw_mode);
 			return true;
 		}
+		if (id == R.id.action_force_hffax_mode) {
+			setMode(R.string.hf_fax);
+			return true;
+		}
 		if (id == R.id.action_force_robot36_color) {
 			setMode(R.string.robot36_color);
 			return true;
@@ -828,7 +832,14 @@ public class MainActivity extends AppCompatActivity {
 		int height = scopeBuffer.height / 2;
 		int stride = scopeBuffer.width;
 		int offset = stride * scopeBuffer.line;
-		storeBitmap(Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888));
+		Bitmap bmp = Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888);
+
+		if (decoder != null)
+		{
+			bmp = decoder.currentMode.postProcessScopeImage(bmp);
+		}
+
+		storeBitmap(bmp);
 	}
 
 	private void createScope(Configuration config) {

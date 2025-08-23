@@ -6,7 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
-public class RGBDecoder implements Mode {
+public class RGBDecoder extends BaseMode {
 	private final ExponentialMovingAverage lowPassFilter;
 	private final int horizontalPixels;
 	private final int verticalPixels;
@@ -51,7 +51,7 @@ public class RGBDecoder implements Mode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return code;
 	}
 
@@ -66,7 +66,7 @@ public class RGBDecoder implements Mode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -81,7 +81,7 @@ public class RGBDecoder implements Mode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 	}
 
 	@Override

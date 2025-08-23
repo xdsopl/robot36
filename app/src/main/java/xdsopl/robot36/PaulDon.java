@@ -6,7 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
-public class PaulDon implements Mode {
+public class PaulDon extends BaseMode {
 	private final ExponentialMovingAverage lowPassFilter;
 	private final int horizontalPixels;
 	private final int verticalPixels;
@@ -56,7 +56,7 @@ public class PaulDon implements Mode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return code;
 	}
 
@@ -71,7 +71,7 @@ public class PaulDon implements Mode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -86,7 +86,7 @@ public class PaulDon implements Mode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 	}
 
 	@Override

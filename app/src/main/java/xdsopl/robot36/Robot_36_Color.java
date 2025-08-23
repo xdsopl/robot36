@@ -6,7 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 package xdsopl.robot36;
 
-public class Robot_36_Color implements Mode {
+public class Robot_36_Color extends BaseMode {
 	private final ExponentialMovingAverage lowPassFilter;
 	private final int horizontalPixels;
 	private final int verticalPixels;
@@ -59,7 +59,7 @@ public class Robot_36_Color implements Mode {
 	}
 
 	@Override
-	public int getCode() {
+	public int getVISCode() {
 		return 8;
 	}
 
@@ -74,7 +74,7 @@ public class Robot_36_Color implements Mode {
 	}
 
 	@Override
-	public int getBegin() {
+	public int getFirstPixelSampleIndex() {
 		return beginSamples;
 	}
 
@@ -89,7 +89,7 @@ public class Robot_36_Color implements Mode {
 	}
 
 	@Override
-	public void reset() {
+	public void resetState() {
 		lastEven = false;
 	}
 
