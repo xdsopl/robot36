@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="language">Мова</string>
-	<string name="share">Поділитися</string>
+	<string name="share">Поділитись</string>
 	<string name="more_options">Більше</string>
 	<string name="store_scope">Зберегти екран</string>
 	<string name="toggle_mode">Зафіксувати режим</string>
 	<string name="auto_mode">Автоматичний</string>
-	<string name="lock_mode">Вибір режима</string>
-	<string name="raw_mode">Без обробки</string>
+	<string name="lock_mode">Вибір режиму</string>
+	<string name="raw_mode">Без обробок</string>
 	<string name="listening">Слухаю</string>
 	<string name="audio_settings">Параметри аудіо</string>
 	<string name="sample_rate">Частота дискретизації</string>
-	<string name="channel_select">Вибір канала</string>
+	<string name="channel_select">Вибір каналу</string>
 	<string name="channel_default">Стандартний</string>
 	<string name="channel_first">Перший</string>
 	<string name="channel_second">Другий</string>
@@ -57,12 +57,12 @@
 На пристрої зберігаються лише зображення, отримані внаслідок декодування сигналу SSTV.
 </p>
 ]]></string>
-	<string name="about">О застосунок Robot36</string>
+	<string name="about">Про застосунок Robot36</string>
 	<string name="about_text"><![CDATA[
 <p><h1>Robot36 %1$s</h1>Авторські права 2024 Ahmet Inan</p>
-<p>Будь ласка, ознайомтеся з ВІДМОВИЮ ВІД ВІДПОВІДАЛЬНОСТІ внизу цієї сторінки</p>
+<p>Будь ласка, ознайомтеся з ВІДМОВОЮ ВІД ВІДПОВІДАЛЬНОСТІ внизу цієї сторінки</p>
 <p><h5>Опис</h5>Декодує зображення телебачення з повільною розгорткою з аудіосигналу</p>
-<p><h5>Реализация</h5><a href="https://github.com/xdsopl/robot36">Robot36 на Ґітхаб</a><br />Ліцензія BSD Zero Clause</p>
+<p><h5>Реалізація</h5><a href="https://github.com/xdsopl/robot36">Робот36 на Ґітхаб</a><br />Ліцензія BSD Zero Clause</p>
 <p><h5>Специфікації режимів</h5><a href="http://www.barberdsp.com/downloads/Dayton%%20Paper.pdf">Dayton Paper</a><br />автор JL Barber - 2000</p>
 <p><h5>ВІДМОВА ВІД ВІДПОВІДАЛЬНОСТІ</h5>%2$s</p>
 ]]></string>
