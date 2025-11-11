@@ -97,9 +97,13 @@
 								android:title="@string/wraase_sc2_180" />
 						</menu>
 					</item>
-					<item
-						android:id="@+id/action_force_hffax_mode"
-						android:title="@string/hf_fax" />
+					<item android:title="@string/contributed_modes">
+						<menu>
+							<item
+								android:id="@+id/action_force_hffax_mode"
+								android:title="@string/hf_fax" />
+						</menu>
+					</item>
 					<item
 						android:id="@+id/action_force_raw_mode"
 						android:icon="@drawable/baseline_image_not_supported_24"

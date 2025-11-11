@@ -6,6 +6,7 @@
 	<string name="martin_modes" translatable="false">Martin</string>
 	<string name="scottie_modes" translatable="false">Scottie</string>
 	<string name="wraase_modes" translatable="false">Wraase</string>
+	<string name="contributed_modes" translatable="false">Contrib</string>
 	<string name="robot36_color" translatable="false">Robot 36 Color</string>
 	<string name="robot72_color" translatable="false">Robot 72 Color</string>
 	<string name="pd50" translatable="false">PD 50</string>
