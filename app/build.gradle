@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'xdsopl.robot36'
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId "xdsopl.robot36"
         minSdk 24
-        targetSdk 36
+        targetSdk 37
         versionCode 66
         versionName "2.16"
 
@@ -18,10 +18,6 @@ android {
 
     androidResources {
         generateLocaleConfig true
-    }
-
-    buildFeatures {
-        buildConfig true
     }
 
     buildTypes {

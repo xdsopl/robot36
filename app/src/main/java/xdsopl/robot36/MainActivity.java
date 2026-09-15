@@ -12,6 +12,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -37,6 +38,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -779,7 +781,7 @@ public class MainActivity extends AppCompatActivity {
 			return true;
 		}
 		if (id == R.id.action_about) {
-			showTextPage(getString(R.string.about_text, BuildConfig.VERSION_NAME, getString(R.string.disclaimer)));
+			showTextPage(getString(R.string.about_text, getVersionString(), getString(R.string.disclaimer)));
 			return true;
 		}
 		if (id == R.id.action_english) {
@@ -819,6 +821,18 @@ public class MainActivity extends AppCompatActivity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+
+	@Nullable
+	private String getVersionString() {
+		String version;
+		try {
+			PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+			version = packageInfo.versionName;
+		} catch (PackageManager.NameNotFoundException ignored) {
+			version = "N/A";
+		}
+		return version;
 	}
 
 	private void setLanguage(String language) {
