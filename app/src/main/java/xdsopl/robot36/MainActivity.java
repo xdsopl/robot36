@@ -14,11 +14,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,11 +33,16 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -74,9 +80,11 @@ public class MainActivity extends AppCompatActivity {
 	private ImageView peakMeterView;
 	private PixelBuffer imageBuffer;
 	private ShortTimeFourierTransform stft;
-	private short[] shortBuffer;
 	private float[] recordBuffer;
-	private AudioRecord audioRecord;
+	private int effectiveChannel, decoderRate;
+	private long decoderGeneration = -1, lastRenderTime;
+	private boolean resumed, projectionPending;
+	private final android.os.Handler audioUi = new android.os.Handler(android.os.Looper.getMainLooper());
 	private Decoder decoder;
 	private Menu menu;
 	private String currentMode;
@@ -94,6 +102,21 @@ public class MainActivity extends AppCompatActivity {
 	private final int binWidthHz = 10;
 	private final int[] freqMarkers = { 1100, 1300, 1500, 2300 };
 
+	// UI Controls for Top Second Row Function Bar
+	private ImageButton btnSourceMic;
+	private ImageButton btnSourceFile;
+	private ImageButton btnSourceCapture;
+	private LinearLayout fileControlContainer;
+	private ImageButton btnFileAction;
+	private ImageButton btnFilePlayStop;
+	private CheckBox cbTurboDecode;
+	private TextView tvCurrentFilename;
+
+	// Audio Session Management
+	private AudioSessionManager audioSessionManager;
+	private ActivityResultLauncher<Intent> mediaProjectionLauncher;
+	private ActivityResultLauncher<String> filePickerLauncher;
+
 	private void setStatus(int id) {
 		setTitle(id);
 	}
@@ -108,7 +131,9 @@ public class MainActivity extends AppCompatActivity {
 			icon = R.drawable.baseline_auto_mode_24;
 		else
 			icon = R.drawable.baseline_lock_24;
-		menu.findItem(R.id.action_toggle_mode).setIcon(icon);
+		if (menu != null) {
+			menu.findItem(R.id.action_toggle_mode).setIcon(icon);
+		}
 		currentMode = name;
 		if (decoder != null)
 			decoder.setMode(currentMode);
@@ -129,35 +154,113 @@ public class MainActivity extends AppCompatActivity {
 			setMode(decoder.currentMode.getName());
 	}
 
-	private final AudioRecord.OnRecordPositionUpdateListener recordListener = new AudioRecord.OnRecordPositionUpdateListener() {
+	private final AudioSessionManager.SessionCallback sessionCallback = new AudioSessionManager.SessionCallback() {
 		@Override
-		public void onMarkerReached(AudioRecord ignore) {
+		public void onPcmDataAvailable(float[] buffer, int frameCount, int sampleRate, int channels, long generation) {
+			// Own this exact block; Decoder destructively demodulates its input.
+			final float[] block = Arrays.copyOf(buffer, frameCount * channels);
+			java.util.concurrent.FutureTask<Void> consume = new java.util.concurrent.FutureTask<>(() -> {
+				if (!audioSessionManager.isCurrent(generation)) return null;
+				int selected = channels == 1 ? 0 : (recordChannel == 0 ? 1 : recordChannel);
+				if (decoder == null || decoderGeneration != generation || decoderRate != sampleRate
+						|| effectiveChannel != selected) {
+					decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), sampleRate);
+					decoder.setMode(currentMode);
+					stft = new ShortTimeFourierTransform(sampleRate / binWidthHz, 3);
+					decoderRate = sampleRate;
+					decoderGeneration = generation;
+					effectiveChannel = selected;
+				}
+				recordBuffer = block;
+				processPeakMeter();
+				if (showSpectrogram) processSpectrogram();
+				boolean newLines = decoder.process(recordBuffer, effectiveChannel);
+				if (!showSpectrogram) processFreqPlot();
+				if (newLines) processImage();
+				long now = android.os.SystemClock.uptimeMillis();
+				if (now - lastRenderTime >= 33) {
+					renderAudio();
+					lastRenderTime = now;
+				}
+				return null;
+			});
+			audioUi.post(consume);
+			// Bounded handoff: at most one PCM task per source, including Turbo.
+			// The next read cannot overwrite this block or grow an unbounded UI queue.
+			try {
+				consume.get();
+			} catch (InterruptedException e) {
+				consume.cancel(false);
+				audioUi.removeCallbacks(consume);
+				Thread.currentThread().interrupt();
+			} catch (java.util.concurrent.ExecutionException e) {
+				throw new IllegalStateException("PCM processing failed", e.getCause());
+			}
 		}
 
 		@Override
-		public void onPeriodicNotification(AudioRecord audioRecord) {
-			if (shortBuffer == null) {
-				audioRecord.read(recordBuffer, 0, recordBuffer.length, AudioRecord.READ_BLOCKING);
-			} else {
-				audioRecord.read(shortBuffer, 0, shortBuffer.length, AudioRecord.READ_BLOCKING);
-				for (int i = 0; i < shortBuffer.length; ++i)
-					recordBuffer[i] = .000030517578125f * shortBuffer[i];
-			}
-			processPeakMeter();
-			if (showSpectrogram)
-				processSpectrogram();
-			boolean newLines = decoder.process(recordBuffer, recordChannel);
-			if (!showSpectrogram)
-				processFreqPlot();
-			if (newLines) {
-				processScope();
-				processImage();
-				setStatus(decoder.currentMode.getName());
-			}
+		public void onSourceStateChanged(AudioSource.AudioSourceState state, String message, long generation) {
+			runOnUiThread(() -> {
+				if (!audioSessionManager.isCurrent(generation)) return;
+				switch (state) {
+					case RUNNING:
+						setStatus(R.string.listening);
+						break;
+					case STOPPED:
+					case COMPLETED:
+						renderAudio();
+						if (audioSessionManager.getCurrentMode() == AudioSessionManager.SourceMode.FILE) {
+							updateFilePlayStopButton(false);
+						}
+						break;
+					case ERROR:
+						showToast(message != null && !message.isEmpty() ? message : getString(R.string.audio_setup_failed));
+						updateFilePlayStopButton(false);
+						break;
+				}
+			});
+		}
+
+		@Override
+		public void onFileSelected(String fileName) {
+			runOnUiThread(() -> {
+				tvCurrentFilename.setText(fileName);
+				tvCurrentFilename.setVisibility(View.VISIBLE);
+				btnFileAction.setImageResource(R.drawable.ic_close_24);
+				btnFilePlayStop.setEnabled(true);
+				btnFilePlayStop.setAlpha(1.0f);
+			});
+		}
+
+		@Override
+		public void onFileUnloaded() {
+			runOnUiThread(() -> {
+				tvCurrentFilename.setText("");
+				tvCurrentFilename.setVisibility(View.GONE);
+				btnFileAction.setImageResource(R.drawable.ic_add_24);
+				updateFilePlayStopButton(false);
+				btnFilePlayStop.setEnabled(false);
+				btnFilePlayStop.setAlpha(0.4f);
+			});
+		}
+
+		@Override
+		public void onPlaybackStateChanged(boolean isPlaying) {
+			runOnUiThread(() -> updateFilePlayStopButton(audioSessionManager.isFilePlaying()));
 		}
 	};
 
+	private void updateFilePlayStopButton(boolean isPlaying) {
+		cbTurboDecode.setEnabled(!isPlaying);
+		if (isPlaying) {
+			btnFilePlayStop.setImageResource(R.drawable.ic_stop_24);
+		} else {
+			btnFilePlayStop.setImageResource(R.drawable.ic_play_arrow_24);
+		}
+	}
+
 	private void processPeakMeter() {
+		if (recordBuffer == null || peakMeterBuffer == null) return;
 		float max = 0;
 		for (float v : recordBuffer)
 			max = Math.max(max, Math.abs(v));
@@ -167,8 +270,6 @@ public class MainActivity extends AppCompatActivity {
 			peak = (int) Math.round(Math.min(Math.max(-Math.PI * Math.log(max), 0), pixels));
 		Arrays.fill(peakMeterBuffer.pixels, 0, peak, thinColor);
 		Arrays.fill(peakMeterBuffer.pixels, peak, pixels, tintColor);
-		peakMeterBitmap.setPixels(peakMeterBuffer.pixels, 0, peakMeterBuffer.width, 0, 0, peakMeterBuffer.width, peakMeterBuffer.height);
-		peakMeterView.invalidate();
 	}
 
 	private double clamp(double x) {
@@ -200,10 +301,10 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void processSpectrogram() {
-		boolean process = false;
-		int channels = recordChannel > 0 ? 2 : 1;
+		if (recordBuffer == null || stft == null) return;
+		int channels = effectiveChannel > 0 ? 2 : 1;
 		for (int j = 0; j < recordBuffer.length / channels; ++j) {
-			switch (recordChannel) {
+			switch (effectiveChannel) {
 				case 1:
 					input.set(recordBuffer[2 * j]);
 					break;
@@ -220,7 +321,6 @@ public class MainActivity extends AppCompatActivity {
 					input.set(recordBuffer[j]);
 			}
 			if (stft.push(input)) {
-				process = true;
 				int stride = waterfallPlotBuffer.width;
 				waterfallPlotBuffer.line = (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - 1) % (waterfallPlotBuffer.height / 2);
 				int line = stride * waterfallPlotBuffer.line;
@@ -236,23 +336,15 @@ public class MainActivity extends AppCompatActivity {
 				System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
 			}
 		}
-		if (process) {
-			int width = waterfallPlotBitmap.getWidth();
-			int height = waterfallPlotBitmap.getHeight();
-			int stride = waterfallPlotBuffer.width;
-			int offset = stride * waterfallPlotBuffer.line;
-			waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
-			waterfallPlotView.invalidate();
-		}
+
 	}
 
 	private void processFreqPlot() {
-		int width = waterfallPlotBitmap.getWidth();
-		int height = waterfallPlotBitmap.getHeight();
+		if (recordBuffer == null || waterfallPlotBuffer == null) return;
 		int stride = waterfallPlotBuffer.width;
 		waterfallPlotBuffer.line = (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - 1) % (waterfallPlotBuffer.height / 2);
 		int line = stride * waterfallPlotBuffer.line;
-		int channels = recordChannel > 0 ? 2 : 1;
+		int channels = effectiveChannel > 0 ? 2 : 1;
 		int samples = recordBuffer.length / channels;
 		int spread = 2;
 		Arrays.fill(waterfallPlotBuffer.pixels, line, line + stride, 0);
@@ -262,13 +354,23 @@ public class MainActivity extends AppCompatActivity {
 				for (int j = -spread; j <= spread; ++j)
 					waterfallPlotBuffer.pixels[line + x + j] += 1 + spread * spread - j * j;
 		}
-		int factor = 960 / samples;
+		int factor = 960 / Math.max(samples, 1);
 		for (int i = 0; i < stride; ++i)
 			waterfallPlotBuffer.pixels[line + i] = 0x00FFFFFF & fgColor | Math.min(factor * waterfallPlotBuffer.pixels[line + i], 255) << 24;
 		System.arraycopy(waterfallPlotBuffer.pixels, line, waterfallPlotBuffer.pixels, line + stride * (waterfallPlotBuffer.height / 2), stride);
-		int offset = stride * waterfallPlotBuffer.line;
-		waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels, offset, stride, 0, 0, width, height);
+	}
+
+	private void renderAudio() {
+		if (peakMeterBitmap == null || decoder == null) return;
+		peakMeterBitmap.setPixels(peakMeterBuffer.pixels, 0, peakMeterBuffer.width, 0, 0,
+				peakMeterBuffer.width, peakMeterBuffer.height);
+		peakMeterView.invalidate();
+		waterfallPlotBitmap.setPixels(waterfallPlotBuffer.pixels,
+				waterfallPlotBuffer.width * waterfallPlotBuffer.line, waterfallPlotBuffer.width, 0, 0,
+				waterfallPlotBitmap.getWidth(), waterfallPlotBitmap.getHeight());
 		waterfallPlotView.invalidate();
+		processScope();
+		setStatus(decoder.currentMode.getName());
 	}
 
 	private void processScope() {
@@ -288,74 +390,11 @@ public class MainActivity extends AppCompatActivity {
 			storeBitmap(Bitmap.createBitmap(imageBuffer.pixels, imageBuffer.width, imageBuffer.height, Bitmap.Config.ARGB_8888));
 	}
 
-	private void initAudioRecord() {
-		boolean rateChanged = true;
-		if (audioRecord != null) {
-			rateChanged = audioRecord.getSampleRate() != recordRate;
-			boolean channelChanged = audioRecord.getChannelCount() != (recordChannel == 0 ? 1 : 2);
-			boolean sourceChanged = audioRecord.getAudioSource() != audioSource;
-			boolean formatChanged = audioRecord.getAudioFormat() != audioFormat;
-			if (!rateChanged && !channelChanged && !sourceChanged && !formatChanged)
-				return;
-			stopListening();
-			audioRecord.release();
-			audioRecord = null;
-		}
-		int channelConfig = AudioFormat.CHANNEL_IN_MONO;
-		int channelCount = 1;
-		if (recordChannel != 0) {
-			channelCount = 2;
-			channelConfig = AudioFormat.CHANNEL_IN_STEREO;
-		}
-		int sampleSize = audioFormat == AudioFormat.ENCODING_PCM_FLOAT ? 4 : 2;
-		int frameSize = sampleSize * channelCount;
-		int readsPerSecond = 50;
-		int bufferSize = Integer.highestOneBit(recordRate) * frameSize;
-		int frameCount = recordRate / readsPerSecond;
-		int bufferCount = frameCount * channelCount;
-		recordBuffer = new float[bufferCount];
-		shortBuffer = audioFormat == AudioFormat.ENCODING_PCM_FLOAT ? null : new short[bufferCount];
-		try {
-			audioRecord = new AudioRecord(audioSource, recordRate, channelConfig, audioFormat, bufferSize);
-			if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
-				audioRecord.setRecordPositionUpdateListener(recordListener);
-				audioRecord.setPositionNotificationPeriod(frameCount);
-				if (rateChanged) {
-					decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), recordRate);
-					decoder.setMode(currentMode);
-					stft = new ShortTimeFourierTransform(recordRate / binWidthHz, 3);
-				}
-				startListening();
-			} else {
-				audioRecord.release();
-				audioRecord = null;
-				setStatus(R.string.audio_init_failed);
-			}
-		} catch (IllegalArgumentException e) {
-			setStatus(R.string.audio_setup_failed);
-		} catch (SecurityException e) {
-			setStatus(R.string.audio_permission_denied);
-		}
-	}
-
-	private void startListening() {
-		if (audioRecord != null) {
-			audioRecord.startRecording();
-			if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-				if (shortBuffer == null)
-					audioRecord.read(recordBuffer, 0, recordBuffer.length, AudioRecord.READ_BLOCKING);
-				else
-					audioRecord.read(shortBuffer, 0, recordBuffer.length, AudioRecord.READ_BLOCKING);
-				setStatus(R.string.listening);
-			} else {
-				setStatus(R.string.audio_recording_error);
-			}
-		}
-	}
-
-	private void stopListening() {
-		if (audioRecord != null)
-			audioRecord.stop();
+	private void initAudioSession() {
+		audioSessionManager.updateAudioRecordConfig(recordRate, recordChannel == 0 ? 1 : 2, audioSource, audioFormat);
+		if (resumed && audioSessionManager.getCurrentMode() == AudioSessionManager.SourceMode.MICROPHONE
+				&& ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+			audioSessionManager.startMicrophoneSession();
 	}
 
 	private void setRecordRate(int newSampleRate) {
@@ -363,7 +402,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		recordRate = newSampleRate;
 		updateRecordRateMenu();
-		initAudioRecord();
+		initAudioSession();
 	}
 
 	private void setRecordChannel(int newChannelSelect) {
@@ -371,7 +410,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		recordChannel = newChannelSelect;
 		updateRecordChannelMenu();
-		initAudioRecord();
+		initAudioSession();
 	}
 
 	private void setAudioSource(int newAudioSource) {
@@ -379,7 +418,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		audioSource = newAudioSource;
 		updateAudioSourceMenu();
-		initAudioRecord();
+		initAudioSession();
 	}
 
 	private void setAudioFormat(int newAudioFormat) {
@@ -387,7 +426,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		audioFormat = newAudioFormat;
 		updateAudioFormatMenu();
-		initAudioRecord();
+		initAudioSession();
 	}
 
 	private void setShowSpectrogram(boolean newShowSpectrogram) {
@@ -398,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateWaterfallPlotMenu() {
+		if (menu == null) return;
 		if (showSpectrogram)
 			menu.findItem(R.id.action_show_spectrogram).setChecked(true);
 		else
@@ -412,6 +452,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateAutoSaveMenu() {
+		if (menu == null) return;
 		if (autoSave)
 			menu.findItem(R.id.action_enable_auto_save).setChecked(true);
 		else
@@ -419,6 +460,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateRecordRateMenu() {
+		if (menu == null) return;
 		switch (recordRate) {
 			case 8000:
 				menu.findItem(R.id.action_set_record_rate_8000).setChecked(true);
@@ -439,6 +481,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateRecordChannelMenu() {
+		if (menu == null) return;
 		switch (recordChannel) {
 			case 0:
 				menu.findItem(R.id.action_set_record_channel_default).setChecked(true);
@@ -459,6 +502,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateAudioSourceMenu() {
+		if (menu == null) return;
 		switch (audioSource) {
 			case MediaRecorder.AudioSource.DEFAULT:
 				menu.findItem(R.id.action_set_source_default).setChecked(true);
@@ -479,6 +523,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateAudioFormatMenu() {
+		if (menu == null) return;
 		menu.findItem(audioFormat == AudioFormat.ENCODING_PCM_FLOAT ? R.id.action_set_floating_point : R.id.action_set_fixed_point).setChecked(true);
 	}
 
@@ -491,7 +536,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		for (int i = 0; i < permissions.length; ++i)
 			if (permissions[i].equals(Manifest.permission.RECORD_AUDIO) && grantResults[i] == PackageManager.PERMISSION_GRANTED)
-				initAudioRecord();
+				initAudioSession();
 	}
 
 	@Override
@@ -530,6 +575,7 @@ public class MainActivity extends AppCompatActivity {
 		final boolean defaultAutoSave = true;
 		final boolean defaultShowSpectrogram = true;
 		final String defaultLanguage = "system";
+
 		if (state == null) {
 			SharedPreferences pref = getPreferences(Context.MODE_PRIVATE);
 			AppCompatDelegate.setDefaultNightMode(pref.getInt("nightMode", AppCompatDelegate.getDefaultNightMode()));
@@ -550,12 +596,14 @@ public class MainActivity extends AppCompatActivity {
 			showSpectrogram = state.getBoolean("showSpectrogram", defaultShowSpectrogram);
 			language = state.getString("language", defaultLanguage);
 		}
+
 		super.onCreate(state);
 		setLanguage(language);
 		Configuration config = getResources().getConfiguration();
 		EdgeToEdge.enable(this);
 		setContentView(config.orientation == Configuration.ORIENTATION_LANDSCAPE ? R.layout.activity_main_land : R.layout.activity_main);
 		handleInsets();
+
 		fgColor = getColor(R.color.fg);
 		thinColor = getColor(R.color.thin);
 		tintColor = getColor(R.color.tint);
@@ -564,20 +612,154 @@ public class MainActivity extends AppCompatActivity {
 		peakMeterBuffer = new PixelBuffer(1, 16);
 		imageBuffer = new PixelBuffer(800, 616);
 		input = new Complex();
+
 		createScope(config);
 		createWaterfallPlot(config);
 		createPeakMeter();
+
+		setupAudioSessionManager();
+		setupTopFunctionBar();
+
 		List<String> permissions = new ArrayList<>();
 		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
 			permissions.add(Manifest.permission.RECORD_AUDIO);
 			setStatus(R.string.audio_permission_denied);
 		} else {
-			initAudioRecord();
+			initAudioSession();
 		}
 		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
 			permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
 		if (!permissions.isEmpty())
 			ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), permissionID);
+	}
+
+	private void setupAudioSessionManager() {
+		audioSessionManager = new AudioSessionManager(this, sessionCallback);
+
+		mediaProjectionLauncher = registerForActivityResult(
+				new ActivityResultContracts.StartActivityForResult(),
+				result -> {
+					projectionPending = false;
+					if (audioSessionManager.getCurrentMode() != AudioSessionManager.SourceMode.PLAYBACK_CAPTURE) return;
+					if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+						audioSessionManager.startPlaybackCaptureSession(result.getResultCode(), result.getData());
+					} else {
+						showToast(R.string.audio_permission_denied);
+						selectSegmentedSource(AudioSessionManager.SourceMode.MICROPHONE);
+					}
+				}
+		);
+
+		filePickerLauncher = registerForActivityResult(
+				new ActivityResultContracts.GetContent(),
+				uri -> {
+					if (uri != null) {
+						audioSessionManager.selectFile(uri);
+					}
+				}
+		);
+	}
+
+	private void setupTopFunctionBar() {
+		btnSourceMic = findViewById(R.id.btn_source_mic);
+		btnSourceFile = findViewById(R.id.btn_source_file);
+		btnSourceCapture = findViewById(R.id.btn_source_capture);
+		fileControlContainer = findViewById(R.id.file_control_container);
+		btnFileAction = findViewById(R.id.btn_file_action);
+		btnFilePlayStop = findViewById(R.id.btn_file_play_stop);
+		cbTurboDecode = findViewById(R.id.cb_turbo_decode);
+		tvCurrentFilename = findViewById(R.id.tv_current_filename);
+
+		btnSourceMic.setOnClickListener(v -> selectSegmentedSource(AudioSessionManager.SourceMode.MICROPHONE));
+		btnSourceFile.setOnClickListener(v -> selectSegmentedSource(AudioSessionManager.SourceMode.FILE));
+		btnSourceCapture.setOnClickListener(v -> selectSegmentedSource(AudioSessionManager.SourceMode.PLAYBACK_CAPTURE));
+
+		btnFileAction.setOnClickListener(v -> {
+			if (audioSessionManager.isFileSelected()) {
+				audioSessionManager.unloadFile();
+			} else {
+				filePickerLauncher.launch("audio/*");
+			}
+		});
+
+		btnFilePlayStop.setOnClickListener(v -> {
+			if (audioSessionManager.isFilePlaying()) {
+				audioSessionManager.stopFilePlayback();
+			} else {
+				audioSessionManager.startFilePlayback();
+			}
+		});
+
+		cbTurboDecode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+			audioSessionManager.setTurboEnabled(isChecked);
+		});
+
+		cbTurboDecode.setChecked(audioSessionManager.isTurboEnabled());
+		if (audioSessionManager.isFileSelected()) sessionCallback.onFileSelected(audioSessionManager.getSelectedFileName());
+		else sessionCallback.onFileUnloaded();
+		updateFilePlayStopButton(audioSessionManager.isFilePlaying());
+		renderSourceSelection(audioSessionManager.getCurrentMode());
+	}
+
+	private void renderSourceSelection(AudioSessionManager.SourceMode mode) {
+		setSegmentedButtonHighlight(btnSourceMic, mode == AudioSessionManager.SourceMode.MICROPHONE);
+		setSegmentedButtonHighlight(btnSourceFile, mode == AudioSessionManager.SourceMode.FILE);
+		setSegmentedButtonHighlight(btnSourceCapture, mode == AudioSessionManager.SourceMode.PLAYBACK_CAPTURE);
+
+		if (mode == AudioSessionManager.SourceMode.FILE) {
+			fileControlContainer.setVisibility(View.VISIBLE);
+			if (audioSessionManager.isFileSelected()) {
+				tvCurrentFilename.setVisibility(View.VISIBLE);
+			} else {
+				tvCurrentFilename.setVisibility(View.GONE);
+			}
+		} else {
+			fileControlContainer.setVisibility(View.GONE);
+			tvCurrentFilename.setVisibility(View.GONE);
+		}
+
+	}
+
+	private void selectSegmentedSource(AudioSessionManager.SourceMode mode) {
+		if (projectionPending) return;
+		audioSessionManager.selectMode(mode);
+		renderSourceSelection(mode);
+		switch (mode) {
+			case MICROPHONE:
+				if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+					ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO }, permissionID);
+				else initAudioSession();
+				break;
+			case PLAYBACK_CAPTURE:
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+					if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+						showToast(R.string.audio_permission_denied);
+						selectSegmentedSource(AudioSessionManager.SourceMode.MICROPHONE);
+						return;
+					}
+					MediaProjectionManager projectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+					if (projectionManager != null) {
+						projectionPending = true;
+						mediaProjectionLauncher.launch(projectionManager.createScreenCaptureIntent());
+					}
+				} else {
+					showToast("Playback Capture requires Android 10+");
+					selectSegmentedSource(AudioSessionManager.SourceMode.MICROPHONE);
+				}
+				break;
+			case FILE:
+				break;
+		}
+	}
+
+	private void setSegmentedButtonHighlight(ImageButton button, boolean isSelected) {
+		if (isSelected) {
+			button.setBackgroundResource(R.drawable.bg_segmented_button);
+			button.setImageTintList(ColorStateList.valueOf(getColor(R.color.white)));
+		} else {
+			button.setBackgroundResource(android.R.color.transparent);
+			button.setImageTintList(ColorStateList.valueOf(getColor(R.color.gray)));
+		}
 	}
 
 	private void handleInsets() {
@@ -848,8 +1030,7 @@ public class MainActivity extends AppCompatActivity {
 		int offset = stride * scopeBuffer.line;
 		Bitmap bmp = Bitmap.createBitmap(scopeBuffer.pixels, offset, stride, width, height, Bitmap.Config.ARGB_8888);
 
-		if (decoder != null)
-		{
+		if (decoder != null) {
 			bmp = decoder.currentMode.postProcessScopeImage(bmp);
 		}
 
@@ -860,10 +1041,11 @@ public class MainActivity extends AppCompatActivity {
 		int screenWidthDp = config.screenWidthDp;
 		int screenHeightDp = config.screenHeightDp;
 		int waterfallPlotHeightDp = 64;
+		int topFunctionBarHeightDp = 48;
 		if (config.orientation == Configuration.ORIENTATION_LANDSCAPE)
 			screenWidthDp /= 2;
 		else
-			screenHeightDp -= waterfallPlotHeightDp;
+			screenHeightDp -= (waterfallPlotHeightDp + topFunctionBarHeightDp);
 		int actionBarHeightDp = 64;
 		screenHeightDp -= actionBarHeightDp;
 		int width = scopeBuffer.width;
@@ -904,6 +1086,7 @@ public class MainActivity extends AppCompatActivity {
 		super.onConfigurationChanged(config);
 		setContentView(config.orientation == Configuration.ORIENTATION_LANDSCAPE ? R.layout.activity_main_land : R.layout.activity_main);
 		handleInsets();
+		setupTopFunctionBar();
 		createScope(config);
 		createWaterfallPlot(config);
 		createPeakMeter();
@@ -922,7 +1105,7 @@ public class MainActivity extends AppCompatActivity {
 
 	void storeBitmap(Bitmap bitmap) {
 		Date date = new Date();
-		String name = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(date);
+		String name = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(date);
 		name += ".png";
 		String title = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(date);
 		ContentValues values = new ContentValues();
@@ -979,7 +1162,7 @@ public class MainActivity extends AppCompatActivity {
 		Intent intent = new Intent(Intent.ACTION_SEND);
 		intent.putExtra(Intent.EXTRA_STREAM, uri);
 		intent.setType("image/png");
-		ShareActionProvider share = (ShareActionProvider) MenuItemCompat.getActionProvider(menu.findItem(R.id.menu_item_share));
+		ShareActionProvider share = menu == null ? null : (ShareActionProvider) MenuItemCompat.getActionProvider(menu.findItem(R.id.menu_item_share));
 		if (share != null)
 			share.setShareIntent(intent);
 		showToast(name);
@@ -995,16 +1178,26 @@ public class MainActivity extends AppCompatActivity {
 		showToast(getString(id));
 	}
 
-	@Override
-	protected void onResume() {
-		startListening();
+	@Override protected void onResume() {
 		super.onResume();
+		resumed = true;
+		if (audioSessionManager != null) initAudioSession();
 	}
 
-	@Override
-	protected void onPause() {
-		stopListening();
+	@Override protected void onPause() {
+		resumed = false;
+		if (audioSessionManager != null
+				&& audioSessionManager.getCurrentMode() != AudioSessionManager.SourceMode.PLAYBACK_CAPTURE) {
+			audioSessionManager.stopAndReleaseCurrentSession();
+			updateFilePlayStopButton(false);
+		}
 		storeSettings();
 		super.onPause();
+	}
+
+	@Override protected void onDestroy() {
+		if (audioSessionManager != null) audioSessionManager.release();
+		audioUi.removeCallbacksAndMessages(null);
+		super.onDestroy();
 	}
 }
