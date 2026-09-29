@@ -143,6 +143,10 @@ public class MainActivity extends AppCompatActivity {
 				if (state == AudioSource.AudioSourceState.RUNNING)
 					setStatus(fileMode ? R.string.audio_file_playing : R.string.listening);
 				else if (state == AudioSource.AudioSourceState.COMPLETED && fileMode) {
+					if (decoder != null && decoderSession == session && decoder.finish(decoderChannel)) {
+						processScope();
+						processImage();
+					}
 					filePlaying = false;
 					updateInputControls();
 					setStatus(R.string.audio_file_completed);

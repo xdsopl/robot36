@@ -13,6 +13,7 @@ public class Decoder {
 
 	private final SimpleMovingAverage pulseFilter;
 	private final Demodulator demodulator;
+	private final int sampleRate;
 	private final PixelBuffer pixelBuffer;
 	private final PixelBuffer scopeBuffer;
 	private final PixelBuffer imageBuffer;
@@ -50,8 +51,10 @@ public class Decoder {
 	private int lastSyncPulseIndex;
 	private int currentScanLineSamples;
 	private float lastFrequencyOffset;
+	private boolean inputEnded;
 
 	Decoder(PixelBuffer scopeBuffer, PixelBuffer imageBuffer, String rawName, int sampleRate) {
+		this.sampleRate = sampleRate;
 		this.scopeBuffer = scopeBuffer;
 		this.imageBuffer = imageBuffer;
 		imageBuffer.line = -1;
@@ -442,6 +445,29 @@ public class Decoder {
 		}
 
 		return newLinesPresent;
+	}
+
+	/**
+	 * Ends a finite input with one second of zero PCM through normal decoding.
+	 * This advances filters and scan-line lookahead, just like continued reception;
+	 * it cannot distinguish buffered pixels from audio actually missing at EOF.
+	 * Call once after the final PCM block, on the same thread as process().
+	 */
+	public boolean finish(int channelSelect) {
+		if (inputEnded) return false;
+		inputEnded = true;
+		if (imageBuffer.line < 0 || imageBuffer.line >= imageBuffer.height) return false;
+		double silenceSeconds = 1.0;
+		int silenceFrames = (int) Math.round(silenceSeconds * sampleRate);
+		int framesPerBlock = Math.max(1, sampleRate / 50);
+		int channels = channelSelect > 0 ? 2 : 1;
+		boolean newLines = false;
+		for (int offset = 0; offset < silenceFrames; offset += framesPerBlock) {
+			int frames = Math.min(framesPerBlock, silenceFrames - offset);
+			// process() overwrites its input; each block must start with fresh zeros.
+			newLines |= process(new float[frames * channels], channelSelect);
+		}
+		return newLines;
 	}
 
 	public void setMode(String name) {
