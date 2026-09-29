@@ -7,16 +7,142 @@
 	android:layout_height="match_parent"
 	android:keepScreenOn="true"
 	tools:context=".MainActivity">
+	<!--  Function Bar (Top Second Row in Landscape)  -->
+	<LinearLayout
+		android:id="@+id/function_bar_container"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingStart="12dp"
+		android:paddingTop="6dp"
+		android:paddingEnd="12dp"
+		android:paddingBottom="6dp"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent">
+		<!--  Segmented Source Toggle Group (Left Aligned)  -->
+		<LinearLayout
+			android:id="@+id/segmented_group"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:background="@drawable/bg_segmented_container"
+			android:orientation="horizontal"
+			android:padding="3dp">
 
-	<ImageView
-		android:id="@+id/scope"
+			<ImageButton
+				android:id="@+id/btn_source_mic"
+				android:layout_width="38dp"
+				android:layout_height="32dp"
+				android:background="@drawable/bg_segmented_button"
+				android:contentDescription="@string/source_microphone"
+				android:src="@drawable/ic_mic_24"
+				app:tint="@color/light_blue" />
+
+			<ImageButton
+				android:id="@+id/btn_source_file"
+				android:alpha="0.4"
+				android:enabled="false"
+				android:layout_width="38dp"
+				android:layout_height="32dp"
+				android:background="@android:color/transparent"
+				android:contentDescription="@string/audio_file_source"
+				android:src="@drawable/ic_folder_24"
+				app:tint="?attr/colorControlNormal" />
+
+			<ImageButton
+				android:id="@+id/btn_source_capture"
+				android:alpha="0.4"
+				android:enabled="false"
+				android:layout_width="38dp"
+				android:layout_height="32dp"
+				android:background="@android:color/transparent"
+				android:contentDescription="@string/playback_capture"
+				android:src="@drawable/ic_screen_share_24"
+				app:tint="?attr/colorControlNormal" />
+		</LinearLayout>
+		<!--  Spacer  -->
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+		<!--  File Controls (Right Aligned, visible in File Mode)  -->
+		<LinearLayout
+			android:id="@+id/file_control_container"
+			android:layout_width="153dp"
+			android:layout_height="34dp"
+			android:gravity="center_vertical"
+			android:orientation="horizontal"
+			android:visibility="gone"
+			tools:visibility="visible">
+
+			<ImageButton
+				android:id="@+id/btn_file_action"
+				android:enabled="false"
+				android:layout_width="36dp"
+				android:layout_height="36dp"
+				android:background="?attr/selectableItemBackgroundBorderless"
+				android:contentDescription="@string/select_audio_file"
+				android:src="@drawable/ic_add_24"
+				app:tint="?attr/colorControlNormal" />
+
+			<ImageButton
+				android:id="@+id/btn_file_play_stop"
+				android:layout_width="36dp"
+				android:layout_height="36dp"
+				android:alpha="0.4"
+				android:background="?attr/selectableItemBackgroundBorderless"
+				android:contentDescription="@string/play_or_stop_audio_file"
+				android:enabled="false"
+				android:src="@drawable/ic_play_arrow_24"
+				app:tint="?attr/colorControlNormal" />
+
+			<com.google.android.material.checkbox.MaterialCheckBox
+				android:id="@+id/cb_turbo_decode"
+				android:enabled="false"
+				android:layout_width="66dp"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="4dp"
+				android:text="@string/turbo_decode"
+				android:textSize="12sp"
+				app:buttonIconTint="@android:color/holo_blue_light" />
+		</LinearLayout>
+	</LinearLayout>
+	<!--  Main SSTV Scope Area with Overlay  -->
+	<FrameLayout
+		android:id="@+id/scope_container"
 		android:layout_width="0dp"
 		android:layout_height="0dp"
-		android:contentDescription="@string/scope_description"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toStartOf="@+id/waterfall_plot"
 		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toTopOf="parent" />
+		app:layout_constraintTop_toBottomOf="@id/function_bar_container">
+
+		<ImageView
+			android:id="@+id/scope"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:contentDescription="@string/scope_description" />
+
+		<TextView
+			android:id="@+id/tv_current_filename"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="top|start"
+			android:layout_margin="12dp"
+			android:background="@drawable/bg_filename_overlay"
+			android:ellipsize="middle"
+			android:maxLines="1"
+			android:paddingStart="10dp"
+			android:paddingTop="5dp"
+			android:paddingEnd="10dp"
+			android:paddingBottom="5dp"
+			android:textColor="#FFFFFF"
+			android:textSize="12sp"
+			android:visibility="gone"
+			tools:text="sample_sstv_audio.wav"
+			tools:visibility="visible" />
+	</FrameLayout>
 
 	<ImageView
 		android:id="@+id/waterfall_plot"
@@ -25,8 +151,8 @@
 		android:contentDescription="@string/waterfall_plot"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toStartOf="@+id/peak_meter"
-		app:layout_constraintStart_toEndOf="@+id/scope"
-		app:layout_constraintTop_toTopOf="parent" />
+		app:layout_constraintStart_toEndOf="@+id/scope_container"
+		app:layout_constraintTop_toBottomOf="@id/function_bar_container" />
 
 	<ImageView
 		android:id="@+id/peak_meter"
@@ -36,5 +162,5 @@
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toEndOf="@+id/waterfall_plot"
-		app:layout_constraintTop_toTopOf="parent" />
+		app:layout_constraintTop_toBottomOf="@id/function_bar_container" />
 </androidx.constraintlayout.widget.ConstraintLayout>

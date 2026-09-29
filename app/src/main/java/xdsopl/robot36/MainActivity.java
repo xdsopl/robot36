@@ -860,10 +860,11 @@ public class MainActivity extends AppCompatActivity {
 		int screenWidthDp = config.screenWidthDp;
 		int screenHeightDp = config.screenHeightDp;
 		int waterfallPlotHeightDp = 64;
+		int topFunctionBarHeightDp = 48;
 		if (config.orientation == Configuration.ORIENTATION_LANDSCAPE)
 			screenWidthDp /= 2;
 		else
-			screenHeightDp -= waterfallPlotHeightDp;
+			screenHeightDp -= (waterfallPlotHeightDp + topFunctionBarHeightDp);
 		int actionBarHeightDp = 64;
 		screenHeightDp -= actionBarHeightDp;
 		int width = scopeBuffer.width;
