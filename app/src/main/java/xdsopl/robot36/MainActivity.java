@@ -30,7 +30,10 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.Html;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -48,6 +51,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -143,8 +147,13 @@ public class MainActivity extends AppCompatActivity {
 		@Override public void onSourceStateChanged(AudioSource.AudioSourceState state, String message, long session) {
 			audioUi.post(() -> {
 				if (!resumed || !audioSessions.isCurrent(session)) return;
-				if (state == AudioSource.AudioSourceState.RUNNING)
-					setStatus(fileMode ? (turboDecode ? R.string.audio_file_decoding : R.string.audio_file_playing) : R.string.listening);
+				if (state == AudioSource.AudioSourceState.RUNNING) {
+					if (fileMode) {
+						setTitle(currentMode == null ? getString(R.string.auto_mode) : currentMode);
+						ActionBar bar = getSupportActionBar();
+						if (bar != null) bar.setSubtitle(turboDecode ? R.string.audio_file_decoding : R.string.audio_file_playing);
+					} else setStatus(R.string.listening);
+				}
 				else if (state == AudioSource.AudioSourceState.COMPLETED && fileMode) {
 					if (decoder != null && decoderSession == session) {
 						decoder.finish(decoderChannel);
@@ -192,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
 		if (newLines) processImage();
 		if (preview && (newLines || turbo)) {
 			processScope();
-			if (!decoder.currentMode.getName().contentEquals(getTitle())) setStatus(decoder.currentMode.getName());
+			if (!decoder.currentMode.getName().contentEquals(getTitle())) setTitle(decoder.currentMode.getName());
 		}
 	}
 
@@ -303,11 +312,14 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void setStatus(int id) {
-		setTitle(id);
-	}
-
-	private void setStatus(String str) {
-		setTitle(str);
+		if (id == R.string.audio_file_ready || id == R.string.audio_file_stopped) {
+			SpannableString title = new SpannableString(getText(id));
+			float scale = id == R.string.audio_file_stopped ? 0.65f : 0.7f;
+			title.setSpan(new RelativeSizeSpan(scale), 0, title.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+			setTitle(title);
+		} else setTitle(id);
+		ActionBar bar = getSupportActionBar();
+		if (bar != null) bar.setSubtitle(null);
 	}
 
 	private void setMode(String name) {
