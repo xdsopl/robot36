@@ -22,10 +22,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -54,9 +57,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -81,6 +87,11 @@ public class MainActivity extends AppCompatActivity {
 	private int recordChannel;
 	private int audioSource;
 	private int audioFormat;
+	private int decoderChannel;
+	private long decoderSession = -1;
+	private boolean resumed;
+	private final Handler audioUi = new Handler(Looper.getMainLooper());
+	private AudioSessionManager audioSessions;
 	private int fgColor;
 	private int thinColor;
 	private int tintColor;
@@ -88,6 +99,78 @@ public class MainActivity extends AppCompatActivity {
 	private boolean showSpectrogram;
 	private final int binWidthHz = 10;
 	private final int[] freqMarkers = { 1100, 1300, 1500, 2300 };
+
+	private final AudioSessionManager.SessionCallback audioListener = new AudioSessionManager.SessionCallback() {
+		@Override public void onPcmDataAvailable(float[] buffer, int frames, int rate, int channels, long session) {
+			// The UI consumer must own its copy even if cancellation interrupts our wait.
+			float[] pcm = Arrays.copyOf(buffer, frames * channels);
+			FutureTask<Void> consume = new FutureTask<>(() -> {
+				if (resumed && audioSessions.isCurrent(session))
+					consumeAudio(pcm, rate, channels, session);
+				return null;
+			});
+			audioUi.post(consume);
+			try {
+				// Keep at most one PCM block queued per source; do not drop live samples.
+				consume.get();
+			} catch (InterruptedException e) {
+				consume.cancel(false);
+				Thread.currentThread().interrupt();
+			} catch (ExecutionException e) {
+				Log.e("Robot36", "Audio decoding failed", e.getCause());
+				audioUi.post(() -> {
+					if (!audioSessions.isCurrent(session)) return;
+					stopListening();
+					setStatus(R.string.audio_recording_error);
+				});
+			}
+		}
+
+		@Override public void onSourceStateChanged(AudioSource.AudioSourceState state, String message, long session) {
+			audioUi.post(() -> {
+				if (!resumed || !audioSessions.isCurrent(session)) return;
+				if (state == AudioSource.AudioSourceState.RUNNING)
+					setStatus(R.string.listening);
+				else if (state == AudioSource.AudioSourceState.ERROR) {
+					Log.e("Robot36", message);
+					setStatus(R.string.audio_recording_error);
+				}
+			});
+		}
+	};
+
+	private void consumeAudio(float[] pcm, int rate, int channels, long session) {
+		if (decoderSession != session) {
+			decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), rate);
+			decoder.setMode(currentMode);
+			stft = new ShortTimeFourierTransform(rate / binWidthHz, 3);
+			decoderChannel = channels == 1 ? 0 : (recordChannel == 0 ? 1 : recordChannel);
+			decoderSession = session;
+		}
+		recordBuffer = pcm;
+		processPeakMeter();
+		if (showSpectrogram) processSpectrogram();
+		boolean newLines = decoder.process(recordBuffer, decoderChannel);
+		if (!showSpectrogram) processFreqPlot();
+		if (newLines) {
+			processScope();
+			processImage();
+			setStatus(decoder.currentMode.getName());
+		}
+	}
+
+	private void startListening() {
+		if (!resumed) return;
+		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+			setStatus(R.string.audio_permission_denied);
+			return;
+		}
+		audioSessions.startSession(new MicrophoneAudioSource(recordRate, recordChannel == 0 ? 1 : 2, audioSource, audioFormat));
+	}
+
+	private void stopListening() {
+		audioSessions.stopAndReleaseCurrentSession();
+	}
 
 	private void setStatus(int id) {
 		setTitle(id);
@@ -168,9 +251,9 @@ public class MainActivity extends AppCompatActivity {
 
 	private void processSpectrogram() {
 		boolean process = false;
-		int channels = recordChannel > 0 ? 2 : 1;
+		int channels = decoderChannel > 0 ? 2 : 1;
 		for (int j = 0; j < recordBuffer.length / channels; ++j) {
-			switch (recordChannel) {
+			switch (decoderChannel) {
 				case 1:
 					input.set(recordBuffer[2 * j]);
 					break;
@@ -219,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
 		int stride = waterfallPlotBuffer.width;
 		waterfallPlotBuffer.line = (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - 1) % (waterfallPlotBuffer.height / 2);
 		int line = stride * waterfallPlotBuffer.line;
-		int channels = recordChannel > 0 ? 2 : 1;
+		int channels = decoderChannel > 0 ? 2 : 1;
 		int samples = recordBuffer.length / channels;
 		int spread = 2;
 		Arrays.fill(waterfallPlotBuffer.pixels, line, line + stride, 0);
@@ -260,6 +343,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		recordRate = newSampleRate;
 		updateRecordRateMenu();
+		startListening();
 	}
 
 	private void setRecordChannel(int newChannelSelect) {
@@ -267,6 +351,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		recordChannel = newChannelSelect;
 		updateRecordChannelMenu();
+		startListening();
 	}
 
 	private void setAudioSource(int newAudioSource) {
@@ -274,6 +359,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		audioSource = newAudioSource;
 		updateAudioSourceMenu();
+		startListening();
 	}
 
 	private void setAudioFormat(int newAudioFormat) {
@@ -281,6 +367,7 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		audioFormat = newAudioFormat;
 		updateAudioFormatMenu();
+		startListening();
 	}
 
 	private void setShowSpectrogram(boolean newShowSpectrogram) {
@@ -378,6 +465,26 @@ public class MainActivity extends AppCompatActivity {
 	private final int permissionID = 1;
 
 	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode != permissionID) return;
+		for (int i = 0; i < permissions.length; ++i) {
+			if (!permissions[i].equals(Manifest.permission.RECORD_AUDIO)) continue;
+			if (i < grantResults.length && grantResults[i] == PackageManager.PERMISSION_GRANTED)
+				startListening();
+			else
+				setStatus(R.string.audio_permission_denied);
+		}
+	}
+
+	private void requestMicrophone() {
+		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+			startListening();
+		else
+			ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO }, permissionID);
+	}
+
+	@Override
 	protected void onSaveInstanceState(@NonNull Bundle state) {
 		state.putInt("nightMode", AppCompatDelegate.getDefaultNightMode());
 		state.putInt("recordRate", recordRate);
@@ -450,8 +557,15 @@ public class MainActivity extends AppCompatActivity {
 		createScope(config);
 		createWaterfallPlot(config);
 		createPeakMeter();
+		audioSessions = new AudioSessionManager(audioListener);
+		findViewById(R.id.btn_source_mic).setOnClickListener(v -> requestMicrophone());
+		ArrayList<String> permissions = new ArrayList<>();
+		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+			permissions.add(Manifest.permission.RECORD_AUDIO);
 		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-			ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE }, permissionID);
+			permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+		if (!permissions.isEmpty())
+			ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), permissionID);
 	}
 
 	private void handleInsets() {
@@ -871,8 +985,24 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		resumed = true;
+		startListening();
+	}
+
+	@Override
 	protected void onPause() {
+		resumed = false;
+		stopListening();
 		storeSettings();
 		super.onPause();
+	}
+
+	@Override
+	protected void onDestroy() {
+		audioSessions.release();
+		audioUi.removeCallbacksAndMessages(null);
+		super.onDestroy();
 	}
 }
