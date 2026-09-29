@@ -39,6 +39,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ImageButton;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -99,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
 	private final Handler audioUi = new Handler(Looper.getMainLooper());
 	private AudioSessionManager audioSessions;
 	private boolean fileMode, filePlaying;
+	private boolean turboDecode;
+	private long lastPreviewNanos;
 	private Uri selectedFile;
 	private String selectedFileName;
 	private final ActivityResultLauncher<String[]> filePicker = registerForActivityResult(
@@ -141,9 +144,11 @@ public class MainActivity extends AppCompatActivity {
 			audioUi.post(() -> {
 				if (!resumed || !audioSessions.isCurrent(session)) return;
 				if (state == AudioSource.AudioSourceState.RUNNING)
-					setStatus(fileMode ? R.string.audio_file_playing : R.string.listening);
+					setStatus(fileMode ? (turboDecode ? R.string.audio_file_decoding : R.string.audio_file_playing) : R.string.listening);
 				else if (state == AudioSource.AudioSourceState.COMPLETED && fileMode) {
-					if (decoder != null && decoderSession == session && decoder.finish(decoderChannel)) {
+					if (decoder != null && decoderSession == session) {
+						decoder.finish(decoderChannel);
+						// Always show the final result, even if Turbo skipped its preview.
 						processScope();
 						processImage();
 					}
@@ -172,16 +177,22 @@ public class MainActivity extends AppCompatActivity {
 			// File layout comes from its header; microphone channel preferences stay local.
 			decoderChannel = channels == 1 ? 0 : (fileMode ? 3 : (recordChannel == 0 ? 1 : recordChannel));
 			decoderSession = session;
+			lastPreviewNanos = 0;
 		}
+		boolean turbo = fileMode && turboDecode;
+		long now = System.nanoTime();
+		boolean preview = !turbo || lastPreviewNanos == 0 || now - lastPreviewNanos >= 33_000_000L;
+		if (preview) lastPreviewNanos = now;
 		recordBuffer = pcm;
-		processPeakMeter();
-		if (showSpectrogram) processSpectrogram();
+		if (preview) processPeakMeter();
+		if (showSpectrogram) processSpectrogram(preview);
 		boolean newLines = decoder.process(recordBuffer, decoderChannel);
-		if (!showSpectrogram) processFreqPlot();
-		if (newLines) {
+		if (!showSpectrogram && preview) processFreqPlot();
+		// Image completion must be checked for every block, independently of drawing.
+		if (newLines) processImage();
+		if (preview && (newLines || turbo)) {
 			processScope();
-			processImage();
-			setStatus(decoder.currentMode.getName());
+			if (!decoder.currentMode.getName().contentEquals(getTitle())) setStatus(decoder.currentMode.getName());
 		}
 	}
 
@@ -206,8 +217,8 @@ public class MainActivity extends AppCompatActivity {
 		filePlaying = true;
 		updateInputControls();
 		setStatus(R.string.audio_file_opening);
-		audioSessions.startSession(new FileAudioSource(() -> getContentResolver().openInputStream(uri)),
-				new AudioTrackPlayer());
+		audioSessions.startSession(new FileAudioSource(() -> getContentResolver().openInputStream(uri), turboDecode),
+				turboDecode ? null : new AudioTrackPlayer());
 	}
 
 	private void selectFile(Uri uri) {
@@ -252,6 +263,9 @@ public class MainActivity extends AppCompatActivity {
 			if (filePlaying) { stopListening(); setStatus(R.string.audio_file_stopped); }
 			else startFile();
 		});
+		CompoundButton turbo = findViewById(R.id.cb_turbo_decode);
+		turbo.setChecked(turboDecode);
+		turbo.setOnCheckedChangeListener((button, checked) -> turboDecode = checked);
 		updateInputControls();
 	}
 
@@ -266,6 +280,9 @@ public class MainActivity extends AppCompatActivity {
 		file.setEnabled(true);
 		file.setAlpha(1f);
 		findViewById(R.id.file_control_container).setVisibility(fileMode ? View.VISIBLE : View.GONE);
+		CompoundButton turbo = findViewById(R.id.cb_turbo_decode);
+		turbo.setChecked(turboDecode);
+		turbo.setEnabled(fileMode && !filePlaying);
 		ImageButton action = findViewById(R.id.btn_file_action), play = findViewById(R.id.btn_file_play_stop);
 		action.setEnabled(true);
 		action.setImageResource(selectedFile == null ? R.drawable.ic_add_24 : R.drawable.ic_close_24);
@@ -362,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
 		return argb(4 * v, t, 1 - Math.abs(t), -t);
 	}
 
-	private void processSpectrogram() {
+	private void processSpectrogram(boolean preview) {
 		boolean process = false;
 		int channels = decoderChannel > 0 ? 2 : 1;
 		for (int j = 0; j < recordBuffer.length / channels; ++j) {
@@ -382,7 +399,7 @@ public class MainActivity extends AppCompatActivity {
 				default:
 					input.set(recordBuffer[j]);
 			}
-			if (stft.push(input)) {
+			if (stft.push(input) && preview) {
 				process = true;
 				int stride = waterfallPlotBuffer.width;
 				waterfallPlotBuffer.line = (waterfallPlotBuffer.line + waterfallPlotBuffer.height / 2 - 1) % (waterfallPlotBuffer.height / 2);
@@ -608,6 +625,7 @@ public class MainActivity extends AppCompatActivity {
 		state.putBoolean("showSpectrogram", showSpectrogram);
 		state.putString("language", language);
 		state.putBoolean("fileMode", fileMode);
+		state.putBoolean("turboDecode", turboDecode);
 		state.putString("selectedFile", selectedFile == null ? null : selectedFile.toString());
 		state.putString("selectedFileName", selectedFileName);
 		super.onSaveInstanceState(state);
@@ -623,6 +641,7 @@ public class MainActivity extends AppCompatActivity {
 		edit.putInt("audioFormat", audioFormat);
 		edit.putBoolean("autoSave", autoSave);
 		edit.putBoolean("showSpectrogram", showSpectrogram);
+		edit.putBoolean("turboDecode", turboDecode);
 		edit.putString("language", language);
 		edit.apply();
 	}
@@ -645,6 +664,7 @@ public class MainActivity extends AppCompatActivity {
 			audioFormat = pref.getInt("audioFormat", defaultAudioFormat);
 			autoSave = pref.getBoolean("autoSave", defaultAutoSave);
 			showSpectrogram = pref.getBoolean("showSpectrogram", defaultShowSpectrogram);
+			turboDecode = pref.getBoolean("turboDecode", false);
 			language = pref.getString("language", defaultLanguage);
 		} else {
 			AppCompatDelegate.setDefaultNightMode(state.getInt("nightMode", AppCompatDelegate.getDefaultNightMode()));
@@ -656,6 +676,7 @@ public class MainActivity extends AppCompatActivity {
 			showSpectrogram = state.getBoolean("showSpectrogram", defaultShowSpectrogram);
 			language = state.getString("language", defaultLanguage);
 			fileMode = state.getBoolean("fileMode");
+			turboDecode = state.getBoolean("turboDecode");
 			String uri = state.getString("selectedFile");
 			selectedFile = uri == null ? null : Uri.parse(uri);
 			selectedFileName = state.getString("selectedFileName");

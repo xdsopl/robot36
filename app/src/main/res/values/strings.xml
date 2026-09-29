@@ -91,11 +91,13 @@
 	<string name="audio_file_ready">File ready — press Play to decode</string>
 	<string name="audio_file_opening">Opening audio file</string>
 	<string name="audio_file_playing">Playing audio file</string>
+	<string name="audio_file_decoding">Decoding audio file</string>
 	<string name="audio_file_completed">Audio file finished</string>
 	<string name="audio_file_stopped">File stopped — Play restarts from the beginning</string>
 	<string name="audio_file_error">Cannot read or play audio file</string>
 	<string name="play_or_stop_audio_file" translatable="false">Play or stop audio file</string>
 	<string name="turbo_decode" translatable="false">Turbo</string>
+	<string name="turbo_decode_description">Turbo: fast decode </string>
 	<string name="privacy_policy_text"><![CDATA[
 <p><h1>Privacy Policy</h1></p>
 <p><h5>Microphone Access</h5>

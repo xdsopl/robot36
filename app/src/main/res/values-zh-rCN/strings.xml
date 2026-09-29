@@ -7,6 +7,8 @@
 	<string name="audio_file_ready">文件已就绪，点击播放开始解码</string>
 	<string name="audio_file_opening">正在打开音频文件</string>
 	<string name="audio_file_playing">正在播放音频文件</string>
+	<string name="audio_file_decoding">正在解码音频文件</string>
+	<string name="turbo_decode_description">Turbo：极速解码</string>
 	<string name="audio_file_completed">音频文件已结束</string>
 	<string name="audio_file_stopped">文件已停止，再次播放将从头开始</string>
 	<string name="audio_file_error">无法读取或播放音频文件</string>

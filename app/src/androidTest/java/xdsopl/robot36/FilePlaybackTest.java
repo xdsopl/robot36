@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.widget.CompoundButton;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -59,10 +60,13 @@ public class FilePlaybackTest {
 				new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent().setData(Uri.fromFile(file))), true);
 		try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
 			int[] original = new int[3];
+			boolean[] originalTurbo = new boolean[1];
 			scenario.onActivity(activity -> {
 				original[0] = (int) field(activity, "recordRate");
 				original[1] = (int) field(activity, "recordChannel");
 				original[2] = (int) field(activity, "audioFormat");
+				originalTurbo[0] = (boolean) field(activity, "turboDecode");
+				((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).setChecked(false);
 				set(activity, "recordRate", 8000);
 				set(activity, "recordChannel", 4);
 				set(activity, "audioFormat", AudioFormat.ENCODING_PCM_16BIT);
@@ -121,9 +125,65 @@ public class FilePlaybackTest {
 				scenario.onActivity(activity -> {
 					set(activity, "recordRate", original[0]); set(activity, "recordChannel", original[1]);
 					set(activity, "audioFormat", original[2]);
+					((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).setChecked(originalTurbo[0]);
 				});
 			}
 		} finally { instrumentation.removeMonitor(picker); file.delete(); }
+	}
+
+	@Test public void turboSkipsAudioPlaybackAndCanRestartInRealtime() throws Exception {
+		Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+		File file = new File(instrumentation.getTargetContext().getCacheDir(), "turbo-input-test.wav");
+		int rate = 8000, frames = rate * 20;
+		ByteBuffer wav = ByteBuffer.allocate(44 + frames).order(ByteOrder.LITTLE_ENDIAN);
+		wav.put(new byte[] {'R','I','F','F'}).putInt(wav.capacity() - 8).put(new byte[] {'W','A','V','E','f','m','t',' '});
+		wav.putInt(16).putShort((short) 1).putShort((short) 1).putInt(rate).putInt(rate);
+		wav.putShort((short) 1).putShort((short) 8).put(new byte[] {'d','a','t','a'}).putInt(frames);
+		java.util.Arrays.fill(wav.array(), 44, wav.capacity(), (byte) 128);
+		try (FileOutputStream out = new FileOutputStream(file)) { out.write(wav.array()); }
+		try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+			boolean[] originalTurbo = new boolean[1];
+			scenario.onActivity(activity -> {
+				originalTurbo[0] = (boolean) field(activity, "turboDecode");
+				activity.findViewById(R.id.btn_source_file).performClick();
+				set(activity, "selectedFile", Uri.fromFile(file));
+				set(activity, "selectedFileName", file.getName());
+				((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).setChecked(true);
+			});
+			try {
+				// Recreation must preserve the choice and rebind the controls.
+				scenario.recreate();
+				scenario.onActivity(activity -> {
+					assertTrue(((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).isChecked());
+					activity.findViewById(R.id.btn_file_play_stop).performClick();
+					assertTrue((boolean) field(activity, "filePlaying"));
+					assertFalse(activity.findViewById(R.id.cb_turbo_decode).isEnabled());
+					assertNull(field(field(activity, "audioSessions"), "currentMonitor"));
+				});
+				// A 20-second source must finish within await's five-second deadline.
+				await(scenario, activity -> !(boolean) field(activity, "filePlaying"));
+				scenario.onActivity(activity -> {
+					assertEquals(activity.getString(R.string.audio_file_completed), activity.getTitle().toString());
+					AudioSource source = (AudioSource) field(field(activity, "audioSessions"), "currentSource");
+					assertEquals(rate, source.getFormat().getSampleRate());
+					assertEquals(1, source.getFormat().getChannels());
+					assertTrue(activity.getSystemService(AudioManager.class).getActiveRecordingConfigurations().isEmpty());
+					assertTrue(activity.findViewById(R.id.cb_turbo_decode).isEnabled());
+					// Stop a second Turbo run, then use normal playback on the same file.
+					activity.findViewById(R.id.btn_file_play_stop).performClick();
+					activity.findViewById(R.id.btn_file_play_stop).performClick();
+					assertFalse((boolean) field(activity, "filePlaying"));
+					((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).setChecked(false);
+					activity.findViewById(R.id.btn_file_play_stop).performClick();
+					assertNotNull(field(field(activity, "audioSessions"), "currentMonitor"));
+				});
+				await(scenario, activity -> ((AudioSource) field(field(activity, "audioSessions"), "currentSource")).getState()
+						== AudioSource.AudioSourceState.RUNNING);
+				scenario.onActivity(activity -> activity.findViewById(R.id.btn_file_play_stop).performClick());
+			} finally {
+				scenario.onActivity(activity -> ((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).setChecked(originalTurbo[0]));
+			}
+		} finally { file.delete(); }
 	}
 
 	@Test public void playerDrainsShortTailAndCancellationDoesNotBlock() throws Exception {

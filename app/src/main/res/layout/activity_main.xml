@@ -103,6 +103,7 @@
 
 			<com.google.android.material.checkbox.MaterialCheckBox
 				android:id="@+id/cb_turbo_decode"
+				android:contentDescription="@string/turbo_decode_description"
 				android:enabled="false"
 				android:layout_width="66dp"
 				android:layout_height="wrap_content"
