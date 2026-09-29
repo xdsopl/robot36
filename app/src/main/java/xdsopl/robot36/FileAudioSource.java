@@ -5,16 +5,20 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.util.concurrent.TimeUnit;
 
-/** Streams file PCM at its original rate. File decoding is delegated to PcmFileReader. */
+/** Streams file PCM with realtime pacing or unrestricted Turbo delivery. */
 public final class FileAudioSource extends WorkerAudioSource {
 	public interface Input {
 		/** Opens a fresh stream on the worker; the source takes ownership. */
 		InputStream open() throws IOException;
 	}
 	private final Input input;
+	private final boolean turbo;
 	private PcmFileReader reader;
 
-	public FileAudioSource(Input input) { this.input = input; }
+	public FileAudioSource(Input input, boolean turbo) {
+		this.input = input;
+		this.turbo = turbo;
+	}
 
 	@Override protected PcmFormat openInput() throws IOException {
 		reader = PcmFileReader.open(input.open());
@@ -29,6 +33,7 @@ public final class FileAudioSource extends WorkerAudioSource {
 			int frames = reader.read(pcm);
 			if (frames == 0) return; // No invented samples or decoder flushing at EOF.
 			emit(pcm, frames);
+			if (turbo) continue;
 			framesSent += frames;
 			// An absolute deadline avoids accumulating decoder/playback processing time.
 			long deadline = start + framesSent / rate * 1_000_000_000L
