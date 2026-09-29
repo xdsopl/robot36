@@ -5,6 +5,7 @@
 	<color name="gray">#FF696969</color>
 	<color name="thin">#FFE0E0E0</color>
 	<color name="white">#FFFFFFFF</color>
+	<color name="light_blue">#2196F3</color>
 	<color name="tint">#FF1D1B20</color>
 	<color name="fg">#FF000000</color>
 	<color name="bg">#FFFFFFFF</color>
