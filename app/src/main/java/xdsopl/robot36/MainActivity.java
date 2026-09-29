@@ -17,7 +17,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
@@ -55,10 +54,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -74,9 +71,7 @@ public class MainActivity extends AppCompatActivity {
 	private ImageView peakMeterView;
 	private PixelBuffer imageBuffer;
 	private ShortTimeFourierTransform stft;
-	private short[] shortBuffer;
 	private float[] recordBuffer;
-	private AudioRecord audioRecord;
 	private Decoder decoder;
 	private Menu menu;
 	private String currentMode;
@@ -128,34 +123,6 @@ public class MainActivity extends AppCompatActivity {
 		else
 			setMode(decoder.currentMode.getName());
 	}
-
-	private final AudioRecord.OnRecordPositionUpdateListener recordListener = new AudioRecord.OnRecordPositionUpdateListener() {
-		@Override
-		public void onMarkerReached(AudioRecord ignore) {
-		}
-
-		@Override
-		public void onPeriodicNotification(AudioRecord audioRecord) {
-			if (shortBuffer == null) {
-				audioRecord.read(recordBuffer, 0, recordBuffer.length, AudioRecord.READ_BLOCKING);
-			} else {
-				audioRecord.read(shortBuffer, 0, shortBuffer.length, AudioRecord.READ_BLOCKING);
-				for (int i = 0; i < shortBuffer.length; ++i)
-					recordBuffer[i] = .000030517578125f * shortBuffer[i];
-			}
-			processPeakMeter();
-			if (showSpectrogram)
-				processSpectrogram();
-			boolean newLines = decoder.process(recordBuffer, recordChannel);
-			if (!showSpectrogram)
-				processFreqPlot();
-			if (newLines) {
-				processScope();
-				processImage();
-				setStatus(decoder.currentMode.getName());
-			}
-		}
-	};
 
 	private void processPeakMeter() {
 		float max = 0;
@@ -288,82 +255,11 @@ public class MainActivity extends AppCompatActivity {
 			storeBitmap(Bitmap.createBitmap(imageBuffer.pixels, imageBuffer.width, imageBuffer.height, Bitmap.Config.ARGB_8888));
 	}
 
-	private void initAudioRecord() {
-		boolean rateChanged = true;
-		if (audioRecord != null) {
-			rateChanged = audioRecord.getSampleRate() != recordRate;
-			boolean channelChanged = audioRecord.getChannelCount() != (recordChannel == 0 ? 1 : 2);
-			boolean sourceChanged = audioRecord.getAudioSource() != audioSource;
-			boolean formatChanged = audioRecord.getAudioFormat() != audioFormat;
-			if (!rateChanged && !channelChanged && !sourceChanged && !formatChanged)
-				return;
-			stopListening();
-			audioRecord.release();
-			audioRecord = null;
-		}
-		int channelConfig = AudioFormat.CHANNEL_IN_MONO;
-		int channelCount = 1;
-		if (recordChannel != 0) {
-			channelCount = 2;
-			channelConfig = AudioFormat.CHANNEL_IN_STEREO;
-		}
-		int sampleSize = audioFormat == AudioFormat.ENCODING_PCM_FLOAT ? 4 : 2;
-		int frameSize = sampleSize * channelCount;
-		int readsPerSecond = 50;
-		int bufferSize = Integer.highestOneBit(recordRate) * frameSize;
-		int frameCount = recordRate / readsPerSecond;
-		int bufferCount = frameCount * channelCount;
-		recordBuffer = new float[bufferCount];
-		shortBuffer = audioFormat == AudioFormat.ENCODING_PCM_FLOAT ? null : new short[bufferCount];
-		try {
-			audioRecord = new AudioRecord(audioSource, recordRate, channelConfig, audioFormat, bufferSize);
-			if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
-				audioRecord.setRecordPositionUpdateListener(recordListener);
-				audioRecord.setPositionNotificationPeriod(frameCount);
-				if (rateChanged) {
-					decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), recordRate);
-					decoder.setMode(currentMode);
-					stft = new ShortTimeFourierTransform(recordRate / binWidthHz, 3);
-				}
-				startListening();
-			} else {
-				audioRecord.release();
-				audioRecord = null;
-				setStatus(R.string.audio_init_failed);
-			}
-		} catch (IllegalArgumentException e) {
-			setStatus(R.string.audio_setup_failed);
-		} catch (SecurityException e) {
-			setStatus(R.string.audio_permission_denied);
-		}
-	}
-
-	private void startListening() {
-		if (audioRecord != null) {
-			audioRecord.startRecording();
-			if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-				if (shortBuffer == null)
-					audioRecord.read(recordBuffer, 0, recordBuffer.length, AudioRecord.READ_BLOCKING);
-				else
-					audioRecord.read(shortBuffer, 0, recordBuffer.length, AudioRecord.READ_BLOCKING);
-				setStatus(R.string.listening);
-			} else {
-				setStatus(R.string.audio_recording_error);
-			}
-		}
-	}
-
-	private void stopListening() {
-		if (audioRecord != null)
-			audioRecord.stop();
-	}
-
 	private void setRecordRate(int newSampleRate) {
 		if (recordRate == newSampleRate)
 			return;
 		recordRate = newSampleRate;
 		updateRecordRateMenu();
-		initAudioRecord();
 	}
 
 	private void setRecordChannel(int newChannelSelect) {
@@ -371,7 +267,6 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		recordChannel = newChannelSelect;
 		updateRecordChannelMenu();
-		initAudioRecord();
 	}
 
 	private void setAudioSource(int newAudioSource) {
@@ -379,7 +274,6 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		audioSource = newAudioSource;
 		updateAudioSourceMenu();
-		initAudioRecord();
 	}
 
 	private void setAudioFormat(int newAudioFormat) {
@@ -387,7 +281,6 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		audioFormat = newAudioFormat;
 		updateAudioFormatMenu();
-		initAudioRecord();
 	}
 
 	private void setShowSpectrogram(boolean newShowSpectrogram) {
@@ -485,16 +378,6 @@ public class MainActivity extends AppCompatActivity {
 	private final int permissionID = 1;
 
 	@Override
-	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-		if (requestCode != permissionID)
-			return;
-		for (int i = 0; i < permissions.length; ++i)
-			if (permissions[i].equals(Manifest.permission.RECORD_AUDIO) && grantResults[i] == PackageManager.PERMISSION_GRANTED)
-				initAudioRecord();
-	}
-
-	@Override
 	protected void onSaveInstanceState(@NonNull Bundle state) {
 		state.putInt("nightMode", AppCompatDelegate.getDefaultNightMode());
 		state.putInt("recordRate", recordRate);
@@ -567,17 +450,8 @@ public class MainActivity extends AppCompatActivity {
 		createScope(config);
 		createWaterfallPlot(config);
 		createPeakMeter();
-		List<String> permissions = new ArrayList<>();
-		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-			permissions.add(Manifest.permission.RECORD_AUDIO);
-			setStatus(R.string.audio_permission_denied);
-		} else {
-			initAudioRecord();
-		}
 		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-			permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-		if (!permissions.isEmpty())
-			ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), permissionID);
+			ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE }, permissionID);
 	}
 
 	private void handleInsets() {
@@ -997,14 +871,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	@Override
-	protected void onResume() {
-		startListening();
-		super.onResume();
-	}
-
-	@Override
 	protected void onPause() {
-		stopListening();
 		storeSettings();
 		super.onPause();
 	}
