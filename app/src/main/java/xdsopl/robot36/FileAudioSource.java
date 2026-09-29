@@ -1,21 +1,50 @@
 package xdsopl.robot36;
 
-/**
- * Planned responsibility: WAV file input that supplies the same PCM stream as live inputs.
- *
- * Implement AudioSource and deliver PCM through its AudioDataListener. Establish
- * PcmFormat from the file at READY; report COMPLETED only after the last PCM callback.
- * Open the user-selected content URI and parse RIFF chunks, including unknown chunks
- * and required padding, before reading the PCM data. Validate the actual file format.
- * Convert supported PCM encodings to the shared float PCM representation using fixed
- * full-scale conversion for integer samples and preserving the scale of float input.
- * Report actual frame counts, including the final short block. Reject malformed or
- * truncated input.
- * Support realtime pacing and unpaced Turbo delivery without skipping samples or
- * changing the sample rate. End-of-file means input delivery has ended; it does not
- * by itself prove that an SSTV image is complete. Do not add compressed-format or
- * resampling interfaces before a concrete implementation requires them.
- *
- * Responsibility-only scaffold. No file reader is connected yet.
- * Add the implementation and its tests in the corresponding integration commit.
- */
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.util.concurrent.TimeUnit;
+
+/** Streams file PCM at its original rate. File decoding is delegated to PcmFileReader. */
+public final class FileAudioSource extends WorkerAudioSource {
+	public interface Input {
+		/** Opens a fresh stream on the worker; the source takes ownership. */
+		InputStream open() throws IOException;
+	}
+	private final Input input;
+	private PcmFileReader reader;
+
+	public FileAudioSource(Input input) { this.input = input; }
+
+	@Override protected PcmFormat openInput() throws IOException {
+		reader = PcmFileReader.open(input.open());
+		return reader.getFormat();
+	}
+
+	@Override protected void readInput() throws IOException {
+		int rate = getFormat().getSampleRate();
+		float[] pcm = new float[Math.max(1, rate / 50) * getFormat().getChannels()];
+		long start = System.nanoTime(), framesSent = 0;
+		while (!cancelled()) {
+			int frames = reader.read(pcm);
+			if (frames == 0) return; // No invented samples or decoder flushing at EOF.
+			emit(pcm, frames);
+			framesSent += frames;
+			// An absolute deadline avoids accumulating decoder/playback processing time.
+			long deadline = start + framesSent / rate * 1_000_000_000L
+					+ framesSent % rate * 1_000_000_000L / rate;
+			try {
+				long remaining;
+				while (!cancelled() && (remaining = deadline - System.nanoTime()) > 0)
+					TimeUnit.NANOSECONDS.sleep(remaining);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new InterruptedIOException("File playback cancelled");
+			}
+		}
+	}
+
+	@Override protected void closeInput() throws IOException {
+		if (reader != null) reader.close();
+	}
+}

@@ -121,7 +121,7 @@
 				android:title="@string/audio_settings"
 				app:iconTint="@color/tint">
 				<menu>
-					<item android:title="@string/sample_rate">
+					<item android:id="@+id/action_audio_sample_rate" android:title="@string/sample_rate">
 						<menu>
 							<group android:checkableBehavior="single">
 								<item
@@ -142,7 +142,7 @@
 							</group>
 						</menu>
 					</item>
-					<item android:title="@string/channel_select">
+					<item android:id="@+id/action_audio_channel" android:title="@string/channel_select">
 						<menu>
 							<group android:checkableBehavior="single">
 								<item
@@ -163,7 +163,7 @@
 							</group>
 						</menu>
 					</item>
-					<item android:title="@string/audio_source">
+					<item android:id="@+id/action_audio_source" android:title="@string/audio_source">
 						<menu>
 							<group android:checkableBehavior="single">
 								<item
@@ -184,7 +184,7 @@
 							</group>
 						</menu>
 					</item>
-					<item android:title="@string/audio_format">
+					<item android:id="@+id/action_audio_format" android:title="@string/audio_format">
 						<menu>
 							<group android:checkableBehavior="single">
 								<item
