@@ -8,10 +8,12 @@ package xdsopl.robot36;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -20,11 +22,14 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
@@ -104,12 +109,38 @@ public class MainActivity extends AppCompatActivity {
 	private final Handler audioUi = new Handler(Looper.getMainLooper());
 	private AudioSessionManager audioSessions;
 	private boolean fileMode, filePlaying;
+	private boolean captureMode, capturePermissionPending;
+	private AudioCaptureService captureService;
+	private ServiceConnection captureConnection;
 	private boolean turboDecode;
 	private long lastPreviewNanos;
 	private Uri selectedFile;
 	private String selectedFileName;
 	private final ActivityResultLauncher<String[]> filePicker = registerForActivityResult(
 			new ActivityResultContracts.OpenDocument(), this::selectFile);
+	private final ActivityResultLauncher<Intent> capturePermission = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(), result -> {
+		if (!capturePermissionPending || !captureMode) return;
+		capturePermissionPending = false;
+		if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+			setStatus(R.string.capture_permission_denied);
+			updateInputControls();
+			return;
+		}
+		bindCapture(result.getResultCode(), result.getData());
+	});
+	private final ActivityResultLauncher<String[]> captureAudioPermission = registerForActivityResult(
+			new ActivityResultContracts.RequestMultiplePermissions(), grants -> {
+		if (!capturePermissionPending || !captureMode) return;
+		// Notifications offer a Stop action, but denying them must not block capture.
+		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+			launchCapturePermission();
+		else {
+			capturePermissionPending = false;
+			setStatus(R.string.audio_permission_denied);
+			updateInputControls();
+		}
+	});
 	private int fgColor;
 	private int thinColor;
 	private int tintColor;
@@ -123,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
 			// The UI consumer must own its copy even if cancellation interrupts our wait.
 			float[] pcm = Arrays.copyOf(buffer, frames * channels);
 			FutureTask<Void> consume = new FutureTask<>(() -> {
-				if (resumed && audioSessions.isCurrent(session))
+				if ((resumed || captureMode) && audioSessions.isCurrent(session))
 					consumeAudio(pcm, rate, channels, session);
 				return null;
 			});
@@ -139,19 +170,20 @@ public class MainActivity extends AppCompatActivity {
 				audioUi.post(() -> {
 					if (!audioSessions.isCurrent(session)) return;
 					stopListening();
-					setStatus(fileMode ? R.string.audio_file_error : R.string.audio_recording_error);
+					setStatus(fileMode ? R.string.audio_file_error : captureMode ? R.string.capture_error : R.string.audio_recording_error);
 				});
 			}
 		}
 
 		@Override public void onSourceStateChanged(AudioSource.AudioSourceState state, String message, long session) {
 			audioUi.post(() -> {
-				if (!resumed || !audioSessions.isCurrent(session)) return;
+				if ((!resumed && !captureMode) || !audioSessions.isCurrent(session)) return;
 				if (state == AudioSource.AudioSourceState.RUNNING) {
-					if (fileMode) {
+					if (fileMode || captureMode) {
 						setTitle(currentMode == null ? getString(R.string.auto_mode) : currentMode);
 						ActionBar bar = getSupportActionBar();
-						if (bar != null) bar.setSubtitle(turboDecode ? R.string.audio_file_decoding : R.string.audio_file_playing);
+						if (bar != null) bar.setSubtitle(captureMode ? R.string.capture_listening
+								: turboDecode ? R.string.audio_file_decoding : R.string.audio_file_playing);
 					} else setStatus(R.string.listening);
 				}
 				else if (state == AudioSource.AudioSourceState.COMPLETED && fileMode) {
@@ -167,9 +199,10 @@ public class MainActivity extends AppCompatActivity {
 				}
 				else if (state == AudioSource.AudioSourceState.ERROR) {
 					Log.e("Robot36", message);
+					if (captureMode) stopListening();
 					filePlaying = false;
 					updateInputControls();
-					setStatus(fileMode ? R.string.audio_file_error : R.string.audio_recording_error);
+					setStatus(fileMode ? R.string.audio_file_error : captureMode ? R.string.capture_error : R.string.audio_recording_error);
 					if (fileMode) new AlertDialog.Builder(MainActivity.this)
 							.setTitle(R.string.audio_file_error).setMessage(message)
 							.setPositiveButton(android.R.string.ok, null).show();
@@ -183,18 +216,18 @@ public class MainActivity extends AppCompatActivity {
 			decoder = new Decoder(scopeBuffer, imageBuffer, getString(R.string.raw_mode), rate);
 			decoder.setMode(currentMode);
 			stft = new ShortTimeFourierTransform(rate / binWidthHz, 3);
-			// File layout comes from its header; microphone channel preferences stay local.
-			decoderChannel = channels == 1 ? 0 : (fileMode ? 3 : (recordChannel == 0 ? 1 : recordChannel));
+			// Each source supplies its format; channel-selection preferences apply only to the mic.
+			decoderChannel = channels == 1 ? 0 : (fileMode || captureMode ? 3 : (recordChannel == 0 ? 1 : recordChannel));
 			decoderSession = session;
 			lastPreviewNanos = 0;
 		}
 		boolean turbo = fileMode && turboDecode;
 		long now = System.nanoTime();
-		boolean preview = !turbo || lastPreviewNanos == 0 || now - lastPreviewNanos >= 33_000_000L;
+		boolean preview = resumed && (!turbo || lastPreviewNanos == 0 || now - lastPreviewNanos >= 33_000_000L);
 		if (preview) lastPreviewNanos = now;
 		recordBuffer = pcm;
 		if (preview) processPeakMeter();
-		if (showSpectrogram) processSpectrogram(preview);
+		if (resumed && showSpectrogram) processSpectrogram(preview);
 		boolean newLines = decoder.process(recordBuffer, decoderChannel);
 		if (!showSpectrogram && preview) processFreqPlot();
 		// Image completion must be checked for every block, independently of drawing.
@@ -206,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void startListening() {
-		if (!resumed || fileMode) return;
+		if (!resumed || fileMode || captureMode) return;
 		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
 			setStatus(R.string.audio_permission_denied);
 			return;
@@ -216,8 +249,87 @@ public class MainActivity extends AppCompatActivity {
 
 	private void stopListening() {
 		audioSessions.stopAndReleaseCurrentSession();
+		stopCapture();
 		filePlaying = false;
 		updateInputControls();
+	}
+
+	private void requestCapture() {
+		if (Build.VERSION.SDK_INT < 29 || !resumed || !captureMode) return;
+		capturePermissionPending = true;
+		updateInputControls();
+		setStatus(R.string.capture_authorizing);
+		ArrayList<String> permissions = new ArrayList<>();
+		if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+			permissions.add(Manifest.permission.RECORD_AUDIO);
+		if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+			permissions.add(Manifest.permission.POST_NOTIFICATIONS);
+		if (permissions.isEmpty()) launchCapturePermission();
+		else captureAudioPermission.launch(permissions.toArray(new String[0]));
+	}
+
+	private void launchCapturePermission() {
+		try {
+			capturePermission.launch(getSystemService(MediaProjectionManager.class).createScreenCaptureIntent());
+		} catch (RuntimeException e) { captureFailed(e); }
+	}
+
+	private void bindCapture(int resultCode, Intent data) {
+		if (Build.VERSION.SDK_INT < 29) return;
+		setStatus(R.string.capture_starting);
+		captureConnection = new ServiceConnection() {
+			private Intent grant = data;
+			@Override public void onServiceConnected(ComponentName name, IBinder binder) {
+				if (captureConnection != this || !captureMode) return;
+				captureService = ((AudioCaptureService.LocalBinder) binder).getService();
+				Intent freshGrant = grant;
+				grant = null;
+				try {
+					MediaProjection projection = captureService.startCapture(resultCode, freshGrant, () -> {
+						if (captureConnection != this) return;
+						stopListening();
+						setStatus(R.string.capture_stopped);
+					});
+					audioSessions.startSession(new AudioPlaybackCaptureSource(projection));
+					updateInputControls();
+				} catch (RuntimeException e) { captureFailed(e); }
+			}
+			@Override public void onServiceDisconnected(ComponentName name) {
+				if (captureConnection == this) captureFailed(new IOException("Capture service disconnected"));
+			}
+			@Override public void onBindingDied(ComponentName name) { onServiceDisconnected(name); }
+			@Override public void onNullBinding(ComponentName name) { onServiceDisconnected(name); }
+		};
+		try {
+			if (!bindService(new Intent(this, AudioCaptureService.class), captureConnection, Context.BIND_AUTO_CREATE))
+				throw new IOException("Cannot bind capture service");
+		} catch (IOException | RuntimeException e) { captureFailed(e); }
+		updateInputControls();
+	}
+
+	private void captureFailed(Exception error) {
+		Log.e("Robot36", "Playback capture failed", error);
+		stopListening();
+		setStatus(R.string.capture_error);
+		if (resumed) new AlertDialog.Builder(this).setTitle(R.string.capture_error)
+				.setMessage(error.toString()).setPositiveButton(android.R.string.ok, null).show();
+	}
+
+	private void stopCapture() {
+		capturePermissionPending = false;
+		AudioCaptureService previous = captureService;
+		ServiceConnection connection = captureConnection;
+		captureService = null;
+		captureConnection = null; // Ignore the service's callback during owner-initiated cleanup.
+		try {
+			if (previous != null && Build.VERSION.SDK_INT >= 29) previous.stopCapture();
+		} finally {
+			// Even an unsuccessful bind can register a connection with the framework.
+			if (connection != null) {
+				try { unbindService(connection); }
+				catch (IllegalArgumentException e) { Log.w("Robot36", "Capture service was not bound", e); }
+			}
+		}
 	}
 
 	private void startFile() {
@@ -234,6 +346,7 @@ public class MainActivity extends AppCompatActivity {
 		if (uri == null) return;
 		stopListening();
 		fileMode = true;
+		captureMode = false;
 		selectedFile = uri;
 		selectedFileName = uri.getLastPathSegment();
 		try (Cursor cursor = getContentResolver().query(uri, new String[] {OpenableColumns.DISPLAY_NAME}, null, null, null)) {
@@ -248,6 +361,7 @@ public class MainActivity extends AppCompatActivity {
 		findViewById(R.id.btn_source_mic).setOnClickListener(v -> {
 			stopListening();
 			fileMode = false;
+			captureMode = false;
 			updateInputControls();
 			requestMicrophone();
 		});
@@ -255,8 +369,20 @@ public class MainActivity extends AppCompatActivity {
 			if (fileMode) return;
 			stopListening();
 			fileMode = true;
+			captureMode = false;
 			updateInputControls();
 			setStatus(selectedFile == null ? R.string.select_audio_file : R.string.audio_file_ready);
+		});
+		findViewById(R.id.btn_source_capture).setOnClickListener(v -> {
+			if (captureMode && (capturePermissionPending || captureConnection != null)) {
+				stopListening();
+				setStatus(R.string.capture_stopped);
+				return;
+			}
+			stopListening();
+			fileMode = false;
+			captureMode = true;
+			requestCapture();
 		});
 		findViewById(R.id.btn_file_action).setOnClickListener(v -> {
 			stopListening();
@@ -280,12 +406,20 @@ public class MainActivity extends AppCompatActivity {
 
 	private void updateInputControls() {
 		ImageButton mic = findViewById(R.id.btn_source_mic), file = findViewById(R.id.btn_source_file);
-		mic.setSelected(!fileMode);
+		ImageButton capture = findViewById(R.id.btn_source_capture);
+		boolean microphone = !fileMode && !captureMode;
+		mic.setSelected(microphone);
 		file.setSelected(fileMode);
-		mic.setBackgroundResource(fileMode ? android.R.color.transparent : R.drawable.bg_segmented_button);
+		capture.setSelected(captureMode);
+		mic.setBackgroundResource(microphone ? R.drawable.bg_segmented_button : android.R.color.transparent);
 		file.setBackgroundResource(fileMode ? R.drawable.bg_segmented_button : android.R.color.transparent);
-		mic.setImageTintList(ColorStateList.valueOf(fileMode ? tintColor : getColor(R.color.light_blue)));
+		capture.setBackgroundResource(captureMode ? R.drawable.bg_segmented_button : android.R.color.transparent);
+		mic.setImageTintList(ColorStateList.valueOf(microphone ? getColor(R.color.light_blue) : tintColor));
 		file.setImageTintList(ColorStateList.valueOf(fileMode ? getColor(R.color.light_blue) : tintColor));
+		capture.setImageTintList(ColorStateList.valueOf(captureMode ? getColor(R.color.light_blue) : tintColor));
+		capture.setEnabled(Build.VERSION.SDK_INT >= 29 && !capturePermissionPending);
+		capture.setAlpha(Build.VERSION.SDK_INT >= 29 ? 1f : 0.4f);
+		capture.setContentDescription(getString(captureConnection != null ? R.string.capture_stop : R.string.playback_capture));
 		file.setEnabled(true);
 		file.setAlpha(1f);
 		findViewById(R.id.file_control_container).setVisibility(fileMode ? View.VISIBLE : View.GONE);
@@ -304,10 +438,10 @@ public class MainActivity extends AppCompatActivity {
 		filename.setText(selectedFileName);
 		filename.setVisibility(fileMode && selectedFile != null ? View.VISIBLE : View.GONE);
 		if (menu != null) {
-			menu.findItem(R.id.action_audio_sample_rate).setEnabled(!fileMode);
-			menu.findItem(R.id.action_audio_channel).setEnabled(!fileMode);
-			menu.findItem(R.id.action_audio_source).setEnabled(!fileMode);
-			menu.findItem(R.id.action_audio_format).setEnabled(!fileMode);
+			menu.findItem(R.id.action_audio_sample_rate).setEnabled(microphone);
+			menu.findItem(R.id.action_audio_channel).setEnabled(microphone);
+			menu.findItem(R.id.action_audio_source).setEnabled(microphone);
+			menu.findItem(R.id.action_audio_format).setEnabled(microphone);
 		}
 	}
 
@@ -614,7 +748,7 @@ public class MainActivity extends AppCompatActivity {
 			if (!permissions[i].equals(Manifest.permission.RECORD_AUDIO)) continue;
 			if (i < grantResults.length && grantResults[i] == PackageManager.PERMISSION_GRANTED)
 				startListening();
-			else if (!fileMode)
+			else if (!fileMode && !captureMode)
 				setStatus(R.string.audio_permission_denied);
 		}
 	}
@@ -637,6 +771,7 @@ public class MainActivity extends AppCompatActivity {
 		state.putBoolean("showSpectrogram", showSpectrogram);
 		state.putString("language", language);
 		state.putBoolean("fileMode", fileMode);
+		state.putBoolean("captureMode", captureMode);
 		state.putBoolean("turboDecode", turboDecode);
 		state.putString("selectedFile", selectedFile == null ? null : selectedFile.toString());
 		state.putString("selectedFileName", selectedFileName);
@@ -688,6 +823,7 @@ public class MainActivity extends AppCompatActivity {
 			showSpectrogram = state.getBoolean("showSpectrogram", defaultShowSpectrogram);
 			language = state.getString("language", defaultLanguage);
 			fileMode = state.getBoolean("fileMode");
+			captureMode = state.getBoolean("captureMode") && Build.VERSION.SDK_INT >= 29;
 			turboDecode = state.getBoolean("turboDecode");
 			String uri = state.getString("selectedFile");
 			selectedFile = uri == null ? null : Uri.parse(uri);
@@ -712,8 +848,9 @@ public class MainActivity extends AppCompatActivity {
 		createPeakMeter();
 		audioSessions = new AudioSessionManager(audioListener);
 		bindInputControls();
+		if (captureMode) setStatus(R.string.capture_stopped);
 		ArrayList<String> permissions = new ArrayList<>();
-		if (!fileMode && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+		if (!fileMode && !captureMode && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
 			permissions.add(Manifest.permission.RECORD_AUDIO);
 		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
 			permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -1143,6 +1280,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void onResume() {
 		super.onResume();
 		resumed = true;
+		if (captureMode && decoder != null) processScope();
 		startListening();
 	}
 
@@ -1150,7 +1288,8 @@ public class MainActivity extends AppCompatActivity {
 	protected void onPause() {
 		resumed = false;
 		boolean wasPlaying = filePlaying;
-		stopListening();
+		// A bound foreground service keeps playback capture alive while another app plays.
+		if (!captureMode) stopListening();
 		if (wasPlaying) setStatus(R.string.audio_file_stopped);
 		storeSettings();
 		super.onPause();
@@ -1159,6 +1298,7 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	protected void onDestroy() {
 		audioSessions.release();
+		stopCapture();
 		audioUi.removeCallbacksAndMessages(null);
 		super.onDestroy();
 	}
