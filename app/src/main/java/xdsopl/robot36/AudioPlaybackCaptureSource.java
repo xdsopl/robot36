@@ -1,18 +1,33 @@
 package xdsopl.robot36;
 
-/**
- * Planned responsibility: Android playback audio capture through AudioRecord.
- *
- * Implement AudioSource and use the same PcmFormat, PCM callback and lifecycle states
- * as microphone input. Obtain authorization outside the source before prepare().
- * Accept an authorized MediaProjection and configure eligible playback audio usages.
- * Reuse the live-input PCM reading path and format handling instead of implementing
- * a separate decoder or a second conversion pipeline.
- * Own only the AudioRecord associated with this capture session.
- * The Activity requests authorization, and the foreground service owns the projection.
- * Restrict construction to supported Android versions and surface setup/read failures
- * through the shared audio-source contract. Do not retain or reuse authorization grants.
- *
- * Responsibility-only scaffold. No playback-capture implementation is connected yet.
- * Add the implementation and its tests in the corresponding integration commit.
- */
+import android.media.AudioAttributes;
+import android.media.AudioFormat;
+import android.media.AudioPlaybackCaptureConfiguration;
+import android.media.AudioRecord;
+import android.media.projection.MediaProjection;
+import androidx.annotation.RequiresApi;
+
+/** Captures eligible playback audio. The foreground service owns the projection. */
+@RequiresApi(29)
+public final class AudioPlaybackCaptureSource extends AudioRecordSource {
+	private final MediaProjection projection;
+
+	public AudioPlaybackCaptureSource(MediaProjection projection) {
+		super(48000, 2, AudioFormat.ENCODING_PCM_16BIT);
+		this.projection = projection;
+	}
+
+	@Override protected AudioRecord createRecord(int channelMask, int bufferBytes) {
+		AudioPlaybackCaptureConfiguration config = new AudioPlaybackCaptureConfiguration.Builder(projection)
+				.addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+				.addMatchingUsage(AudioAttributes.USAGE_GAME)
+				.addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+				.build();
+		return new AudioRecord.Builder()
+				.setAudioFormat(new AudioFormat.Builder().setSampleRate(sampleRate)
+						.setChannelMask(channelMask).setEncoding(encoding).build())
+				.setBufferSizeInBytes(bufferBytes)
+				.setAudioPlaybackCaptureConfig(config)
+				.build();
+	}
+}
