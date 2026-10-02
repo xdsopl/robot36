@@ -96,7 +96,7 @@ public class Demodulator {
 					baseBand.set(buffer[2 * i + 1]);
 					break;
 				case 3:
-					baseBand.set(buffer[2 * i] + buffer[2 * i + 1]);
+					baseBand.set(0.5f * (buffer[2 * i] + buffer[2 * i + 1]));
 					break;
 				case 4:
 					baseBand.set(buffer[2 * i], buffer[2 * i + 1]);
