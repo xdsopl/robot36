@@ -23,15 +23,15 @@ import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class FilePlaybackTest {
-	private static Object field(Object owner, String name) {
+	static Object field(Object owner, String name) {
 		try { Field f = owner.getClass().getDeclaredField(name); f.setAccessible(true); return f.get(owner); }
 		catch (ReflectiveOperationException e) { throw new AssertionError(e); }
 	}
-	private static void set(Object owner, String name, Object value) {
+	static void set(Object owner, String name, Object value) {
 		try { Field f = owner.getClass().getDeclaredField(name); f.setAccessible(true); f.set(owner, value); }
 		catch (ReflectiveOperationException e) { throw new AssertionError(e); }
 	}
-	private static void await(ActivityScenario<MainActivity> scenario, java.util.function.Predicate<MainActivity> condition) throws Exception {
+	static void await(ActivityScenario<MainActivity> scenario, java.util.function.Predicate<MainActivity> condition) throws Exception {
 		long deadline = System.nanoTime() + 5_000_000_000L;
 		AtomicBoolean passed = new AtomicBoolean();
 		do {
@@ -80,7 +80,7 @@ public class FilePlaybackTest {
 					assertNull(field(activity, "selectedFile"));
 					activity.findViewById(R.id.btn_file_action).performClick();
 				});
-				await(scenario, activity -> field(activity, "selectedFile") != null);
+				await(scenario, activity -> activity.findViewById(R.id.btn_file_play_stop).isEnabled());
 				scenario.onActivity(activity -> activity.findViewById(R.id.btn_file_play_stop).performClick());
 				await(scenario, activity -> field(activity, "recordBuffer") != null && (int) field(activity, "decoderChannel") == 3);
 				scenario.onActivity(activity -> {
@@ -153,6 +153,7 @@ public class FilePlaybackTest {
 			try {
 				// Recreation must preserve the choice and rebind the controls.
 				scenario.recreate();
+				await(scenario, activity -> activity.findViewById(R.id.btn_file_play_stop).isEnabled());
 				scenario.onActivity(activity -> {
 					assertTrue(((CompoundButton) activity.findViewById(R.id.cb_turbo_decode)).isChecked());
 					activity.findViewById(R.id.btn_file_play_stop).performClick();

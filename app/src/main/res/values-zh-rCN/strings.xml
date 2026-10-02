@@ -21,6 +21,7 @@
 	<string name="audio_file_completed">音频文件已结束</string>
 	<string name="audio_file_stopped">文件已停止，再次播放将从头开始</string>
 	<string name="audio_file_error">无法读取或播放音频文件</string>
+	<string name="audio_file_lossy_notice">该文件采用有损音频压缩，可能导致 SSTV 图像出现噪点、颜色偏差或识别失败。建议优先使用原始 WAV 录音。</string>
 	<string name="language">语言</string>
 	<string name="share">分享</string>
 	<string name="more_options">更多选项</string>

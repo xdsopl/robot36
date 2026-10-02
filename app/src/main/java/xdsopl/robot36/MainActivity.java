@@ -45,6 +45,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ImageButton;
 import android.widget.CompoundButton;
@@ -68,6 +69,7 @@ import androidx.core.os.LocaleListCompat;
 import androidx.core.view.MenuItemCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -78,6 +80,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 public class MainActivity extends AppCompatActivity {
@@ -117,6 +122,12 @@ public class MainActivity extends AppCompatActivity {
 	private long lastPreviewNanos;
 	private Uri selectedFile;
 	private String selectedFileName;
+	private AudioFileReaders.Type selectedFileType;
+	private final ExecutorService fileInspector = Executors.newSingleThreadExecutor(r -> new Thread(r, "AudioFileInspector"));
+	private Future<?> pendingFileInspection;
+	private long fileSelection;
+	private boolean fileNoticePending;
+	private Snackbar fileNotice;
 	private final ActivityResultLauncher<String[]> filePicker = registerForActivityResult(
 			new ActivityResultContracts.OpenDocument(), this::selectFile);
 	private final ActivityResultLauncher<Intent> capturePermission = registerForActivityResult(
@@ -249,6 +260,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void stopListening() {
+		dismissFileNotice();
 		audioSessions.stopAndReleaseCurrentSession();
 		stopCapture();
 		filePlaying = false;
@@ -334,12 +346,13 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void startFile() {
-		if (!resumed || !fileMode || selectedFile == null) return;
+		if (!resumed || !fileMode || selectedFile == null || selectedFileType == null) return;
 		Uri uri = selectedFile;
+		AudioFileReaders.Type type = selectedFileType;
 		filePlaying = true;
 		updateInputControls();
 		setStatus(R.string.audio_file_opening);
-		audioSessions.startSession(new FileAudioSource(() -> WavFileReader.open(getContentResolver().openInputStream(uri)), turboDecode),
+		audioSessions.startSession(new FileAudioSource(() -> AudioFileReaders.open(getApplicationContext(), uri, type), turboDecode),
 				turboDecode ? null : new AudioTrackPlayer());
 	}
 
@@ -349,13 +362,78 @@ public class MainActivity extends AppCompatActivity {
 		fileMode = true;
 		captureMode = false;
 		selectedFile = uri;
+		fileNoticePending = true;
 		selectedFileName = uri.getLastPathSegment();
 		try (Cursor cursor = getContentResolver().query(uri, new String[] {OpenableColumns.DISPLAY_NAME}, null, null, null)) {
 			if (cursor != null && cursor.moveToFirst() && !cursor.isNull(0)) selectedFileName = cursor.getString(0);
 		} catch (RuntimeException e) { Log.w("Robot36", "Cannot read audio filename", e); }
 		if (selectedFileName == null) selectedFileName = getString(R.string.audio_file_source);
+		inspectSelectedFile();
+	}
+
+	private void cancelFileInspection() {
+		++fileSelection;
+		if (pendingFileInspection != null) pendingFileInspection.cancel(true);
+		pendingFileInspection = null;
+	}
+
+	private void inspectSelectedFile() {
+		cancelFileInspection();
+		selectedFileType = null;
+		Uri uri = selectedFile;
+		long selection = fileSelection;
 		updateInputControls();
-		setStatus(R.string.audio_file_ready);
+		if (fileMode) setStatus(R.string.audio_file_opening);
+		pendingFileInspection = fileInspector.submit(() -> {
+			try {
+				AudioFileReaders.Type type = AudioFileReaders.detect(getApplicationContext(), uri);
+				if (fileInspector.isShutdown() || Thread.currentThread().isInterrupted()) return;
+				audioUi.post(() -> {
+					if (isDestroyed() || selection != fileSelection || !uri.equals(selectedFile)) return;
+					pendingFileInspection = null;
+					selectedFileType = type;
+					if (type != AudioFileReaders.Type.MP3 || !fileMode) fileNoticePending = false;
+					updateInputControls();
+					if (fileMode) {
+						setStatus(R.string.audio_file_ready);
+						showFileNotice();
+					}
+				});
+			} catch (IOException | RuntimeException e) {
+				if (fileInspector.isShutdown() || Thread.currentThread().isInterrupted()) return;
+				audioUi.post(() -> {
+					if (isDestroyed() || selection != fileSelection || !uri.equals(selectedFile)) return;
+					pendingFileInspection = null;
+					fileNoticePending = false;
+					Log.e("Robot36", "Cannot identify audio file", e);
+					if (fileMode && resumed) {
+						setStatus(R.string.audio_file_error);
+						new AlertDialog.Builder(MainActivity.this).setTitle(R.string.audio_file_error)
+								.setMessage(e.getMessage()).setPositiveButton(android.R.string.ok, null).show();
+					}
+				});
+			}
+		});
+	}
+
+	private void dismissFileNotice() {
+		if (fileNotice != null) fileNotice.dismiss();
+		fileNotice = null;
+	}
+
+	private void showFileNotice() {
+		if (!resumed || !fileMode || !fileNoticePending || selectedFileType != AudioFileReaders.Type.MP3) return;
+		fileNoticePending = false;
+		dismissFileNotice();
+		View root = findViewById(R.id.main);
+		fileNotice = Snackbar.make(root, R.string.audio_file_lossy_notice, 4000)
+				.setBackgroundTint(0xCC202020).setTextColor(0xFFFFFFFF).setTextMaxLines(4);
+		ViewGroup.LayoutParams params = fileNotice.getView().getLayoutParams();
+		if (params instanceof ViewGroup.MarginLayoutParams) {
+			((ViewGroup.MarginLayoutParams) params).bottomMargin += root.getHeight() / 6;
+			fileNotice.getView().setLayoutParams(params);
+		}
+		fileNotice.show();
 	}
 
 	private void bindInputControls() {
@@ -372,7 +450,9 @@ public class MainActivity extends AppCompatActivity {
 			fileMode = true;
 			captureMode = false;
 			updateInputControls();
-			setStatus(selectedFile == null ? R.string.select_audio_file : R.string.audio_file_ready);
+			if (selectedFile != null && selectedFileType == null && pendingFileInspection == null) inspectSelectedFile();
+			else setStatus(selectedFile == null ? R.string.select_audio_file
+					: selectedFileType == null ? R.string.audio_file_opening : R.string.audio_file_ready);
 		});
 		findViewById(R.id.btn_source_capture).setOnClickListener(v -> {
 			if (captureMode && (capturePermissionPending || captureConnection != null)) {
@@ -389,8 +469,11 @@ public class MainActivity extends AppCompatActivity {
 			stopListening();
 			if (selectedFile == null) filePicker.launch(new String[] {"audio/*", "application/octet-stream"});
 			else {
+				cancelFileInspection();
 				selectedFile = null;
 				selectedFileName = null;
+				selectedFileType = null;
+				fileNoticePending = false;
 				updateInputControls();
 				setStatus(R.string.select_audio_file);
 			}
@@ -431,8 +514,8 @@ public class MainActivity extends AppCompatActivity {
 		action.setEnabled(true);
 		action.setImageResource(selectedFile == null ? R.drawable.ic_add_24 : R.drawable.ic_close_24);
 		action.setContentDescription(getString(selectedFile == null ? R.string.select_audio_file : R.string.unload_audio_file));
-		play.setEnabled(selectedFile != null);
-		play.setAlpha(selectedFile == null ? 0.4f : 1f);
+		play.setEnabled(selectedFile != null && selectedFileType != null);
+		play.setAlpha(play.isEnabled() ? 1f : 0.4f);
 		play.setImageResource(filePlaying ? R.drawable.ic_stop_24 : R.drawable.ic_play_arrow_24);
 		play.setContentDescription(getString(filePlaying ? R.string.stop_audio_file : R.string.play_audio_file));
 		TextView filename = findViewById(R.id.tv_current_filename);
@@ -776,6 +859,8 @@ public class MainActivity extends AppCompatActivity {
 		state.putBoolean("turboDecode", turboDecode);
 		state.putString("selectedFile", selectedFile == null ? null : selectedFile.toString());
 		state.putString("selectedFileName", selectedFileName);
+		state.putString("selectedFileType", selectedFileType == null ? null : selectedFileType.name());
+		state.putBoolean("fileNoticePending", fileNoticePending);
 		super.onSaveInstanceState(state);
 	}
 
@@ -829,6 +914,9 @@ public class MainActivity extends AppCompatActivity {
 			String uri = state.getString("selectedFile");
 			selectedFile = uri == null ? null : Uri.parse(uri);
 			selectedFileName = state.getString("selectedFileName");
+			String fileType = state.getString("selectedFileType");
+			selectedFileType = fileType == null ? null : AudioFileReaders.Type.valueOf(fileType);
+			fileNoticePending = state.getBoolean("fileNoticePending");
 		}
 		super.onCreate(state);
 		setLanguage(language);
@@ -1182,6 +1270,7 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration config) {
+		dismissFileNotice();
 		super.onConfigurationChanged(config);
 		setContentView(config.orientation == Configuration.ORIENTATION_LANDSCAPE ? R.layout.activity_main_land : R.layout.activity_main);
 		handleInsets();
@@ -1283,6 +1372,9 @@ public class MainActivity extends AppCompatActivity {
 		resumed = true;
 		if (captureMode && decoder != null) processScope();
 		startListening();
+		if (fileMode && selectedFile != null && selectedFileType == null && pendingFileInspection == null)
+			inspectSelectedFile();
+		showFileNotice();
 	}
 
 	@Override
@@ -1298,6 +1390,9 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	protected void onDestroy() {
+		cancelFileInspection();
+		fileInspector.shutdownNow();
+		dismissFileNotice();
 		audioSessions.release();
 		stopCapture();
 		audioUi.removeCallbacksAndMessages(null);
