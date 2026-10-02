@@ -19,23 +19,34 @@ final class MediaCodecFileReader implements PcmFileReader {
 	private int encoding, bytesPerFrame;
 	private int outputIndex = -1;
 	private ByteBuffer output;
+	private ByteBuffer extractedPcm;
 	private boolean inputEnded, outputEnded, closed;
 
 	private MediaCodecFileReader() { }
 
-	static MediaCodecFileReader open(Context context, Uri uri) throws IOException {
+	static MediaCodecFileReader open(Context context, Uri uri, AudioFileReaders.Type type) throws IOException {
 		MediaCodecFileReader reader = new MediaCodecFileReader();
 		try {
 			reader.extractor = new MediaExtractor();
 			reader.extractor.setDataSource(context, uri, null);
-			int track = AudioFileReaders.mp3Track(reader.extractor);
+			int track = AudioFileReaders.audioTrack(reader.extractor, type == AudioFileReaders.Type.FLAC);
 			MediaFormat input = reader.extractor.getTrackFormat(track);
 			reader.extractor.selectTrack(track);
-			// Only MP3 is enabled. Other codecs need their own compatibility tests first.
-			reader.codec = MediaCodec.createDecoderByType(input.getString(MediaFormat.KEY_MIME));
-			input.setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_16BIT);
-			reader.codec.configure(input, null, null, 0);
-			reader.codec.start();
+			String mime = input.getString(MediaFormat.KEY_MIME);
+			if (MediaFormat.MIMETYPE_AUDIO_RAW.equals(mime)) {
+				// Some FLAC extractors deliver decoded PCM (often PCM16 even for 24-bit
+				// files). Respect their actual encoding; a codec cannot recover lost bits.
+				reader.updateFormat(input);
+				// A FLAC block contains at most 65535 frames, independent of metadata size.
+				reader.extractedPcm = ByteBuffer.allocateDirect(65535 * reader.bytesPerFrame).order(ByteOrder.nativeOrder());
+			} else {
+				reader.codec = MediaCodec.createDecoderByType(mime);
+				// Prefer float for compressed FLAC tracks to retain 24-bit precision.
+				input.setInteger(MediaFormat.KEY_PCM_ENCODING, MediaFormat.MIMETYPE_AUDIO_FLAC.equals(mime)
+						? AudioFormat.ENCODING_PCM_FLOAT : AudioFormat.ENCODING_PCM_16BIT);
+				reader.codec.configure(input, null, null, 0);
+				reader.codec.start();
+			}
 			// Establish the actual output format and retain the first PCM buffer for read().
 			reader.nextOutput();
 			if (reader.format == null) throw new IOException("Decoder did not provide a PCM format");
@@ -86,6 +97,19 @@ final class MediaCodecFileReader implements PcmFileReader {
 	}
 
 	private boolean nextOutput() throws IOException {
+		if (extractedPcm != null) {
+			AudioFileReaders.checkInterrupted();
+			if (outputEnded) return false;
+			extractedPcm.clear();
+			int size = extractor.readSampleData(extractedPcm, 0);
+			if (size < 0) { outputEnded = true; return false; }
+			if (size == 0 || size > extractedPcm.capacity() || size % bytesPerFrame != 0)
+				throw new IOException("Invalid extracted PCM buffer");
+			extractedPcm.limit(size).position(0);
+			output = extractedPcm;
+			extractor.advance();
+			return true;
+		}
 		long lastProgress = System.nanoTime();
 		while (!outputEnded) {
 			AudioFileReaders.checkInterrupted();
@@ -137,7 +161,7 @@ final class MediaCodecFileReader implements PcmFileReader {
 	}
 
 	private void releaseOutput() {
-		codec.releaseOutputBuffer(outputIndex, false);
+		if (outputIndex >= 0) codec.releaseOutputBuffer(outputIndex, false);
 		outputIndex = -1;
 		output = null;
 	}
@@ -146,6 +170,7 @@ final class MediaCodecFileReader implements PcmFileReader {
 		if (closed) return;
 		closed = true;
 		output = null;
+		extractedPcm = null;
 		try { if (codec != null) codec.release(); }
 		finally { if (extractor != null) extractor.release(); }
 	}
