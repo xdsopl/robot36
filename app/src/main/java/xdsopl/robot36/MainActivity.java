@@ -339,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
 		filePlaying = true;
 		updateInputControls();
 		setStatus(R.string.audio_file_opening);
-		audioSessions.startSession(new FileAudioSource(() -> getContentResolver().openInputStream(uri), turboDecode),
+		audioSessions.startSession(new FileAudioSource(() -> WavFileReader.open(getContentResolver().openInputStream(uri)), turboDecode),
 				turboDecode ? null : new AudioTrackPlayer());
 	}
 
