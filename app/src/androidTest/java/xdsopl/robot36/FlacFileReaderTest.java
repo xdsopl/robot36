@@ -18,12 +18,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
-public class Mp3FileReaderTest {
+public class FlacFileReaderTest {
 	static Context context() { return InstrumentationRegistry.getInstrumentation().getTargetContext(); }
 	static File fixture(String asset) throws IOException {
-		// A misleading suffix also verifies that detection uses contents, not extensions.
-		File file = File.createTempFile("mp3-reader-", ".wav", context().getCacheDir());
-		try (InputStream in = InstrumentationRegistry.getInstrumentation().getContext().getAssets().open("mp3/" + asset);
+		// The suffix must not make a lossless file show the MP3 warning.
+		File file = File.createTempFile("flac-reader-", ".mp3", context().getCacheDir());
+		try (InputStream in = InstrumentationRegistry.getInstrumentation().getContext().getAssets().open("flac/" + asset);
 				FileOutputStream out = new FileOutputStream(file)) {
 			byte[] buffer = new byte[4096];
 			int count;
@@ -32,16 +32,22 @@ public class Mp3FileReaderTest {
 		return file;
 	}
 
-	private void checkAudio(String asset, int rate, int... frequencies) throws Exception {
+	private static int sample(int frame, int channel, int bits) {
+		if (frame == 0) return -(1 << (bits - 1));
+		if (frame == 1) return (1 << (bits - 1)) - 1;
+		int phase = frame * (channel == 0 ? 31 : 47) % 2048 - 1024;
+		return (phase << (bits - 12)) + (bits == 24 ? frame % 251 - 125 : 0);
+	}
+
+	private void checkAudio(String asset, int rate, int channels, int bits, int expectedFrames) throws Exception {
 		File file = fixture(asset);
 		try {
 			Uri uri = Uri.fromFile(file);
-			assertEquals(AudioFileReaders.Type.MP3, AudioFileReaders.detect(context(), uri));
-			try (PcmFileReader reader = AudioFileReaders.open(context(), uri, AudioFileReaders.Type.MP3)) {
-				int channels = frequencies.length;
+			assertEquals(AudioFileReaders.Type.FLAC, AudioFileReaders.detect(context(), uri));
+			try (PcmFileReader reader = AudioFileReaders.open(context(), uri, AudioFileReaders.Type.FLAC)) {
 				assertEquals(rate, reader.getFormat().getSampleRate());
 				assertEquals(channels, reader.getFormat().getChannels());
-				float[] all = new float[rate * channels], block = new float[173 * channels + channels - 1];
+				float[] block = new float[173 * channels + channels - 1];
 				int total = 0;
 				while (true) {
 					Arrays.fill(block, Float.NaN);
@@ -49,70 +55,67 @@ public class Mp3FileReaderTest {
 					assertTrue(frames >= 0 && frames <= 173);
 					for (int i = frames * channels; i < block.length; ++i) assertTrue(Float.isNaN(block[i]));
 					if (frames == 0) break;
-					System.arraycopy(block, 0, all, total * channels, frames * channels);
+					assertTrue("Extra decoded frames", total + frames <= expectedFrames);
+					for (int frame = 0; frame < frames; ++frame) {
+						for (int channel = 0; channel < channels; ++channel) {
+							float expected = sample(total + frame, channel, bits) / (float) (1 << (bits - 1));
+							// System extractors can quantize 24-bit FLAC to PCM16. Allow at
+							// most one PCM16 step, while 16-bit input must remain exact.
+							assertEquals("PCM frame " + (total + frame) + ", channel " + channel,
+									expected, block[frame * channels + channel], bits > 16 ? 1f / 32768 : 0f);
+						}
+					}
 					total += frames;
 				}
+				assertEquals("Missing final PCM frames", expectedFrames, total);
 				assertEquals(0, reader.read(block));
-				// Allow MP3 encoder/decoder padding, but reject missing initial/final codec frames.
-				assertTrue("Audio tail lost: " + total, total >= rate * .58);
-				assertTrue("Unexpected extra audio: " + total, total <= rate * .8);
-				for (int channel = 0; channel < channels; ++channel) {
-					int begin = rate / 10, end = rate / 2, crossings = 0;
-					float peak = 0;
-					for (int frame = begin; frame < end; ++frame) {
-						float value = all[frame * channels + channel];
-						assertFalse(Float.isNaN(value) || Float.isInfinite(value));
-						peak = Math.max(peak, Math.abs(value));
-						if (value > 0 && all[(frame - 1) * channels + channel] <= 0) ++crossings;
-					}
-					assertTrue("PCM scale changed: " + peak, peak > .15f && peak < .4f);
-					assertEquals(frequencies[channel], crossings * (double) rate / (end - begin), 15);
-				}
 			}
 		} finally { file.delete(); }
 	}
 
-	@Test public void decodesMonoCbrWithActualRateAndCompleteTail() throws Exception { checkAudio("mono-cbr.mp3", 32000, 1500); }
-	@Test public void decodesStereoVbrWithoutMixingChannels() throws Exception { checkAudio("stereo-vbr.mp3", 44100, 1200, 2300); }
+	@Test public void mono16BitMatchesOriginalPcmThroughEof() throws Exception {
+		checkAudio("mono-16.flac", 32000, 1, 16, 10037);
+	}
 
-	@Test public void realtimeMonitoringAndTurboDeliverTheSameMp3Frames() throws Exception {
-		File file = fixture("silence.mp3");
-		int normalFrames = 0;
+	@Test public void stereo24BitMatchesPcmWithinPlatformPrecision() throws Exception {
+		checkAudio("stereo-24.flac", 48000, 2, 24, 15013);
+	}
+
+	@Test public void realtimeAndTurboDeliverEveryFrameIncludingShortTail() throws Exception {
+		File file = fixture("silence.flac");
 		try {
 			for (boolean turbo : new boolean[] {false, true}) {
 				CountDownLatch released = new CountDownLatch(1);
-				AtomicInteger received = new AtomicInteger();
+				AtomicInteger received = new AtomicInteger(), completed = new AtomicInteger();
 				AtomicReference<String> failure = new AtomicReference<>();
 				AudioSessionManager manager = new AudioSessionManager(new AudioSessionManager.SessionCallback() {
 					@Override public void onPcmDataAvailable(float[] pcm, int frames, int rate, int channels, long session) {
 						received.addAndGet(frames);
-						Arrays.fill(pcm, Float.NaN);
+						Arrays.fill(pcm, Float.NaN); // Monitoring must consume PCM before the decoder mutates it.
 					}
 					@Override public void onSourceStateChanged(AudioSource.AudioSourceState state, String message, long session) {
 						if (state == AudioSource.AudioSourceState.ERROR) failure.set(message);
+						if (state == AudioSource.AudioSourceState.COMPLETED) completed.incrementAndGet();
 						if (state == AudioSource.AudioSourceState.RELEASED) released.countDown();
 					}
 				});
 				try {
 					long start = System.nanoTime();
-					manager.startSession(new FileAudioSource(() -> AudioFileReaders.open(context(), Uri.fromFile(file), AudioFileReaders.Type.MP3), turbo),
+					manager.startSession(new FileAudioSource(() -> AudioFileReaders.open(context(), Uri.fromFile(file), AudioFileReaders.Type.FLAC), turbo),
 							turbo ? null : new AudioTrackPlayer());
 					assertTrue(released.await(5, TimeUnit.SECONDS));
 					assertNull(failure.get());
-					if (turbo) assertEquals(normalFrames, received.get());
-					else {
-						assertTrue(System.nanoTime() - start >= 550_000_000L);
-						normalFrames = received.get();
-						assertTrue(normalFrames >= 18560);
-					}
+					assertEquals(24017, received.get());
+					assertEquals(1, completed.get());
+					if (!turbo) assertTrue(System.nanoTime() - start >= 500_000_000L);
 				} finally { manager.release(); }
 			}
 		} finally { file.delete(); }
 	}
 
-	@Test public void stoppingMp3AfterOneBlockReleasesWithoutCompletion() throws Exception {
-		File file = fixture("stereo-vbr.mp3");
-		FileAudioSource source = new FileAudioSource(() -> AudioFileReaders.open(context(), Uri.fromFile(file), AudioFileReaders.Type.MP3), true);
+	@Test public void stoppingFlacReleasesWithoutCompletion() throws Exception {
+		File file = fixture("stereo-24.flac");
+		FileAudioSource source = new FileAudioSource(() -> AudioFileReaders.open(context(), Uri.fromFile(file), AudioFileReaders.Type.FLAC), true);
 		CountDownLatch released = new CountDownLatch(1);
 		AtomicInteger blocks = new AtomicInteger(), completions = new AtomicInteger();
 		source.setAudioDataListener(new AudioSource.AudioDataListener() {
@@ -131,14 +134,5 @@ public class Mp3FileReaderTest {
 			assertEquals(1, blocks.get());
 			assertEquals(0, completions.get());
 		} finally { source.release(); file.delete(); }
-	}
-
-	@Test public void invalidMp3DoesNotOpenAsAnAudioReader() throws Exception {
-		File file = File.createTempFile("bad-audio-", ".mp3", context().getCacheDir());
-		try {
-			try (FileOutputStream out = new FileOutputStream(file)) { out.write(new byte[64]); }
-			assertThrows(IOException.class, () -> AudioFileReaders.detect(context(), Uri.fromFile(file)));
-			assertThrows(IOException.class, () -> MediaCodecFileReader.open(context(), Uri.fromFile(file), AudioFileReaders.Type.MP3));
-		} finally { file.delete(); }
 	}
 }
