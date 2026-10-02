@@ -82,6 +82,7 @@ import java.util.concurrent.FutureTask;
 
 public class MainActivity extends AppCompatActivity {
 
+
 	private Bitmap scopeBitmap;
 	private PixelBuffer scopeBuffer;
 	private ImageView scopeView;
@@ -537,7 +538,7 @@ public class MainActivity extends AppCompatActivity {
 					input.set(recordBuffer[2 * j + 1]);
 					break;
 				case 3:
-					input.set(recordBuffer[2 * j] + recordBuffer[2 * j + 1]);
+					input.set(0.5f * (recordBuffer[2 * j] + recordBuffer[2 * j + 1]));
 					break;
 				case 4:
 					input.set(recordBuffer[2 * j], recordBuffer[2 * j + 1]);
