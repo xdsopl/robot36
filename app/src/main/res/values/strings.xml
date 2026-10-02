@@ -104,6 +104,7 @@
 	<string name="audio_file_completed">Audio file finished</string>
 	<string name="audio_file_stopped">File stopped — Play restarts from the beginning</string>
 	<string name="audio_file_error">Cannot read or play audio file</string>
+	<string name="audio_file_lossy_notice">Lossy audio compression may cause SSTV image noise, color errors, or decoding failures. Prefer the original WAV recording.</string>
 	<string name="play_or_stop_audio_file" translatable="false">Play or stop audio file</string>
 	<string name="turbo_decode" translatable="false">Turbo</string>
 	<string name="turbo_decode_description">Turbo: fast decode </string>
