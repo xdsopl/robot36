@@ -34,7 +34,7 @@ public class WavFileReaderTest {
 		return riff(chunk("fmt ", format(encoding, bits, channels, rate)), chunk("data", data));
 	}
 	private float[] decode(byte[] wav, int samples) throws IOException {
-		try (PcmFileReader reader = PcmFileReader.open(new ByteArrayInputStream(wav))) {
+		try (PcmFileReader reader = WavFileReader.open(new ByteArrayInputStream(wav))) {
 			float[] pcm = new float[samples];
 			assertEquals(samples / reader.getFormat().getChannels(), reader.read(pcm));
 			assertEquals(0, reader.read(new float[4]));
@@ -76,7 +76,7 @@ public class WavFileReaderTest {
 		ByteArrayInputStream slow = new ByteArrayInputStream(file) {
 			@Override public synchronized int read(byte[] b, int off, int len) { return super.read(b, off, Math.min(3, len)); }
 		};
-		try (PcmFileReader reader = PcmFileReader.open(slow)) {
+		try (PcmFileReader reader = WavFileReader.open(slow)) {
 			assertEquals(32000, reader.getFormat().getSampleRate());
 			assertEquals(2, reader.getFormat().getChannels());
 			float[] pcm = new float[4];
@@ -91,7 +91,7 @@ public class WavFileReaderTest {
 	}
 	@Test public void rejectsPhysicalTruncationWithoutGeneratingSilence() throws Exception {
 		byte[] file = wav(1, 16, 1, 8000, new byte[8]);
-		try (PcmFileReader reader = PcmFileReader.open(new ByteArrayInputStream(Arrays.copyOf(file, file.length - 1)))) {
+		try (PcmFileReader reader = WavFileReader.open(new ByteArrayInputStream(Arrays.copyOf(file, file.length - 1)))) {
 			assertThrows(EOFException.class, () -> reader.read(new float[4]));
 		}
 	}
@@ -103,7 +103,7 @@ public class WavFileReaderTest {
 		byte[] file = Arrays.copyOf(declared, declared.length - 2);
 		// EOF can fall within a read or immediately after a full output block.
 		for (int capacity : new int[] {2, 3, 8}) {
-			try (PcmFileReader reader = PcmFileReader.open(new ByteArrayInputStream(file))) {
+			try (PcmFileReader reader = WavFileReader.open(new ByteArrayInputStream(file))) {
 				float[] expected = {-1, 0, 0.25f, 0.5f}, pcm = new float[capacity];
 				int total = 0, frames;
 				Arrays.fill(pcm, Float.NaN);
@@ -121,7 +121,7 @@ public class WavFileReaderTest {
 		for (int channels : new int[] {1, 2}) {
 			byte[] file = wav(1, 16, channels, 44100, new byte[16]);
 			int missing = channels == 1 ? 4 : 2;
-			try (PcmFileReader reader = PcmFileReader.open(new ByteArrayInputStream(Arrays.copyOf(file, file.length - missing)))) {
+			try (PcmFileReader reader = WavFileReader.open(new ByteArrayInputStream(Arrays.copyOf(file, file.length - missing)))) {
 				assertThrows(EOFException.class, () -> reader.read(new float[16]));
 			}
 		}
@@ -138,7 +138,7 @@ public class WavFileReaderTest {
 				wav(1, 16, 2, 48000, new byte[3]),
 				riff(chunk("data", new byte[4]), chunk("fmt ", format(1, 16, 1, 8000)))
 		};
-		for (byte[] file : files) assertThrows(IOException.class, () -> PcmFileReader.open(new ByteArrayInputStream(file)));
+		for (byte[] file : files) assertThrows(IOException.class, () -> WavFileReader.open(new ByteArrayInputStream(file)));
 	}
 	@Test public void rejectsNonFiniteFloatSamples() throws Exception {
 		byte[] data = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(Float.NaN).array();
@@ -149,7 +149,7 @@ public class WavFileReaderTest {
 		ByteArrayInputStream stream = new ByteArrayInputStream(new byte[20]) {
 			@Override public void close() { closed[0] = true; }
 		};
-		assertThrows(IOException.class, () -> PcmFileReader.open(stream));
+		assertThrows(IOException.class, () -> WavFileReader.open(stream));
 		assertTrue(closed[0]);
 	}
 }

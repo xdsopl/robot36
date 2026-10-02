@@ -1,27 +1,31 @@
 package xdsopl.robot36;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.util.concurrent.TimeUnit;
 
 /** Streams file PCM with realtime pacing or unrestricted Turbo delivery. */
 public final class FileAudioSource extends WorkerAudioSource {
-	public interface Input {
-		/** Opens a fresh stream on the worker; the source takes ownership. */
-		InputStream open() throws IOException;
+	public interface ReaderFactory {
+		/**
+		 * Opens a fresh reader with its PCM format established, on the source worker.
+		 * The source owns the returned reader. The factory must close any resources
+		 * it opens if initialization fails before returning a reader.
+		 */
+		PcmFileReader open() throws IOException;
 	}
-	private final Input input;
+	private final ReaderFactory readerFactory;
 	private final boolean turbo;
 	private PcmFileReader reader;
 
-	public FileAudioSource(Input input, boolean turbo) {
-		this.input = input;
+	public FileAudioSource(ReaderFactory readerFactory, boolean turbo) {
+		this.readerFactory = readerFactory;
 		this.turbo = turbo;
 	}
 
 	@Override protected PcmFormat openInput() throws IOException {
-		reader = PcmFileReader.open(input.open());
+		reader = readerFactory.open();
+		if (reader == null) throw new IOException("Cannot open audio file");
 		return reader.getFormat();
 	}
 

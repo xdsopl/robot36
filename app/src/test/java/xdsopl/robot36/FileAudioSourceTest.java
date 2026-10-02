@@ -15,6 +15,85 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.*;
 
 public class FileAudioSourceTest {
+	@Test public void nonWavReaderPreservesPcmAndRunsOnSourceWorker() throws Exception {
+		float[] samples = {0.1234567f, -0.7654321f, 1.25f, -0.25f, 0, 0.5f};
+		List<Float> received = new ArrayList<>();
+		List<Integer> frameCounts = new ArrayList<>();
+		List<Thread> readerThreads = new ArrayList<>();
+		AtomicInteger closes = new AtomicInteger();
+		CountDownLatch released = new CountDownLatch(1);
+		FileAudioSource source = new FileAudioSource(() -> {
+			readerThreads.add(Thread.currentThread());
+			return new PcmFileReader() {
+				private int offset;
+				@Override public AudioSource.PcmFormat getFormat() { return new AudioSource.PcmFormat(32000, 2); }
+				@Override public int read(float[] pcm) {
+					readerThreads.add(Thread.currentThread());
+					Arrays.fill(pcm, Float.NaN);
+					int count = Math.min(4, samples.length - offset);
+					System.arraycopy(samples, offset, pcm, 0, count);
+					offset += count;
+					return count / 2;
+				}
+				@Override public void close() { readerThreads.add(Thread.currentThread()); closes.incrementAndGet(); }
+			};
+		}, true);
+		source.setAudioDataListener(new AudioSource.AudioDataListener() {
+			@Override public void onAudioDataAvailable(float[] pcm, int frames, int rate, int channels) {
+				frameCounts.add(frames);
+				for (int i = 0; i < frames * channels; ++i) received.add(pcm[i]);
+				Arrays.fill(pcm, Float.NaN);
+			}
+			@Override public void onStatusChanged(AudioSource.AudioSourceState state, String message) {
+				if (state == AudioSource.AudioSourceState.COMPLETED || state == AudioSource.AudioSourceState.ERROR) source.release();
+				if (state == AudioSource.AudioSourceState.RELEASED) released.countDown();
+			}
+		});
+		try {
+			assertTrue(readerThreads.isEmpty());
+			source.prepare();
+			assertEquals(32000, source.getFormat().getSampleRate());
+			assertEquals(2, source.getFormat().getChannels());
+			source.start();
+			assertTrue(released.await(3, TimeUnit.SECONDS));
+			assertNull(source.getFailure());
+			assertEquals(Arrays.asList(2, 1), frameCounts);
+			assertEquals(samples.length, received.size());
+			for (int i = 0; i < samples.length; ++i) assertEquals(samples[i], received.get(i), 0);
+			assertEquals(1, closes.get());
+			assertNotSame(Thread.currentThread(), readerThreads.get(0));
+			for (Thread thread : readerThreads) assertSame(readerThreads.get(0), thread);
+		} finally { source.release(); }
+	}
+
+	@Test public void readerFailureClosesReaderWithoutReportingCompletion() throws Exception {
+		IOException failure = new IOException("Cannot decode audio frame");
+		AtomicInteger closes = new AtomicInteger(), completions = new AtomicInteger(), framesReceived = new AtomicInteger();
+		CountDownLatch released = new CountDownLatch(1);
+		FileAudioSource source = new FileAudioSource(() -> new PcmFileReader() {
+			@Override public AudioSource.PcmFormat getFormat() { return new AudioSource.PcmFormat(48000, 1); }
+			@Override public int read(float[] pcm) throws IOException { throw failure; }
+			@Override public void close() { closes.incrementAndGet(); }
+		}, true);
+		source.setAudioDataListener(new AudioSource.AudioDataListener() {
+			@Override public void onAudioDataAvailable(float[] pcm, int frames, int rate, int channels) { framesReceived.addAndGet(frames); }
+			@Override public void onStatusChanged(AudioSource.AudioSourceState state, String message) {
+				if (state == AudioSource.AudioSourceState.COMPLETED) completions.incrementAndGet();
+				if (state == AudioSource.AudioSourceState.COMPLETED || state == AudioSource.AudioSourceState.ERROR) source.release();
+				if (state == AudioSource.AudioSourceState.RELEASED) released.countDown();
+			}
+		});
+		try {
+			source.prepare();
+			source.start();
+			assertTrue(released.await(3, TimeUnit.SECONDS));
+			assertSame(failure, source.getFailure());
+			assertEquals(1, closes.get());
+			assertEquals(0, completions.get());
+			assertEquals(0, framesReceived.get());
+		} finally { source.release(); }
+	}
+
 	@Test public void turboDeliversEveryFrameWithoutRealtimeWaits() throws Exception {
 		int rate = 48000, totalFrames = rate * 20 + 1;
 		ByteBuffer data = ByteBuffer.allocate(totalFrames * 4).order(ByteOrder.LITTLE_ENDIAN);
@@ -23,7 +102,7 @@ public class FileAudioSourceTest {
 			data.putShort((short) ~frame);
 		}
 		byte[] wav = WavFileReaderTest.wav(1, 16, 2, rate, data.array());
-		FileAudioSource source = new FileAudioSource(() -> new ByteArrayInputStream(wav), true);
+		FileAudioSource source = new FileAudioSource(() -> WavFileReader.open(new ByteArrayInputStream(wav)), true);
 		CountDownLatch released = new CountDownLatch(1);
 		AtomicInteger received = new AtomicInteger(), completions = new AtomicInteger(), lastFrames = new AtomicInteger();
 		AtomicReference<String> invalid = new AtomicReference<>();
@@ -59,7 +138,7 @@ public class FileAudioSourceTest {
 
 	@Test public void turboCanStopBetweenBlocksWithoutReportingCompletion() throws Exception {
 		byte[] wav = WavFileReaderTest.wav(1, 8, 1, 8000, new byte[8000 * 20]);
-		FileAudioSource source = new FileAudioSource(() -> new ByteArrayInputStream(wav), true);
+		FileAudioSource source = new FileAudioSource(() -> WavFileReader.open(new ByteArrayInputStream(wav)), true);
 		CountDownLatch released = new CountDownLatch(1);
 		AtomicInteger blocks = new AtomicInteger(), completions = new AtomicInteger(), stops = new AtomicInteger();
 		source.setAudioDataListener(new AudioSource.AudioDataListener() {
@@ -95,7 +174,7 @@ public class FileAudioSourceTest {
 			@Override public void onSourceStateChanged(AudioSource.AudioSourceState state, String message, long generation) { }
 		});
 		try {
-			manager.startSession(new FileAudioSource(() -> new ByteArrayInputStream(wav), false), new AudioSessionManager.Monitor() {
+			manager.startSession(new FileAudioSource(() -> WavFileReader.open(new ByteArrayInputStream(wav)), false), new AudioSessionManager.Monitor() {
 				@Override public void write(float[] pcm, int frames, int rate, int channels) { }
 				@Override public void finish() throws IOException {
 					draining.countDown();
@@ -109,7 +188,7 @@ public class FileAudioSourceTest {
 			manager.startSession(new FileAudioSource(() -> {
 				closedAtNextOpen.set(monitorClosed.get());
 				nextOpened.countDown();
-				return new ByteArrayInputStream(wav);
+				return WavFileReader.open(new ByteArrayInputStream(wav));
 			}, false));
 			assertTrue(nextOpened.await(3, TimeUnit.SECONDS));
 			assertEquals(1, closedAtNextOpen.get());
@@ -120,7 +199,7 @@ public class FileAudioSourceTest {
 		byte[] data = new byte[2 * 2 * 9601]; // Stereo, 200 ms plus a single final frame.
 		Arrays.fill(data, (byte) 0);
 		byte[] wav = WavFileReaderTest.wav(1, 16, 2, 48000, data);
-		FileAudioSource source = new FileAudioSource(() -> new ByteArrayInputStream(wav), false);
+		FileAudioSource source = new FileAudioSource(() -> WavFileReader.open(new ByteArrayInputStream(wav)), false);
 		CountDownLatch released = new CountDownLatch(1);
 		List<Integer> frameCounts = new ArrayList<>();
 		AtomicReference<String> invalid = new AtomicReference<>();
@@ -170,7 +249,7 @@ public class FileAudioSourceTest {
 			}
 		});
 		try {
-			manager.startSession(new FileAudioSource(() -> new ByteArrayInputStream(wav), false), monitor);
+			manager.startSession(new FileAudioSource(() -> WavFileReader.open(new ByteArrayInputStream(wav)), false), monitor);
 			assertTrue(released.await(3, TimeUnit.SECONDS));
 			assertEquals(0.25f, heard.get(), 0);
 			assertEquals(Arrays.asList("play", "decode", "drain", "complete", "close"), order);
@@ -188,7 +267,7 @@ public class FileAudioSourceTest {
 				if (state == AudioSource.AudioSourceState.COMPLETED) completions.incrementAndGet();
 			}
 		});
-		FileAudioSource source = new FileAudioSource(() -> new ByteArrayInputStream(wav), false);
+		FileAudioSource source = new FileAudioSource(() -> WavFileReader.open(new ByteArrayInputStream(wav)), false);
 		try {
 			manager.startSession(source, new AudioSessionManager.Monitor() {
 				@Override public void write(float[] pcm, int frames, int rate, int channels) throws IOException { throw new IOException("Output disconnected"); }
