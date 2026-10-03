@@ -1,6 +1,20 @@
 
 # Robot36 - SSTV Image Decoder
 
+## Audio inputs
+
+* **Microphone:** decode live SSTV audio.
+* **Files:** import WAV (8/16/24/32-bit integer PCM or 32/64-bit IEEE float), FLAC, or MP3. Mono and stereo files at 8–192 kHz use their own sample rate and channel count, independently of microphone settings.
+* **Playback capture:** decode audio playing in other apps on Android 10 or later, after granting system capture permission.
+
+In File mode, tap **+** to choose a file, then **Play**. Normal playback includes audible monitoring; **Turbo** decodes without playback or real-time pacing. Its speed depends on the device and SSTV mode. Stopping and pressing Play again restarts the file. At the end, the decoder drains its buffered audio so complete images can be saved when automatic saving is enabled.
+
+### Limitations
+
+* Prefer original WAV or FLAC recordings. MP3 is lossy and may introduce image noise, color errors, or decoding failures; a brief, non-blocking notice appears on each MP3 selection. Other compressed formats are not currently supported.
+* MP3 and FLAC use Android's media components. On some devices, 24-bit FLAC is output as 16-bit PCM, so full source precision is not guaranteed.
+* Playback capture depends on the source app allowing its audio to be captured; it cannot capture every app or stream.
+
 ## Audio Line-Level to Microphone-Level Converter
 Decoding SSTV signals is more reliable with a clean input. Using a direct cable connection instead of acoustic coupling avoids echo, distortion, and environmental noise.
 
